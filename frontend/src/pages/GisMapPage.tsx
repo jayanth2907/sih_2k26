@@ -60,7 +60,7 @@ import clsx from 'clsx';
 // ============================================================================
 // BASEMAP PROVIDERS CONFIGURATION (No Secret API Key Required)
 // ============================================================================
-export type BasemapType = 'satellite' | 'terrain' | 'dark' | 'street';
+export type BasemapType = 'satellite' | 'terrain';
 
 interface BasemapConfig {
   id: BasemapType;
@@ -84,21 +84,6 @@ const BASEMAP_CONFIGS: Record<BasemapType, BasemapConfig> = {
     name: 'Terrain',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
     attribution: '&copy; Esri &mdash; Esri, DeLorme, NAVTEQ, USGS, Intermap',
-    maxZoom: 19
-  },
-  dark: {
-    id: 'dark',
-    name: 'Dark',
-    url: 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png',
-    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-    maxZoom: 19,
-    subdomains: 'abcd'
-  },
-  street: {
-    id: 'street',
-    name: 'Street',
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '&copy; OpenStreetMap contributors',
     maxZoom: 19
   }
 };
@@ -916,7 +901,7 @@ export const GisMapPage: React.FC = () => {
             >
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider select-none shrink-0">Basemap:</span>
               <div className="flex items-center gap-1.5 shrink-0">
-                {(['satellite', 'terrain', 'dark', 'street'] as BasemapType[]).map((type) => (
+                {(['satellite', 'terrain'] as BasemapType[]).map((type) => (
                   <button
                     key={type}
                     type="button"

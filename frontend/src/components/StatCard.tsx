@@ -52,15 +52,15 @@ export const StatCard: React.FC<StatCardProps> = ({
       )}
     >
       <div className="flex items-center justify-between">
-        <div className="min-w-0 pr-2">
-          <p className="text-[11px] font-mono font-medium text-slate-400 uppercase tracking-wider truncate">{title}</p>
+        <div className="min-w-0 pr-2 flex-1">
+          <p className="text-[10.5px] font-mono font-bold text-slate-400 uppercase tracking-wider leading-tight line-clamp-2">{title}</p>
           <div className="mt-1.5 flex items-baseline gap-2">
             <span className="text-xl font-bold tracking-tight text-white font-mono">{value}</span>
             {trend && <span className="text-[11px] font-mono text-slate-400">{trend}</span>}
           </div>
-          {subtitle && <p className="mt-1 text-[10.5px] text-slate-400 truncate">{subtitle}</p>}
+          {subtitle && <p className="mt-1 text-[10px] text-slate-400 leading-tight line-clamp-2">{subtitle}</p>}
         </div>
-        <div className={clsx('p-2.5 rounded-md shrink-0', iconStyles[variant])}>
+        <div className={clsx('p-2.5 rounded-md shrink-0 self-start', iconStyles[variant])}>
           <Icon className="w-4 h-4" />
         </div>
       </div>
