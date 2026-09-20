@@ -9,11 +9,58 @@ from reportlab.platypus import (
 )
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+
+# Initialize Unicode font support for Devanagari & Telugu
+_UNICODE_FONT_REGISTERED = False
+_PRIMARY_FONT = "Helvetica"
+_PRIMARY_FONT_BOLD = "Helvetica-Bold"
+_PRIMARY_FONT_OBLIQUE = "Helvetica-Oblique"
+
+def _setup_unicode_fonts():
+    global _UNICODE_FONT_REGISTERED, _PRIMARY_FONT, _PRIMARY_FONT_BOLD, _PRIMARY_FONT_OBLIQUE
+    if _UNICODE_FONT_REGISTERED:
+        return
+    
+    font_candidates = [
+        ("Nirmala", "C:\\Windows\\Fonts\\Nirmala.ttc", 0, "Nirmala-Bold", "C:\\Windows\\Fonts\\Nirmala.ttc", 1),
+        ("ArialUnicode", "C:\\Windows\\Fonts\\arial.ttf", 0, "ArialUnicode-Bold", "C:\\Windows\\Fonts\\arialbd.ttf", 0),
+        ("SegoeUI", "C:\\Windows\\Fonts\\segoeui.ttf", 0, "SegoeUI-Bold", "C:\\Windows\\Fonts\\segoeuib.ttf", 0),
+    ]
+    
+    for reg_name, reg_path, reg_idx, bold_name, bold_path, bold_idx in font_candidates:
+        if os.path.exists(reg_path):
+            try:
+                if reg_path.endswith(".ttc"):
+                    pdfmetrics.registerFont(TTFont(reg_name, reg_path, subfontIndex=reg_idx))
+                    if os.path.exists(bold_path):
+                        pdfmetrics.registerFont(TTFont(bold_name, bold_path, subfontIndex=bold_idx))
+                        _PRIMARY_FONT_BOLD = bold_name
+                    else:
+                        _PRIMARY_FONT_BOLD = reg_name
+                else:
+                    pdfmetrics.registerFont(TTFont(reg_name, reg_path))
+                    if os.path.exists(bold_path):
+                        pdfmetrics.registerFont(TTFont(bold_name, bold_path))
+                        _PRIMARY_FONT_BOLD = bold_name
+                    else:
+                        _PRIMARY_FONT_BOLD = reg_name
+                
+                _PRIMARY_FONT = reg_name
+                _PRIMARY_FONT_OBLIQUE = reg_name
+                _UNICODE_FONT_REGISTERED = True
+                break
+            except Exception as e:
+                continue
+
+_setup_unicode_fonts()
 
 class PDFReportGenerator:
     @staticmethod
     def generate_regulatory_pdf(report_data: Dict[str, Any]) -> bytes:
-        """Generates a real, official-style PDF compliance and governance report."""
+        """Generates a real, official-style PDF compliance and governance report with full Unicode support."""
+        _setup_unicode_fonts()
         buffer = BytesIO()
         doc = SimpleDocTemplate(
             buffer,
@@ -26,21 +73,21 @@ class PDFReportGenerator:
 
         styles = getSampleStyleSheet()
         
-        # Custom Typography Styles
+        # Custom Typography Styles with Unicode Font Binding
         title_style = ParagraphStyle(
             'GovTitle',
             parent=styles['Normal'],
-            fontName='Helvetica-Bold',
-            fontSize=16,
-            leading=20,
+            fontName=_PRIMARY_FONT_BOLD,
+            fontSize=15,
+            leading=19,
             textColor=colors.HexColor('#0f172a'),
             alignment=1
         )
         subtitle_style = ParagraphStyle(
             'GovSubtitle',
             parent=styles['Normal'],
-            fontName='Helvetica-Bold',
-            fontSize=11,
+            fontName=_PRIMARY_FONT_BOLD,
+            fontSize=10.5,
             leading=14,
             textColor=colors.HexColor('#d97706'),
             alignment=1
@@ -48,9 +95,9 @@ class PDFReportGenerator:
         heading_style = ParagraphStyle(
             'GovHeading',
             parent=styles['Normal'],
-            fontName='Helvetica-Bold',
-            fontSize=12,
-            leading=16,
+            fontName=_PRIMARY_FONT_BOLD,
+            fontSize=11.5,
+            leading=15,
             textColor=colors.HexColor('#1e293b'),
             spaceBefore=10,
             spaceAfter=4
@@ -58,7 +105,7 @@ class PDFReportGenerator:
         body_style = ParagraphStyle(
             'GovBody',
             parent=styles['Normal'],
-            fontName='Helvetica',
+            fontName=_PRIMARY_FONT,
             fontSize=9,
             leading=12,
             textColor=colors.HexColor('#334155')
@@ -66,7 +113,7 @@ class PDFReportGenerator:
         disclaimer_style = ParagraphStyle(
             'GovDisclaimer',
             parent=styles['Normal'],
-            fontName='Helvetica-Oblique',
+            fontName=_PRIMARY_FONT_OBLIQUE,
             fontSize=8,
             leading=10,
             textColor=colors.HexColor('#64748b'),
@@ -121,8 +168,10 @@ class PDFReportGenerator:
         kpi_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0f172a')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTNAME', (0, 0), (-1, 0), _PRIMARY_FONT_BOLD),
             ('FONTSIZE', (0, 0), (-1, 0), 9),
+            ('FONTNAME', (0, 1), (-1, -1), _PRIMARY_FONT),
+            ('FONTSIZE', (0, 1), (-1, -1), 8.5),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cbd5e1')),
             ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f8fafc')]),
             ('PADDING', (0, 0), (-1, -1), 4),

@@ -149,6 +149,100 @@ class ToolRegistry:
             parameters={"mine_id": "int", "limit": "int"}
         )
 
+        # Phase 11C: Government & Mine Knowledge Tools
+        self.register_tool(
+            name="search_government_documents",
+            func=CopilotTools.search_government_documents,
+            description="Performs hybrid search across official government regulations, circulars, reports, and SOPs.",
+            allowed_roles=all_operational_roles,
+            parameters={"query": "str", "domain": "str", "source_tier": "str", "prefer_current": "bool"}
+        )
+        self.register_tool(
+            name="get_document_evidence",
+            func=CopilotTools.get_document_evidence,
+            description="Retrieves exact page-level text chunk, SHA-256 hash, and section heading from an indexed document.",
+            allowed_roles=all_operational_roles,
+            parameters={"document_code": "str", "page_number": "int"}
+        )
+        self.register_tool(
+            name="get_regulatory_requirement",
+            func=CopilotTools.get_regulatory_requirement,
+            description="Retrieves specific statutory requirements from Coal Mines Regulations 2017 or relevant DGMS notifications.",
+            allowed_roles=all_operational_roles,
+            parameters={"topic": "str", "domain": "str"}
+        )
+        self.register_tool(
+            name="get_current_regulation",
+            func=CopilotTools.get_current_regulation,
+            description="Retrieves current active statutory frameworks (CMR 2017, DGMS active circulars, OSH Code).",
+            allowed_roles=all_operational_roles,
+            parameters={"topic": "str", "domain": "str"}
+        )
+        self.register_tool(
+            name="get_historical_regulation",
+            func=CopilotTools.get_historical_regulation,
+            description="Retrieves historical or superseded regulations (Mines Rules 1955, Mines Act 1952) with historical marking.",
+            allowed_roles=all_operational_roles,
+            parameters={"topic": "str", "domain": "str"}
+        )
+        self.register_tool(
+            name="get_mine_source_evidence",
+            func=CopilotTools.get_mine_source_evidence,
+            description="Retrieves official Phase 11A source-derived facts (area, reserves, seams, clearances, coordinates) for real coal blocks.",
+            allowed_roles=all_operational_roles,
+            parameters={"mine_id": "int", "category": "str"}
+        )
+        self.register_tool(
+            name="get_cmsms_workflow",
+            func=CopilotTools.get_cmsms_workflow,
+            description="Retrieves official Standard Operating Procedures for CMSMS / Khanan Prahari illegal mining reporting & verification.",
+            allowed_roles=all_operational_roles,
+            parameters={"workflow_stage": "str"}
+        )
+        self.register_tool(
+            name="get_pgrm_workflow",
+            func=CopilotTools.get_pgrm_workflow,
+            description="Retrieves official Public Grievances Redressal Mechanism (PGRM) SOPs, CPGRAMS routing, and statutory SLAs.",
+            allowed_roles=all_operational_roles,
+            parameters={"topic": "str"}
+        )
+        self.register_tool(
+            name="get_budget_indicator",
+            func=CopilotTools.get_budget_indicator,
+            description="Retrieves Ministry of Coal Budget 2026-27 allocations, Demand No. 8 heads, and Output-Outcome targets.",
+            allowed_roles=all_operational_roles,
+            parameters={"scheme_name": "str"}
+        )
+        self.register_tool(
+            name="get_annual_report_evidence",
+            func=CopilotTools.get_annual_report_evidence,
+            description="Retrieves Ministry of Coal Annual Report 2025-26 chapters evidence on safety, production, R&D, and sustainability.",
+            allowed_roles=all_operational_roles,
+            parameters={"chapter_or_topic": "str"}
+        )
+        self.register_tool(
+            name="search_uploaded_documents",
+            func=CopilotTools.search_uploaded_documents,
+            description="Searches user-uploaded mine documents, OCR-digitized text, and verified pages.",
+            allowed_roles=all_operational_roles,
+            parameters={"query": "str", "doc_type": "str"}
+        )
+        self.register_tool(
+            name="get_uploaded_document_field_evidence",
+            func=CopilotTools.get_uploaded_document_field_evidence,
+            description="Retrieves structured fields (dates, coordinates, quantities, regulation clauses) extracted from uploaded documents.",
+            allowed_roles=all_operational_roles,
+            parameters={"field_name": "str"}
+        )
+        self.register_tool(
+            name="get_spatial_risk_context",
+            func=CopilotTools.get_spatial_risk_context,
+            description="Retrieves 2D GIS spatial context, boundary containment, nearest sensors/incidents, and risk hotspots for a coordinate.",
+            allowed_roles=all_operational_roles,
+            parameters={"latitude": "float", "longitude": "float", "feature_id": "str"}
+        )
+
+
     def register_tool(
         self,
         name: str,

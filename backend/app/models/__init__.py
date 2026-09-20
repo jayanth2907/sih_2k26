@@ -10,7 +10,7 @@ from app.models.incident import Incident, IncidentEvent
 from app.models.violation import Violation, CorrectiveAction, Escalation
 from app.models.risk import RiskScore, RiskFactor, AnomalyEvent
 from app.models.alert import Alert
-from app.models.document import Document, ExtractedDocumentField
+from app.models.document import Document, DocumentPage, ExtractedDocumentField
 from app.models.audit import AuditEvent
 from app.models.notification import Notification
 from app.models.production import ProductionReport
@@ -26,6 +26,28 @@ from app.models.ml_registry import MLModelRegistry
 from app.models.copilot import CopilotHistory
 from app.models.field_operation import FieldInspection, FieldEvidence, FieldSyncLog
 from app.models.external_integration import ExternalEventLog
+from app.models.real_mine_data import (
+    AuthorityLevelEnum,
+    DataStatusEnum,
+    GeometryStatusEnum,
+    ExtractionMethodEnum,
+    ValidationStatusEnum,
+    DataProvenance,
+    MineProfile,
+    MineBoundary,
+    MineCoordinate,
+    MineSeam,
+    MineClearance,
+    MineDataAttribute,
+    MineDataQualityRecord,
+)
+from app.models.knowledge import (
+    SourceTierEnum,
+    DocumentStatusEnum,
+    GovernmentDocument,
+    DocumentChunk,
+)
+
 
 __all__ = [
     "Base",
@@ -53,6 +75,7 @@ __all__ = [
     "AnomalyEvent",
     "Alert",
     "Document",
+    "DocumentPage",
     "ExtractedDocumentField",
     "AuditEvent",
     "Notification",
@@ -76,5 +99,25 @@ __all__ = [
     "CopilotHistory",
     "FieldInspection",
     "FieldEvidence",
-    "FieldSyncLog"
+    "FieldSyncLog",
+    "ExternalEventLog",
+    "AuthorityLevelEnum",
+    "DataStatusEnum",
+    "GeometryStatusEnum",
+    "ExtractionMethodEnum",
+    "ValidationStatusEnum",
+    "DataProvenance",
+    "MineProfile",
+    "MineBoundary",
+    "MineCoordinate",
+    "MineSeam",
+    "MineClearance",
+    "MineDataAttribute",
+    "MineDataQualityRecord",
+    "SourceTierEnum",
+    "DocumentStatusEnum",
+    "GovernmentDocument",
+    "DocumentChunk",
 ]
+
+

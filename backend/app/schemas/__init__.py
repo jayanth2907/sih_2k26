@@ -30,6 +30,12 @@ from app.schemas.telemetry import (
     TelemetryIngestPayload, SimulationScenarioRequest, SpatialContextResponse,
     NearbyCameraDTO, NearbyEquipmentDTO, MineTelemetrySummary
 )
+from app.schemas.real_mine_data import (
+    DataProvenanceRead, MineProfileRead, MineBoundaryRead,
+    MineCoordinateRead, MineSeamRead, MineClearanceRead,
+    MineDataAttributeRead, MineDataQualityRead,
+    RealMineSummaryRead, RealMineDetailRead, IngestionReportItem
+)
 
 __all__ = [
     "TokenResponse", "LoginRequest", "UserCreate", "UserSummary", "UserDetail",
@@ -47,5 +53,10 @@ __all__ = [
     "RiskScoreRead", "RiskFactorRead", "AnomalyEventCreate", "AnomalyEventRead", "AuditEventRead",
     "AlertBase", "AlertCreate", "AlertRead", "AlertStatusUpdate",
     "TelemetryIngestPayload", "SimulationScenarioRequest", "SpatialContextResponse",
-    "NearbyCameraDTO", "NearbyEquipmentDTO", "MineTelemetrySummary"
+    "NearbyCameraDTO", "NearbyEquipmentDTO", "MineTelemetrySummary",
+    "DataProvenanceRead", "MineProfileRead", "MineBoundaryRead",
+    "MineCoordinateRead", "MineSeamRead", "MineClearanceRead",
+    "MineDataAttributeRead", "MineDataQualityRead",
+    "RealMineSummaryRead", "RealMineDetailRead", "IngestionReportItem"
 ]
+

@@ -196,9 +196,7 @@ export const MineCanvas3D: React.FC<MineCanvas3DProps> = ({
     const structureGroup = structureGroupRef.current;
     structureGroup.clear();
     const mineStructure = MineGeometryBuilder.buildMineStructure(
-      twinData.mine,
-      twinData.levels,
-      twinData.zones,
+      twinData,
       viewMode
     );
     structureGroup.add(mineStructure);
@@ -290,6 +288,19 @@ export const MineCanvas3D: React.FC<MineCanvas3DProps> = ({
     structureGroupRef.current.visible = layers.mineStructure;
     proximityGroupRef.current.visible = layers.proximityLines;
 
+    // Granular Source-derived layers within structureGroup
+    structureGroupRef.current.traverse((child) => {
+      if (child.name === 'SOURCE_BOUNDARY_OUTLINE' || child.userData?.type === 'boundary') {
+        child.visible = layers.sourceBoundary !== false;
+      }
+      if (child.name.startsWith('COORD_POINT_') || child.userData?.type === 'coordinate') {
+        child.visible = layers.cardinalPoints !== false;
+      }
+      if (child.name.startsWith('SEAM_') || child.userData?.type === 'seam') {
+        child.visible = layers.coalSeamsStratigraphy !== false;
+      }
+    });
+
     // Handle Camera FOV Cones visibility
     camerasGroupRef.current.children.forEach((camMesh) => {
       const cone = camMesh.getObjectByName('camera_fov_cone');
@@ -342,11 +353,12 @@ export const MineCanvas3D: React.FC<MineCanvas3DProps> = ({
     camerasGroupRef.current.children.forEach((c) => targets.push(c));
     equipmentGroupRef.current.children.forEach((c) => targets.push(c));
     incidentsGroupRef.current.children.forEach((c) => targets.push(c));
+    structureGroupRef.current.children.forEach((c) => targets.push(c));
 
     const intersects = raycaster.current.intersectObjects(targets, true);
 
     if (intersects.length > 0) {
-      // Find top-level group with userData
+      // Find top-level group or mesh with userData
       let obj: THREE.Object3D | null = intersects[0].object;
       while (obj && !obj.userData?.type && obj.parent) {
         obj = obj.parent;
@@ -355,7 +367,7 @@ export const MineCanvas3D: React.FC<MineCanvas3DProps> = ({
       if (obj && obj.userData?.type) {
         onSelectObject({
           type: obj.userData.type,
-          id: obj.userData.id,
+          id: obj.userData.id || 0,
           data: obj.userData.data,
           coordinates: { x: obj.position.x, y: obj.position.z, z: obj.position.y }
         });

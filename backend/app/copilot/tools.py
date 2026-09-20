@@ -406,3 +406,494 @@ class CopilotTools:
                 "event_hash": e.current_event_hash[:12] + "..." if e.current_event_hash else None
             })
         return {"mine_id": mine_id, "recent_audit_events": items}
+
+    # ============================================================
+    # PHASE 11C: GOVERNMENT KNOWLEDGE & EVIDENCE TOOLS
+    # ============================================================
+
+    @staticmethod
+    def search_government_documents(
+        db: Session,
+        mine_id: int,
+        user: User,
+        query: str = "",
+        domain: Optional[str] = None,
+        source_tier: Optional[str] = None,
+        prefer_current: bool = True,
+        top_k: int = 5,
+        **kwargs
+    ) -> Dict[str, Any]:
+        from app.services.government_rag_service import government_rag_service
+        results = government_rag_service.search(
+            query=query,
+            domain=domain,
+            source_tier=source_tier,
+            prefer_current=prefer_current,
+            top_k=top_k
+        )
+        items = []
+        for chunk, score in results:
+            items.append({
+                "document_code": chunk.document_code,
+                "document_title": chunk.document_title,
+                "organization": chunk.organization,
+                "page_number": chunk.page_number,
+                "section": chunk.section_heading,
+                "excerpt": chunk.text_content,
+                "source_tier": chunk.source_tier,
+                "status": chunk.source_status,
+                "domain": chunk.domain,
+                "chunk_hash": chunk.chunk_hash,
+                "file_hash": chunk.file_hash,
+                "relevance_score": round(score, 2)
+            })
+        return {
+            "query": query,
+            "domain_filter": domain,
+            "results_count": len(items),
+            "evidence_chunks": items
+        }
+
+    @staticmethod
+    def get_document_evidence(
+        db: Session,
+        mine_id: int,
+        user: User,
+        document_code: str,
+        page_number: Optional[int] = None,
+        **kwargs
+    ) -> Dict[str, Any]:
+        from app.services.government_rag_service import government_rag_service
+        matching = [
+            c for c in government_rag_service.chunks
+            if c.document_code == document_code and (page_number is None or c.page_number == page_number)
+        ]
+        if not matching:
+            return {"error": f"No indexed evidence found for document {document_code} on page {page_number}."}
+        
+        items = []
+        for c in matching[:5]:
+            items.append({
+                "document_title": c.document_title,
+                "organization": c.organization,
+                "page_number": c.page_number,
+                "section": c.section_heading,
+                "excerpt": c.text_content,
+                "source_tier": c.source_tier,
+                "status": c.source_status,
+                "chunk_hash": c.chunk_hash,
+                "file_hash": c.file_hash
+            })
+        return {
+            "document_code": document_code,
+            "page_number": page_number,
+            "evidence": items
+        }
+
+    @staticmethod
+    def get_regulatory_requirement(
+        db: Session,
+        mine_id: int,
+        user: User,
+        topic: str = "",
+        domain: Optional[str] = None,
+        **kwargs
+    ) -> Dict[str, Any]:
+        from app.services.government_rag_service import government_rag_service
+        results = government_rag_service.search(
+            query=topic,
+            domain=domain,
+            source_tier="TIER_1_OFFICIAL_REGULATORY",
+            prefer_current=True,
+            top_k=4
+        )
+        return {
+            "topic": topic,
+            "domain": domain,
+            "regulatory_evidence": [
+                {
+                    "document": c.document_title,
+                    "organization": c.organization,
+                    "page": c.page_number,
+                    "section": c.section_heading,
+                    "statutory_text": c.text_content,
+                    "source_tier": c.source_tier,
+                    "status": c.source_status,
+                    "file_hash": c.file_hash
+                }
+                for c, _ in results
+            ]
+        }
+
+    @staticmethod
+    def get_current_regulation(
+        db: Session,
+        mine_id: int,
+        user: User,
+        topic: str = "",
+        domain: Optional[str] = None,
+        **kwargs
+    ) -> Dict[str, Any]:
+        from app.services.government_rag_service import government_rag_service
+        results = government_rag_service.search(
+            query=topic,
+            domain=domain,
+            source_tier="TIER_1_OFFICIAL_REGULATORY",
+            temporal_mode="CURRENT_ONLY",
+            top_k=4
+        )
+        return {
+            "topic": topic,
+            "temporal_scope": "CURRENT_ONLY",
+            "current_regulations": [
+                {
+                    "document": c.document_title,
+                    "organization": c.organization,
+                    "page": c.page_number,
+                    "section": c.section_heading,
+                    "text": c.text_content,
+                    "status": c.source_status,
+                    "file_hash": c.file_hash
+                }
+                for c, _ in results
+            ]
+        }
+
+    @staticmethod
+    def get_historical_regulation(
+        db: Session,
+        mine_id: int,
+        user: User,
+        topic: str = "",
+        domain: Optional[str] = None,
+        **kwargs
+    ) -> Dict[str, Any]:
+        from app.services.government_rag_service import government_rag_service
+        results = government_rag_service.search(
+            query=topic or "Mines Act 1952 Mines Rules 1955",
+            domain=domain,
+            source_tier="TIER_1_OFFICIAL_REGULATORY",
+            temporal_mode="HISTORICAL_ALLOWED",
+            top_k=4
+        )
+        return {
+            "topic": topic,
+            "temporal_scope": "HISTORICAL_AND_SUPERSEDED",
+            "historical_regulations": [
+                {
+                    "document": c.document_title,
+                    "page": c.page_number,
+                    "section": c.section_heading,
+                    "text": c.text_content,
+                    "status": c.source_status,
+                    "file_hash": c.file_hash
+                }
+                for c, _ in results
+            ]
+        }
+
+    @staticmethod
+    def get_mine_source_evidence(
+        db: Session,
+        mine_id: int,
+        user: User,
+        category: Optional[str] = None,
+        **kwargs
+    ) -> Dict[str, Any]:
+        from app.models.real_mine_data import (
+            MineProfile, MineBoundary, MineCoordinate, MineSeam, MineClearance, MineDataAttribute, DataProvenance
+        )
+        profile = db.query(MineProfile).filter(MineProfile.mine_id == mine_id).first()
+        boundary = db.query(MineBoundary).filter(MineBoundary.mine_id == mine_id).first()
+        coords = db.query(MineCoordinate).filter(MineCoordinate.mine_id == mine_id).order_by(MineCoordinate.sequence_order).all()
+        seams = db.query(MineSeam).filter(MineSeam.mine_id == mine_id).all()
+        clearances = db.query(MineClearance).filter(MineClearance.mine_id == mine_id).all()
+        
+        # Primary provenance
+        prov_data = {}
+        if profile and profile.provenance:
+            prov_data = {
+                "document_title": profile.provenance.document_title,
+                "document_filename": profile.provenance.document_filename,
+                "document_hash": profile.provenance.document_hash,
+                "page_number": profile.provenance.page_number,
+                "source_organization": profile.provenance.source_organization,
+                "authority_level": profile.provenance.authority_level,
+                "data_status": profile.provenance.data_status
+            }
+
+        return {
+            "mine_id": mine_id,
+            "provenance": prov_data,
+            "profile": {
+                "official_name": profile.official_name if profile else None,
+                "coalfield": profile.coalfield if profile else None,
+                "state": profile.state if profile else None,
+                "district": profile.district if profile else None,
+                "geological_block_area_sq_km": profile.geological_block_area_sq_km if profile else None,
+                "total_geological_reserve_mt": profile.total_geological_reserve_mt if profile else None,
+                "total_extractable_reserve_mt": profile.total_extractable_reserve_mt if profile else None,
+                "target_capacity_raw": profile.target_capacity_raw if profile else None,
+                "data_status": profile.data_status if profile else "UNKNOWN",
+                "geometry_status": profile.geometry_status if profile else "UNKNOWN"
+            } if profile else None,
+            "boundary": {
+                "boundary_type": boundary.boundary_type if boundary else None,
+                "geometry_status": boundary.geometry_status if boundary else "UNKNOWN",
+                "min_latitude": boundary.min_latitude if boundary else None,
+                "max_latitude": boundary.max_latitude if boundary else None,
+                "min_longitude": boundary.min_longitude if boundary else None,
+                "max_longitude": boundary.max_longitude if boundary else None
+            } if boundary else None,
+            "coordinates_count": len(coords),
+            "seams_count": len(seams),
+            "clearances_count": len(clearances)
+        }
+
+    @staticmethod
+    def get_cmsms_workflow(
+        db: Session,
+        mine_id: int,
+        user: User,
+        workflow_stage: Optional[str] = None,
+        **kwargs
+    ) -> Dict[str, Any]:
+        from app.services.government_rag_service import government_rag_service
+        q = f"CMSMS Khanan Prahari {workflow_stage or 'complaint citizen routing field inspection satellite'}"
+        results = government_rag_service.search(
+            query=q,
+            domain="CMSMS",
+            source_tier="TIER_1_OFFICIAL_REGULATORY",
+            top_k=4
+        )
+        return {
+            "system": "COAL MINE SURVEILLANCE AND MANAGEMENT SYSTEM (CMSMS)",
+            "app": "KHANAN PRAHARI",
+            "workflow_stage": workflow_stage or "END_TO_END_SOP",
+            "disclaimer": "OFFICIAL CMSMS WORKFLOW (Not connected to live government production database; operates via TRINETRA integration adapter)",
+            "workflow_evidence": [
+                {
+                    "source": c.document_title,
+                    "page": c.page_number,
+                    "section": c.section_heading,
+                    "text": c.text_content,
+                    "file_hash": c.file_hash
+                }
+                for c, _ in results
+            ]
+        }
+
+    @staticmethod
+    def get_pgrm_workflow(
+        db: Session,
+        mine_id: int,
+        user: User,
+        topic: Optional[str] = None,
+        **kwargs
+    ) -> Dict[str, Any]:
+        from app.services.government_rag_service import government_rag_service
+        q = f"PGRM public grievance CPGRAMS {topic or 'redressal timeline nodal officer appeal'}"
+        results = government_rag_service.search(
+            query=q,
+            domain="PGRM",
+            source_tier="TIER_1_OFFICIAL_REGULATORY",
+            top_k=4
+        )
+        return {
+            "system": "PUBLIC GRIEVANCES REDRESSAL MECHANISM (PGRM)",
+            "portal": "CPGRAMS (pgportal.gov.in)",
+            "topic": topic or "STANDARD_REDRESSAL_SOP",
+            "evidence": [
+                {
+                    "source": c.document_title,
+                    "page": c.page_number,
+                    "section": c.section_heading,
+                    "text": c.text_content,
+                    "file_hash": c.file_hash
+                }
+                for c, _ in results
+            ]
+        }
+
+    @staticmethod
+    def get_budget_indicator(
+        db: Session,
+        mine_id: int,
+        user: User,
+        scheme_name: Optional[str] = None,
+        **kwargs
+    ) -> Dict[str, Any]:
+        from app.services.government_rag_service import government_rag_service
+        q = f"Budget 2026-27 Demand No 8 {scheme_name or 'exploration R&D safety allocation output outcome'}"
+        results = government_rag_service.search(
+            query=q,
+            domain="BUDGET",
+            source_tier="TIER_1_OFFICIAL_REGULATORY",
+            top_k=4
+        )
+        return {
+            "fiscal_year": "2026-27",
+            "demand_no": "Demand No. 8 (Ministry of Coal)",
+            "scheme_query": scheme_name or "ALL_MAJOR_HEADS",
+            "disclaimer": "Budgetary figures represent authorized government allocations and target indicators, not verified operational expenditure.",
+            "budget_evidence": [
+                {
+                    "document": c.document_title,
+                    "page": c.page_number,
+                    "section": c.section_heading,
+                    "text": c.text_content,
+                    "file_hash": c.file_hash
+                }
+                for c, _ in results
+            ]
+        }
+
+    @staticmethod
+    def get_annual_report_evidence(
+        db: Session,
+        mine_id: int,
+        user: User,
+        chapter_or_topic: Optional[str] = None,
+        **kwargs
+    ) -> Dict[str, Any]:
+        from app.services.government_rag_service import government_rag_service
+        q = f"Annual Report 2025-26 Ministry of Coal {chapter_or_topic or 'safety production sustainability exploration workforce welfare'}"
+        results = government_rag_service.search(
+            query=q,
+            source_tier="TIER_1_OFFICIAL_REGULATORY",
+            top_k=4
+        )
+        return {
+            "report": "Ministry of Coal Annual Report 2025-26",
+            "query": chapter_or_topic or "GENERAL_REPORT",
+            "disclaimer": "Government-reported national figures from official MoC Annual Report.",
+            "report_evidence": [
+                {
+                    "document": c.document_title,
+                    "page": c.page_number,
+                    "section": c.section_heading,
+                    "text": c.text_content,
+                    "file_hash": c.file_hash
+                }
+                for c, _ in results
+            ]
+        }
+
+    @staticmethod
+    def search_uploaded_documents(
+        db: Session,
+        mine_id: int,
+        user: User,
+        query: str,
+        doc_type: Optional[str] = None,
+        **kwargs
+    ) -> Dict[str, Any]:
+        from app.models.document import Document, DocumentPage
+        docs_query = db.query(Document).filter(
+            (Document.mine_id == mine_id) | (Document.mine_id.is_(None))
+        )
+        if doc_type:
+            docs_query = docs_query.filter(Document.doc_type == doc_type)
+        docs = docs_query.order_by(Document.uploaded_at.desc()).limit(5).all()
+
+        matching_pages = []
+        for d in docs:
+            for p in d.pages:
+                if query.lower() in p.text_content.lower() or not query.strip():
+                    matching_pages.append({
+                        "document_id": d.id,
+                        "document_title": d.title,
+                        "doc_type": d.doc_type,
+                        "page_number": p.page_number,
+                        "extraction_method": p.extraction_method,
+                        "ocr_provider": p.ocr_provider,
+                        "ocr_confidence": p.ocr_confidence,
+                        "quality_status": p.quality_status,
+                        "file_hash": d.file_hash,
+                        "excerpt": p.text_content[:240]
+                    })
+
+        return {
+            "mine_id": mine_id,
+            "query": query,
+            "total_matches": len(matching_pages),
+            "evidence": matching_pages[:4]
+        }
+
+    @staticmethod
+    def get_uploaded_document_field_evidence(
+        db: Session,
+        mine_id: int,
+        user: User,
+        field_name: Optional[str] = None,
+        **kwargs
+    ) -> Dict[str, Any]:
+        from app.models.document import Document, ExtractedDocumentField
+        fields_query = db.query(ExtractedDocumentField).join(Document).filter(
+            (Document.mine_id == mine_id) | (Document.mine_id.is_(None))
+        )
+        if field_name:
+            fields_query = fields_query.filter(ExtractedDocumentField.field_name.ilike(f"%{field_name}%"))
+        fields = fields_query.order_by(ExtractedDocumentField.created_at.desc()).limit(10).all()
+
+        return {
+            "mine_id": mine_id,
+            "field_filter": field_name or "ALL_FIELDS",
+            "extracted_fields": [
+                {
+                    "document_id": f.document_id,
+                    "document_title": f.document.title if f.document else "Document",
+                    "field_name": f.field_name,
+                    "field_value": f.field_value,
+                    "confidence": f.confidence,
+                    "source_page": f.page_number,
+                    "extraction_method": f.extraction_method,
+                    "validation_status": f.validation_status,
+                    "is_verified": f.is_verified,
+                    "source_text": f.source_text
+                }
+                for f in fields
+            ]
+        }
+
+    @staticmethod
+    def get_spatial_risk_context(
+        db: Session,
+        mine_id: int,
+        user: User,
+        latitude: Optional[float] = None,
+        longitude: Optional[float] = None,
+        feature_id: Optional[str] = None,
+        **kwargs
+    ) -> Dict[str, Any]:
+        from app.services.spatial_context_service import spatial_context_service
+        from app.models.mine import Mine
+        mine = db.query(Mine).filter(Mine.id == mine_id).first()
+        if not mine:
+            return {"error": f"Mine {mine_id} not found"}
+
+        target_lat = latitude or mine.latitude or 23.5000
+        target_lon = longitude or mine.longitude or 85.5000
+
+        context_data = spatial_context_service.find_nearest_entities(
+            db=db,
+            mine_id=mine_id,
+            target_lat=target_lat,
+            target_lon=target_lon
+        )
+        risk_hotspots = spatial_context_service.aggregate_spatial_risk_hotspots(db=db, mine_id=mine_id)
+
+        return {
+            "mine_id": mine_id,
+            "mine_name": mine.name,
+            "target_coordinate": {"latitude": target_lat, "longitude": target_lon},
+            "feature_id": feature_id,
+            "boundary_status": context_data["boundary_status"],
+            "nearest_sensors": context_data["nearest_sensors"],
+            "nearest_incidents": context_data["nearest_incidents"],
+            "nearest_inspections": context_data["nearest_inspections"],
+            "active_spatial_risk_hotspots": risk_hotspots[:3]
+        }
+
+
+

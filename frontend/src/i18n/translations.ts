@@ -59,7 +59,74 @@ export interface Translations {
   circuitBreaker: string;
   sourceProvenance: string;
   demoControlCenter: string;
+  documentIntelligence: string;
+  gisCommandMap: string;
+  governanceIntelligence: string;
+  governanceSubtitle: string;
+  dataAsOfLabel: string;
+  dataTrustLabel: string;
+  sourceDerivedLabel: string;
+  operationalLabel: string;
+  simulatedLabel: string;
+  modelDerivedLabel: string;
+  attentionRequiredLabel: string;
+  crossMineViewLabel: string;
+  safetyIntelligenceLabel: string;
+  complianceIntelligenceLabel: string;
+  productionPerformanceLabel: string;
+  environmentalMonitoringLabel: string;
+  predictiveRisk30MinLabel: string;
+  noDataLabel: string;
+  viewInGisLabel: string;
+  viewContractorsLabel: string;
+  openFieldOperationsLabel: string;
+  openPgrmWorkflowLabel: string;
   languageSelect: string;
+  // Sensors & Telemetry
+  sensorTelemetryNodes: string;
+  sensorTelemetrySubtitle: string;
+  scenarioControlsTitle: string;
+  scenarioImpactTitle: string;
+  scenarioImpactSubtitle: string;
+  normalBaseline: string;
+  methaneSpike: string;
+  coSurge: string;
+  ventilationDrop: string;
+  sensorSilence: string;
+  multiHazardSpike: string;
+  sensorCode: string;
+  sensorNameType: string;
+  zoneLevel: string;
+  liveTelemetry: string;
+  thresholds: string;
+  coords3d: string;
+  status: string;
+  history: string;
+  centerInTwin: string;
+  viewReadingHistory: string;
+  // Workforce
+  workforceManagement: string;
+  workforceSubtitle: string;
+  activeWorkers: string;
+  shiftsToday: string;
+  attendanceRate: string;
+  certCompliance: string;
+  searchWorkers: string;
+  allShifts: string;
+  allMines: string;
+  workerName: string;
+  designation: string;
+  shift: string;
+  assignedMine: string;
+  attendance: string;
+  safetyCert: string;
+  // Common Actions
+  generateReport: string;
+  downloadPdf: string;
+  viewDetails: string;
+  exportData: string;
+  filterBy: string;
+  allStatus: string;
 }
 
 export const translations: Record<SupportedLanguage, Translations> = {
@@ -67,7 +134,9 @@ export const translations: Record<SupportedLanguage, Translations> = {
     appName: 'TRINETRA',
     appSubtitle: 'Mine Governance AI',
     liveDashboard: 'Live Dashboard',
+    gisCommandMap: '2D GIS Command Map',
     demoControlCenter: 'Demo Control Center',
+    documentIntelligence: 'Document Intelligence & OCR',
     aiRiskIntelligence: 'AI Risk Intelligence',
     aiCopilot: 'AI Governance Copilot',
     fieldOperations: 'Field Operations',
@@ -122,13 +191,77 @@ export const translations: Record<SupportedLanguage, Translations> = {
     systemNormal: 'All parameters within DGMS statutory limits.',
     criticalAlert: 'CRITICAL ESCALATION',
     warningAlert: 'STATUTORY WARNING',
-    languageSelect: 'Language'
+    governanceIntelligence: 'Governance Intelligence',
+    governanceSubtitle: 'Cross-domain operational, compliance and predictive intelligence',
+    dataAsOfLabel: 'DATA AS OF',
+    dataTrustLabel: 'DATA TRUST',
+    sourceDerivedLabel: 'SOURCE-DERIVED',
+    operationalLabel: 'OPERATIONAL',
+    simulatedLabel: 'DATA MODE: SIMULATED',
+    modelDerivedLabel: 'MODEL-DERIVED',
+    attentionRequiredLabel: 'ATTENTION REQUIRED',
+    crossMineViewLabel: 'CROSS-MINE VIEW',
+    safetyIntelligenceLabel: 'SAFETY INTELLIGENCE',
+    complianceIntelligenceLabel: 'COMPLIANCE INTELLIGENCE',
+    productionPerformanceLabel: 'PRODUCTION PERFORMANCE',
+    environmentalMonitoringLabel: 'ENVIRONMENTAL MONITORING',
+    predictiveRisk30MinLabel: 'PREDICTIVE RISK — 30 MIN',
+    noDataLabel: 'NO DATA',
+    viewInGisLabel: 'VIEW IN GIS',
+    viewContractorsLabel: 'VIEW CONTRACTORS',
+    openFieldOperationsLabel: 'OPEN FIELD OPERATIONS',
+    openPgrmWorkflowLabel: 'OPEN PGRM WORKFLOW',
+    languageSelect: 'Language',
+    sensorTelemetryNodes: 'Environmental & Telemetry Nodes',
+    sensorTelemetrySubtitle: 'Real-time gas concentration, air velocity, dust PM, and strata seismic monitoring with deterministic simulation.',
+    scenarioControlsTitle: 'Deterministic Simulation Scenario Controls (SIH Testing)',
+    scenarioImpactTitle: 'Active Scenario Pipeline Response',
+    scenarioImpactSubtitle: 'Real-time telemetry injection, threshold evaluation, and incident trigger status',
+    normalBaseline: 'Normal Baseline',
+    methaneSpike: 'Methane Spike',
+    coSurge: 'CO Gas Surge',
+    ventilationDrop: 'Ventilation Drop',
+    sensorSilence: 'Sensor Silence',
+    multiHazardSpike: 'Multi-Hazard Spike',
+    sensorCode: 'Sensor Code',
+    sensorNameType: 'Sensor Name / Type',
+    zoneLevel: 'Zone / Level',
+    liveTelemetry: 'Live Telemetry',
+    thresholds: 'Thresholds (Warn / Crit)',
+    coords3d: '3D Coords (x,y,z)',
+    status: 'Status',
+    history: 'History',
+    centerInTwin: 'Center in 3D Digital Twin',
+    viewReadingHistory: 'View Telemetry Reading History',
+    workforceManagement: 'Workforce & Muster Intelligence',
+    workforceSubtitle: 'Statutory Form E muster roll, biometric attendance, DGMS safety certifications, and shift allocations.',
+    activeWorkers: 'Active Workers',
+    shiftsToday: 'Active Shifts',
+    attendanceRate: 'Muster Attendance Rate',
+    certCompliance: 'DGMS Cert Compliance',
+    searchWorkers: 'Search workers by name, token, designation...',
+    allShifts: 'All Shifts',
+    allMines: 'All Mine Allocations',
+    workerName: 'Worker Name / Token',
+    designation: 'Designation / Role',
+    shift: 'Assigned Shift',
+    assignedMine: 'Allocated Mine',
+    attendance: 'Muster Attendance',
+    safetyCert: 'DGMS Cert Status',
+    generateReport: 'Generate Statutory Report',
+    downloadPdf: 'Download Signed PDF',
+    viewDetails: 'View Details',
+    exportData: 'Export Data',
+    filterBy: 'Filter By',
+    allStatus: 'ALL STATUS'
   },
   hi: {
     appName: 'त्रिनेत्र (TRINETRA)',
     appSubtitle: 'खदान प्रशासन एवं सुरक्षा AI',
     liveDashboard: 'लाइव डैशबोर्ड',
+    gisCommandMap: '2D GIS कमांड मानचित्र',
     demoControlCenter: 'डेमो कंट्रोल सेंटर',
+    documentIntelligence: 'दस्तावेज़ इंटेलिजेंस एवं OCR',
     aiRiskIntelligence: 'AI जोखिम विश्लेषण',
     aiCopilot: 'AI गवर्नेंस कोपायलट',
     fieldOperations: 'फील्ड ऑपरेशन्स',
@@ -183,13 +316,77 @@ export const translations: Record<SupportedLanguage, Translations> = {
     systemNormal: 'सभी पैरामीटर DGMS वैधानिक सीमा में हैं।',
     criticalAlert: 'गंभीर जोखिम चेतावनी',
     warningAlert: 'वैधानिक चेतावनी',
-    languageSelect: 'भाषा'
+    governanceIntelligence: 'गवर्नेंस इंटेलिजेंस',
+    governanceSubtitle: 'क्रॉस-डोमेन परिचालन, अनुपालन एवं भविष्य कहनेवाला विश्लेषण',
+    dataAsOfLabel: 'डेटा समय',
+    dataTrustLabel: 'डेटा विश्वसनीयता',
+    sourceDerivedLabel: 'स्रोत-व्युत्पन्न',
+    operationalLabel: 'परिचालन',
+    simulatedLabel: 'डेटा मोड: सिम्युलेटेड',
+    modelDerivedLabel: 'मॉडल-व्युत्पन्न',
+    attentionRequiredLabel: 'ध्यान आवश्यक',
+    crossMineViewLabel: 'क्रॉस-माइन तुलना',
+    safetyIntelligenceLabel: 'सुरक्षा आसूचना',
+    complianceIntelligenceLabel: 'अनुपालन आसूचना',
+    productionPerformanceLabel: 'उत्पादन प्रदर्शन',
+    environmentalMonitoringLabel: 'पर्यावरण निगरानी',
+    predictiveRisk30MinLabel: 'पूर्वानुमानित जोखिम — 30 मिनट',
+    noDataLabel: 'डेटा उपलब्ध नहीं',
+    viewInGisLabel: 'GIS में देखें',
+    viewContractorsLabel: 'ठेकेदार देखें',
+    openFieldOperationsLabel: 'फील्ड ऑपरेशन्स खोलें',
+    openPgrmWorkflowLabel: 'PGRM वर्कफ़्लो खोलें',
+    languageSelect: 'भाषा',
+    sensorTelemetryNodes: 'पर्यावरण एवं टेलीमेट्री नोड्स',
+    sensorTelemetrySubtitle: 'रीयल-टाइम गैस सांद्रता, वायु वेग, धूल पीएम और स्ट्रैटा भूकंपीय निगरानी।',
+    scenarioControlsTitle: 'नियतात्मक सिमुलेशन परिदृश्य नियंत्रण (SIH परीक्षण)',
+    scenarioImpactTitle: 'सक्रिय परिदृश्य पाइपलाइन प्रतिक्रिया',
+    scenarioImpactSubtitle: 'रीयल-टाइम टेलीमेट्री इंजेक्शन, थ्रेशोल्ड मूल्यांकन और अलर्ट स्थिति',
+    normalBaseline: 'सामान्य बेसलाइन',
+    methaneSpike: 'मीथेन वृद्धि (स्पाइक)',
+    coSurge: 'कार्बन मोनोऑक्साइड गैस वृद्धि',
+    ventilationDrop: 'वेंटिलेशन में गिरावट',
+    sensorSilence: 'सेंसर मौन / ऑफलाइन',
+    multiHazardSpike: 'बहु-खतरा स्पाइक',
+    sensorCode: 'सेंसर कोड',
+    sensorNameType: 'सेंसर नाम / प्रकार',
+    zoneLevel: 'ज़ोन / स्तर',
+    liveTelemetry: 'लाइव टेलीमेट्री',
+    thresholds: 'सीमाएं (चेतावनी / गंभीर)',
+    coords3d: '3D निर्देशांक (x,y,z)',
+    status: 'स्थिति',
+    history: 'इतिहास',
+    centerInTwin: '3D डिजिटल ट्विन में केंद्रित करें',
+    viewReadingHistory: 'रीडिंग इतिहास देखें',
+    workforceManagement: 'कार्यबल एवं मस्टर रोल प्रबंधन',
+    workforceSubtitle: 'वैधानिक फॉर्म E मस्टर रोल, बायोमेट्रिक उपस्थिति और DGMS सुरक्षा प्रमाणपत्र।',
+    activeWorkers: 'सक्रिय श्रमिक',
+    shiftsToday: 'सक्रिय शिफ्ट',
+    attendanceRate: 'उपस्थिति दर',
+    certCompliance: 'DGMS प्रमाणन अनुपालन',
+    searchWorkers: 'श्रमिक का नाम, टोकन या पद खोजें...',
+    allShifts: 'सभी शिफ्ट',
+    allMines: 'सभी खदान आवंटन',
+    workerName: 'श्रमिक का नाम / टोकन',
+    designation: 'पद / भूमिका',
+    shift: 'आवंटित शिफ्ट',
+    assignedMine: 'आवंटित खदान',
+    attendance: 'मस्टर उपस्थिति',
+    safetyCert: 'DGMS प्रमाणन स्थिति',
+    generateReport: 'वैधानिक रिपोर्ट तैयार करें',
+    downloadPdf: 'हस्ताक्षरित PDF डाउनलोड करें',
+    viewDetails: 'विवरण देखें',
+    exportData: 'डेटा निर्यात करें',
+    filterBy: 'फ़िल्टर करें',
+    allStatus: 'सभी स्थितियां'
   },
   te: {
     appName: 'త్రినేత్ర (TRINETRA)',
     appSubtitle: 'గనుల పరిపాలన & భద్రత AI',
     liveDashboard: 'లైవ్ డాష్‌బోర్డ్',
+    gisCommandMap: '2D GIS కమాండ్ మ్యాప్',
     demoControlCenter: 'డెమో కంట్రోల్ సెంటర్',
+    documentIntelligence: 'డాక్యుమెంట్ ఇంటెలిజెన్స్ & OCR',
     aiRiskIntelligence: 'AI ప్రమాద విశ్లేషణ',
     aiCopilot: 'AI గవర్నెన్స్ కోపైలట్',
     fieldOperations: 'ఫీల్డ్ ఆపరేషన్స్',
@@ -244,6 +441,69 @@ export const translations: Record<SupportedLanguage, Translations> = {
     systemNormal: 'అన్ని పారామితులు చట్టబద్ధమైన పరిమితుల్లో ఉన్నాయి.',
     criticalAlert: 'తీవ్ర హెచ్చరిక',
     warningAlert: 'చట్టబద్ధ హెచ్చరిక',
-    languageSelect: 'భాష'
+    governanceIntelligence: 'గవర్నెన్స్ ఇంటెలిజెన్స్',
+    governanceSubtitle: 'క్రాస్-డొమైన్ ఆపరేషనల్, కంప్లైయన్స్ మరియు ప్రిడిక్టివ్ ఇంటెలిజెన్స్',
+    dataAsOfLabel: 'డేటా సమయం',
+    dataTrustLabel: 'డేటా విశ్వసనీయత',
+    sourceDerivedLabel: 'సోర్స్-డెరైవ్డ్',
+    operationalLabel: 'ఆపరేషనల్',
+    simulatedLabel: 'డేటా మోడ్: సిమ్యులేటెడ్',
+    modelDerivedLabel: 'మోడల్-డెరైవ్డ్',
+    attentionRequiredLabel: 'శ్రద్ధ అవసరం',
+    crossMineViewLabel: 'క్రాస్-మైన్ పోలిక',
+    safetyIntelligenceLabel: 'భద్రతా ఇంటెలిజెన్స్',
+    complianceIntelligenceLabel: 'కంప్లైయన్స్ ఇంటెలిజెన్స్',
+    productionPerformanceLabel: 'ఉత్పత్తి పనితీరు',
+    environmentalMonitoringLabel: 'పర్యావరణ పర్యవేక్షణ',
+    predictiveRisk30MinLabel: 'అంచనా ప్రమాదం — 30 నిమిషాలు',
+    noDataLabel: 'డేటా లేదు',
+    viewInGisLabel: 'GIS లో చూడండి',
+    viewContractorsLabel: 'కాంట్రాక్టర్లను చూడండి',
+    openFieldOperationsLabel: 'ఫీల్డ్ ఆపరేషన్స్ తెరవండి',
+    openPgrmWorkflowLabel: 'PGRM వర్క్‌ఫ్లో తెరవండి',
+    languageSelect: 'భాష',
+    sensorTelemetryNodes: 'పర్యావరణ & టెలిమెట్రీ నోడ్లు',
+    sensorTelemetrySubtitle: 'రియల్ టైమ్ గ్యాస్ సాంద్రత, గాలి వేగం, ధూళి పీఎమ్ మరియు స్ట్రాటా భూకంప పర్యవేక్షణ.',
+    scenarioControlsTitle: 'డిటర్మినిస్టిక్ సిమ్యులేషన్ దృశ్య నియంత్రణలు (SIH పరీక్ష)',
+    scenarioImpactTitle: 'క్రియాశీల దృశ్య పైప్‌లైన్ ప్రతిస్పందన',
+    scenarioImpactSubtitle: 'రియల్ టైమ్ టెలిమెట్రీ ఇంజెక్షన్, థ్రెషోల్డ్ మూల్యాంకనం మరియు హెచ్చరిక స్థితి',
+    normalBaseline: 'సాధారణ బేస్‌లైన్',
+    methaneSpike: 'మీథేన్ పెరుగుదల (స్పైక్)',
+    coSurge: 'కార్బన్ మోనాక్సైడ్ గ్యాస్ సర్జ్',
+    ventilationDrop: 'వెంటిలేషన్ తగ్గుదల',
+    sensorSilence: 'సెన్సార్ నిశ్శబ్దం / ఆఫ్‌లైన్',
+    multiHazardSpike: 'బహుళ-ప్రమాద స్పైక్',
+    sensorCode: 'సెన్సార్ కోడ్',
+    sensorNameType: 'సెన్సార్ పేరు / రకం',
+    zoneLevel: 'జోన్ / స్థాయి',
+    liveTelemetry: 'లైవ్ టెలిమెట్రీ',
+    thresholds: 'పరిమితులు (హెచ్చరిక / ప్రమాదం)',
+    coords3d: '3D కోఆర్డినేట్స్ (x,y,z)',
+    status: 'స్థితి',
+    history: 'చరిత్ర',
+    centerInTwin: '3D డిజిటల్ ట్విన్ లో కేంద్రీకరించండి',
+    viewReadingHistory: 'రీడింగ్ చరిత్ర చూడండి',
+    workforceManagement: 'కార్మికులు & మస్టర్ నిర్వహణ',
+    workforceSubtitle: 'చట్టబద్ధమైన ఫారం E మస్టర్ రోల్, బయోమెట్రిక్ హాజరు మరియు DGMS భద్రతా ధృవీకరణలు.',
+    activeWorkers: 'క్రియాశీల కార్మికులు',
+    shiftsToday: 'క్రియాశీల షిఫ్టులు',
+    attendanceRate: 'హాజరు రేటు',
+    certCompliance: 'DGMS సర్టిఫికేషన్ కంప్లైయన్స్',
+    searchWorkers: 'కార్మికుని పేరు, టోకెన్ లేదా హోదా కోసం శోధించండి...',
+    allShifts: 'అన్ని షిఫ్ట్‌లు',
+    allMines: 'అన్ని గనుల కేటాయింపులు',
+    workerName: 'కార్మికుని పేరు / టోకెన్',
+    designation: 'హోదా / పాత్ర',
+    shift: 'కేటాయించిన షిఫ్ట్',
+    assignedMine: 'కేటాయించిన గని',
+    attendance: 'మస్టర్ హాజరు',
+    safetyCert: 'DGMS సర్టిఫికేషన్ స్థితి',
+    generateReport: 'చట్టబద్ధ నివేదికను రూపొందించండి',
+    downloadPdf: 'సంతకం చేసిన PDF డౌన్‌లోడ్ చేయండి',
+    viewDetails: 'వివరాలు చూడండి',
+    exportData: 'డేటాను ఎగుమతి చేయండి',
+    filterBy: 'ఫిల్టర్ చేయండి',
+    allStatus: 'అన్ని స్థితులు'
   }
 };
+

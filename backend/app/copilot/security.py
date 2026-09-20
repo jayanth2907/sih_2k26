@@ -5,18 +5,25 @@ from app.core.exceptions import BusinessRuleViolationError, PermissionDeniedErro
 
 # Patterns indicative of prompt injection or system prompt extraction attempts
 INJECTION_PATTERNS = [
-    r"(?i)ignore\s+(all\s+)?(previous|prior|above)\s+instructions",
-    r"(?i)disregard\s+(all\s+)?(previous|prior|system)\s+rules",
+    r"(?i)ignore\s+(all\s+)?(previous|prior|above)\s+(instructions|rules)",
+    r"(?i)disregard\s+(all\s+)?(previous|prior|system|above)\s+(rules|regulations|instructions|framework)",
+    r"(?i)forget\s+(all\s+)?(previous|prior|above)\s+(instructions|rules)",
+    r"(?i)system\s*override",
     r"(?i)system\s*prompt",
     r"(?i)you\s+are\s+now\s+(an?\s+)?unrestricted",
     r"(?i)jailbreak",
-    r"(?i)reveal\s+(the\s+)?(secret|password|jwt|api_key|token|credentials)",
+    r"(?i)<script",
+    r"(?i)reveal\s+(the\s+)?(secret|password|jwt|api_key|token|credentials|system\s*prompt)",
     r"(?i)delete\s+from\s+",
     r"(?i)drop\s+table",
     r"(?i)select\s+.*\s+from\s+users",
     r"(?i)exec\s*\(",
-    r"(?i)eval\s*\("
+    r"(?i)eval\s*\(",
+    r"(?i)execute\s+command",
+    r"(?i)change\s+(the\s+)?system\s+rules"
 ]
+
+
 
 # Sensitive keys/patterns to scrub from evidence and tool outputs
 SENSITIVE_PATTERNS = [

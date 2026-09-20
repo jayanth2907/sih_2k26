@@ -54,19 +54,30 @@ class SimulatedTelemetryProvider(TelemetryProvider):
         critical_thresh = sensor_metadata.get("critical_threshold", 12.0)
         sensor_code = sensor_metadata.get("sensor_code", "")
 
-        val = (normal_min + normal_max) / 2.0
+        code_upper = sensor_code.upper()
 
         if scenario == "NORMAL":
             val = random.uniform(normal_min, normal_max)
         elif scenario == "WARNING":
             val = random.uniform(warning_thresh, (warning_thresh + critical_thresh) / 2.0)
-        elif scenario == "CRITICAL" or scenario == "METHANE_SPIKE" and "CH4" in sensor_code:
-            val = random.uniform(critical_thresh, critical_thresh * 1.45)
-        elif scenario == "CO_SPIKE" and ("CO" in sensor_code or "CARBON" in sensor_code):
-            val = random.uniform(critical_thresh, critical_thresh * 1.50)
-        elif scenario == "VENTILATION_DROP" and ("VEL" in sensor_code or "AIR" in sensor_code):
-            # Air velocity crash
-            val = random.uniform(0.1, max(0.2, critical_thresh * 0.7))
+        elif scenario == "CRITICAL":
+            val = random.uniform(critical_thresh * 1.05, critical_thresh * 1.40)
+        elif scenario == "METHANE_SPIKE":
+            if any(k in code_upper for k in ["CH4", "METH", "GAS"]):
+                val = random.uniform(critical_thresh * 1.08, critical_thresh * 1.45)
+            else:
+                val = random.uniform(normal_min, normal_max)
+        elif scenario == "CO_SPIKE":
+            if any(k in code_upper for k in ["CO", "CARBON"]):
+                val = random.uniform(critical_thresh * 1.10, critical_thresh * 1.50)
+            else:
+                val = random.uniform(normal_min, normal_max)
+        elif scenario == "VENTILATION_DROP":
+            if any(k in code_upper for k in ["VEL", "AIR", "WIND", "FLOW"]):
+                # Velocity drops below critical floor
+                val = random.uniform(0.15, max(0.25, (normal_min or 1.0) * 0.35))
+            else:
+                val = random.uniform(normal_min, normal_max)
         elif scenario == "TRENDING_UP":
             last_v = sensor_metadata.get("last_value", normal_max) or normal_max
             val = last_v + (warning_thresh - normal_max) * 0.35
@@ -78,8 +89,8 @@ class SimulatedTelemetryProvider(TelemetryProvider):
         elif scenario == "NOISY":
             val = random.uniform(normal_min * 0.8, normal_max * 1.2)
         elif scenario == "MULTI_SENSOR_ANOMALY":
-            if any(k in sensor_code for k in ["CH4", "CO", "VEL"]):
-                val = random.uniform(critical_thresh, critical_thresh * 1.3)
+            if any(k in code_upper for k in ["CH4", "CO", "VEL", "DUST", "TEMP", "VIB"]):
+                val = random.uniform(critical_thresh * 1.05, critical_thresh * 1.35)
             else:
                 val = random.uniform(normal_min, normal_max)
         else:

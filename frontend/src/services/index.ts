@@ -9,7 +9,9 @@ import type {
   PredictiveRiskSummary, SignalAttribution, MLModelInfo,
   FieldInspection, FieldEvidence, SyncBatchRequest, SyncBatchResponse, ZoneRiskPrediction,
   IntegrationHealthResponse, SystemHealthResponse, ExternalReport, AuditChainVerification, AdapterHealthStatus, SystemHealthComponent,
-  DemoPreflightReport, DemoScenarioSummary, DemoScenarioDetail, DemoStepResponse, DemoResetResponse, DemoScenarioStep, DemoPreflightItem
+  DemoPreflightReport, DemoScenarioSummary, DemoScenarioDetail, DemoStepResponse, DemoResetResponse, DemoScenarioStep, DemoPreflightItem,
+  DocumentDTO, DocumentSummaryDTO, DocumentPageDTO, ExtractedDocumentFieldDTO, DocumentProcessingStatusDTO,
+  GisMapDTO, GisRiskHotspotDTO, SpatialContextDTO, GisSearchResponseDTO
 } from '../types';
 
 export const authService = {
@@ -481,6 +483,145 @@ export const demoService = {
 
 export const demoApi = demoService;
 
+export const realMineDataService = {
+  getRealMines: async (): Promise<any[]> => {
+    const res = await api.get('/mine-data/real-mines');
+    return res.data;
+  },
+
+  getRealMineDetail: async (mineId: number): Promise<any> => {
+    const res = await api.get(`/mine-data/${mineId}`);
+    return res.data;
+  },
+
+  getCoordinates: async (mineId: number): Promise<any[]> => {
+    const res = await api.get(`/mine-data/${mineId}/coordinates`);
+    return res.data;
+  },
+
+  getSeams: async (mineId: number): Promise<any[]> => {
+    const res = await api.get(`/mine-data/${mineId}/seams`);
+    return res.data;
+  },
+
+  getClearances: async (mineId: number): Promise<any[]> => {
+    const res = await api.get(`/mine-data/${mineId}/clearances`);
+    return res.data;
+  },
+
+  getProvenance: async (mineId: number): Promise<any[]> => {
+    const res = await api.get(`/mine-data/${mineId}/provenance`);
+    return res.data;
+  },
+
+  getQualitySummary: async (mineId: number): Promise<any> => {
+    const res = await api.get(`/mine-data/${mineId}/quality`);
+    return res.data;
+  }
+};
+
+export const documentService = {
+  uploadDocument: async (file: File, mineId?: number, title?: string, sourceTier = 'TIER_3_TRINETRA_OPERATIONAL'): Promise<DocumentDTO> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (mineId) formData.append('mine_id', mineId.toString());
+    if (title) formData.append('title', title);
+    formData.append('source_tier', sourceTier);
+    const res = await api.post<DocumentDTO>('/documents/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return res.data;
+  },
+
+  getDocuments: async (mineId?: number, docType?: string, qualityStatus?: string, verificationStatus?: string): Promise<DocumentSummaryDTO[]> => {
+    const params: any = {};
+    if (mineId) params.mine_id = mineId;
+    if (docType) params.doc_type = docType;
+    if (qualityStatus) params.quality_status = qualityStatus;
+    if (verificationStatus) params.verification_status = verificationStatus;
+    const res = await api.get<DocumentSummaryDTO[]>('/documents', { params });
+    return res.data;
+  },
+
+  getDocument: async (documentId: number): Promise<DocumentDTO> => {
+    const res = await api.get<DocumentDTO>(`/documents/${documentId}`);
+    return res.data;
+  },
+
+  getDocumentPages: async (documentId: number): Promise<DocumentPageDTO[]> => {
+    const res = await api.get<DocumentPageDTO[]>(`/documents/${documentId}/pages`);
+    return res.data;
+  },
+
+  getDocumentFields: async (documentId: number): Promise<ExtractedDocumentFieldDTO[]> => {
+    const res = await api.get<ExtractedDocumentFieldDTO[]>(`/documents/${documentId}/fields`);
+    return res.data;
+  },
+
+  verifyField: async (documentId: number, fieldId: number, isVerified: string, verifiedValue?: string): Promise<ExtractedDocumentFieldDTO> => {
+    const res = await api.post<ExtractedDocumentFieldDTO>(`/documents/${documentId}/fields/${fieldId}/verify`, {
+      is_verified: isVerified,
+      verified_value: verifiedValue
+    });
+    return res.data;
+  },
+
+  verifyAllFields: async (documentId: number): Promise<DocumentDTO> => {
+    const res = await api.post<DocumentDTO>(`/documents/${documentId}/verify-all`);
+    return res.data;
+  },
+
+  createDraftGovernance: async (documentId: number, title: string, description: string): Promise<any> => {
+    const res = await api.post(`/documents/${documentId}/create-draft-governance`, { title, description });
+    return res.data;
+  },
+
+  getOcrStatus: async (documentId: number): Promise<DocumentProcessingStatusDTO> => {
+    const res = await api.get<DocumentProcessingStatusDTO>(`/documents/${documentId}/ocr-status`);
+    return res.data;
+  },
+
+  deleteDocument: async (documentId: number): Promise<any> => {
+    const res = await api.delete(`/documents/${documentId}`);
+    return res.data;
+  }
+};
+
+export const gisService = {
+  getMineMap: async (mineId: number): Promise<GisMapDTO> => {
+    const res = await api.get<GisMapDTO>(`/gis/mines/${mineId}/map`);
+    return res.data;
+  },
+
+  getSpatialContext: async (mineId: number, lat: number, lon: number): Promise<SpatialContextDTO> => {
+    const res = await api.get<SpatialContextDTO>(`/gis/mines/${mineId}/context`, {
+      params: { latitude: lat, longitude: lon }
+    });
+    return res.data;
+  },
+
+  getMineRisk: async (mineId: number): Promise<GisRiskHotspotDTO[]> => {
+    const res = await api.get<GisRiskHotspotDTO[]>(`/gis/mines/${mineId}/risk`);
+    return res.data;
+  },
+
+  searchGis: async (q: string, mineId?: number): Promise<GisSearchResponseDTO> => {
+    const res = await api.get<GisSearchResponseDTO>('/gis/search', {
+      params: { q, ...(mineId ? { mine_id: mineId } : {}) }
+    });
+    return res.data;
+  },
+
+  createFieldTaskFromGis: async (featureId: string, mineId: number, title: string, notes?: string): Promise<any> => {
+    const res = await api.post(`/gis/features/${featureId}/field-task`, null, {
+      params: { mine_id: mineId, title, ...(notes ? { notes } : {}) }
+    });
+    return res.data;
+  }
+};
+
+export { analyticsService } from './analyticsService';
+
 export type { 
   FieldInspection, 
   FieldEvidence, 
@@ -502,8 +643,17 @@ export type {
   DemoPreflightItem,
   DemoPreflightReport,
   DemoStepResponse,
-  DemoResetResponse
+  DemoResetResponse,
+  GisMapDTO,
+  GisRiskHotspotDTO,
+  GisBoundaryFeatureDTO,
+  GisCoordinateFeatureDTO,
+  GisOperationalFeatureDTO,
+  SpatialContextDTO,
+  GisSearchResponseDTO,
+  GisSearchItemDTO
 } from '../types';
+
 
 
 

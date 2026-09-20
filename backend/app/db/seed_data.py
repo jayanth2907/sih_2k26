@@ -267,11 +267,18 @@ def seed():
         db.commit()
 
         print("Seeding Phase 4 Governance Data (Production, Workforce, Contractors, Environmental, Grievances, Approvals, Reports)...")
-        # 1. Shifts
+        # 1. Shifts for Mine 1, 2, 3
         sh_a1 = Shift(mine_id=m1.id, shift_code="A", name="Morning Production Shift A", start_time="06:00", end_time="14:00", is_night_shift=False)
         sh_b1 = Shift(mine_id=m1.id, shift_code="B", name="Afternoon Production Shift B", start_time="14:00", end_time="22:00", is_night_shift=False)
         sh_c1 = Shift(mine_id=m1.id, shift_code="C", name="Night Maintenance Shift C", start_time="22:00", end_time="06:00", is_night_shift=True)
-        db.add_all([sh_a1, sh_b1, sh_c1])
+        
+        sh_a2 = Shift(mine_id=m2.id, shift_code="A", name="Opencast Morning Shift A", start_time="06:00", end_time="14:00", is_night_shift=False)
+        sh_b2 = Shift(mine_id=m2.id, shift_code="B", name="Opencast Afternoon Shift B", start_time="14:00", end_time="22:00", is_night_shift=False)
+        
+        sh_a3 = Shift(mine_id=m3.id, shift_code="A", name="Incline Morning Shift A", start_time="06:00", end_time="14:00", is_night_shift=False)
+        sh_b3 = Shift(mine_id=m3.id, shift_code="B", name="Incline Afternoon Shift B", start_time="14:00", end_time="22:00", is_night_shift=False)
+        
+        db.add_all([sh_a1, sh_b1, sh_c1, sh_a2, sh_b2, sh_a3, sh_b3])
         db.commit()
 
         # 2. Contractors
@@ -288,19 +295,39 @@ def seed():
         db.add_all([ct1, ct2])
         db.commit()
 
-        # 4. Workers & Attendance
-        workers = [
+        # 4. Workers & Attendance (Seeded across Mine 1, Mine 2, Mine 3)
+        workers_m1 = [
             Worker(worker_code="WRK-BDS-001", full_name="Budhan Manjhi", designation="Senior Overman", trade_category="OVERMAN", mine_id=m1.id, is_contractual=False, blood_group="O+"),
             Worker(worker_code="WRK-BDS-002", full_name="Sunil Soren", designation="Longwall Shearer Operator", trade_category="OPERATOR", mine_id=m1.id, is_contractual=True, contractor_id=c_komatsu.id, blood_group="B+"),
             Worker(worker_code="WRK-BDS-003", full_name="Manohar Karmakar", designation="Underground Chief Electrician", trade_category="ELECTRICIAN", mine_id=m1.id, is_contractual=False, blood_group="A+"),
             Worker(worker_code="WRK-BDS-004", full_name="Raju Murmu", designation="Face Driller", trade_category="DRILLER", mine_id=m1.id, is_contractual=True, contractor_id=c_komatsu.id, blood_group="AB+"),
             Worker(worker_code="WRK-BDS-005", full_name="Arjun Nayak", designation="Conveyor Fitter", trade_category="FITTER", mine_id=m1.id, is_contractual=True, contractor_id=c_elecon.id, blood_group="O+")
         ]
-        db.add_all(workers)
+        workers_m2 = [
+            Worker(worker_code="WRK-SOB-001", full_name="Devendra Tripathi", designation="Heavy Dragline Master Operator", trade_category="OPERATOR", mine_id=m2.id, is_contractual=False, blood_group="B+"),
+            Worker(worker_code="WRK-SOB-002", full_name="Rameshwar Bind", designation="Shovel Bench Operator", trade_category="OPERATOR", mine_id=m2.id, is_contractual=True, contractor_id=c_haulage.id, blood_group="O+"),
+            Worker(worker_code="WRK-SOB-003", full_name="Dharmendra Yadav", designation="Haul Truck Driver Grade I", trade_category="OPERATOR", mine_id=m2.id, is_contractual=True, contractor_id=c_haulage.id, blood_group="A+"),
+            Worker(worker_code="WRK-SOB-004", full_name="Kallu Kol", designation="Bench Blaster & Driller", trade_category="DRILLER", mine_id=m2.id, is_contractual=False, blood_group="AB+"),
+            Worker(worker_code="WRK-SOB-005", full_name="Vijay Sharma", designation="Surface Electrical Overman", trade_category="OVERMAN", mine_id=m2.id, is_contractual=False, blood_group="O+")
+        ]
+        workers_m3 = [
+            Worker(worker_code="WRK-RS-001", full_name="Tapan Bauri", designation="Continuous Miner Incline Driver", trade_category="OPERATOR", mine_id=m3.id, is_contractual=False, blood_group="A+"),
+            Worker(worker_code="WRK-RS-002", full_name="Subodh Hembram", designation="Incline Roof Bolter", trade_category="DRILLER", mine_id=m3.id, is_contractual=True, contractor_id=c_komatsu.id, blood_group="B+"),
+            Worker(worker_code="WRK-RS-003", full_name="Gouranga Mondal", designation="Mine Safety Overman", trade_category="OVERMAN", mine_id=m3.id, is_contractual=False, blood_group="O+")
+        ]
+        
+        all_workers = workers_m1 + workers_m2 + workers_m3
+        db.add_all(all_workers)
         db.commit()
 
-        for w in workers:
+        for w in workers_m1:
             att = AttendanceRecord(worker_id=w.id, mine_id=m1.id, shift_id=sh_a1.id, attendance_date=today_date, check_in_time=now - timedelta(hours=3), status="PRESENT", verification_mode="SIMULATED", marked_by_id=u_safety1.id)
+            db.add(att)
+        for w in workers_m2:
+            att = AttendanceRecord(worker_id=w.id, mine_id=m2.id, shift_id=sh_a2.id, attendance_date=today_date, check_in_time=now - timedelta(hours=4), status="PRESENT", verification_mode="SIMULATED", marked_by_id=u_mgr2.id)
+            db.add(att)
+        for w in workers_m3:
+            att = AttendanceRecord(worker_id=w.id, mine_id=m3.id, shift_id=sh_a3.id, attendance_date=today_date, check_in_time=now - timedelta(hours=2), status="PRESENT", verification_mode="SIMULATED", marked_by_id=u_admin.id)
             db.add(att)
         db.commit()
 
@@ -400,18 +427,25 @@ def seed():
         db.add(rep1)
         db.commit()
 
+        # Seed Phase 11A Real Mine Data Foundation (6 Official Coal Blocks)
+        print("Seeding Phase 11A Real Mine Data Foundation (6 Official Coal Blocks)...")
+        from app.services.real_mine_ingestion_service import RealMineIngestionService
+        ingestion_svc = RealMineIngestionService(db)
+        real_reports = ingestion_svc.ingest_all()
+        print(f"Phase 11A Real Mines Ingested: {len(real_reports)} blocks processed.")
+
         # Seed Genesis Audit Log
         AuditService.log_event(
             db=db,
             actor_id=u_admin.id,
-            action="SYSTEM_PHASE4_GOVERNANCE_SEED",
+            action="SYSTEM_PHASE11A_REAL_MINE_FOUNDATION_SEED",
             resource_type="SYSTEM",
             resource_id="0",
-            metadata={"environment": "development", "version": "1.0.0-phase4", "total_sensors": len(sensors_list), "total_workers": len(workers)}
+            metadata={"environment": "development", "version": "1.0.0-phase11a", "real_blocks_count": len(real_reports)}
         )
 
-        print("\nPhase 4 Seed data generated successfully!")
-        print(f"Total Sensors: {len(sensors_list)} | Total Workers: {len(workers)} | Total Contracts: 2")
+        print("\nPhase 11A Seed data generated successfully!")
+        print(f"Total Sensors: {len(sensors_list)} | Total Workers: {len(all_workers)} | Real Coal Blocks: {len(real_reports)}")
 
     except Exception as e:
         db.rollback()
@@ -422,4 +456,5 @@ def seed():
 
 if __name__ == "__main__":
     seed()
+
 

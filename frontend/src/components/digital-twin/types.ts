@@ -14,16 +14,31 @@ export interface LayerVisibility {
   labels: boolean;
   proximityLines: boolean;
   surfaceYard: boolean;
+  sourceBoundary: boolean;
+  cardinalPoints: boolean;
+  coalSeamsStratigraphy: boolean;
 }
 
-export type SelectedObjectType = 'sensor' | 'camera' | 'equipment' | 'zone' | 'incident' | 'anomaly';
+export type SelectedObjectType = 
+  | 'sensor' 
+  | 'camera' 
+  | 'equipment' 
+  | 'zone' 
+  | 'incident' 
+  | 'anomaly' 
+  | 'boundary' 
+  | 'coordinate' 
+  | 'seam' 
+  | 'provenance' 
+  | 'completeness';
 
 export interface SelectedObject {
   type: SelectedObjectType;
-  id: number;
+  id: number | string;
   data: any;
   coordinates?: { x: number; y: number; z: number };
 }
+
 
 export interface CameraFocusTarget {
   x: number;

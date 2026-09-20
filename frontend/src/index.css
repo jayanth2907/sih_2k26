@@ -103,3 +103,47 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #2D3732;
 }
+
+/* Leaflet Dark Command-Center Theme Overrides */
+.leaflet-container {
+  background-color: #080A09 !important;
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
+.leaflet-popup-content-wrapper {
+  background-color: #0D100F !important;
+  color: #F1F5F9 !important;
+  border: 1px solid #232A26 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.7) !important;
+  padding: 4px !important;
+}
+
+.leaflet-popup-tip {
+  background-color: #0D100F !important;
+  border: 1px solid #232A26 !important;
+}
+
+.leaflet-popup-content {
+  margin: 8px 12px !important;
+  line-height: 1.4 !important;
+  font-size: 11px !important;
+}
+
+.leaflet-tooltip {
+  background-color: #0D100F !important;
+  color: #F1F5F9 !important;
+  border: 1px solid #232A26 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+  padding: 4px 8px !important;
+  font-family: 'IBM Plex Mono', monospace !important;
+  font-size: 11px !important;
+}
+
+.leaflet-tooltip-top:before,
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+  border-color: #0D100F !important;
+}

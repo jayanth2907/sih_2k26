@@ -6,6 +6,7 @@ import { Activity } from 'lucide-react';
 
 // Code-split pages for performance & judge responsiveness
 const DashboardPage = lazy(() => import('../pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
+const GisMapPage = lazy(() => import('../pages/GisMapPage').then(m => ({ default: m.GisMapPage })));
 const AlertsPage = lazy(() => import('../pages/AlertsPage').then(m => ({ default: m.AlertsPage })));
 const MinesPage = lazy(() => import('../pages/MinesPage').then(m => ({ default: m.MinesPage })));
 const SensorsPage = lazy(() => import('../pages/SensorsPage').then(m => ({ default: m.SensorsPage })));
@@ -23,9 +24,11 @@ const ReportsPage = lazy(() => import('../pages/ReportsPage').then(m => ({ defau
 const ApprovalsPage = lazy(() => import('../pages/ApprovalsPage').then(m => ({ default: m.ApprovalsPage })));
 const PredictiveRiskPage = lazy(() => import('../pages/PredictiveRiskPage').then(m => ({ default: m.PredictiveRiskPage })));
 const CopilotPage = lazy(() => import('../pages/CopilotPage').then(m => ({ default: m.CopilotPage })));
+const DocumentsPage = lazy(() => import('../pages/DocumentsPage').then(m => ({ default: m.DocumentsPage })));
 const FieldOperationsPage = lazy(() => import('../pages/FieldOperationsPage').then(m => ({ default: m.FieldOperationsPage })));
 const IntegrationsHealthPage = lazy(() => import('../pages/IntegrationsHealthPage').then(m => ({ default: m.IntegrationsHealthPage })));
 const DemoControlCenterPage = lazy(() => import('../pages/DemoControlCenterPage').then(m => ({ default: m.DemoControlCenterPage })));
+const AnalyticsPage = lazy(() => import('../pages/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })));
 
 const PageLoadingSkeleton: React.FC = () => (
   <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-3 font-mono text-slate-500">
@@ -41,6 +44,8 @@ export const AppLayout: React.FC = () => {
     switch (currentTab) {
       case 'dashboard':
         return <DashboardPage />;
+      case 'gis-map':
+        return <GisMapPage />;
       case 'demo-control':
         return <DemoControlCenterPage />;
       case 'field-operations':
@@ -49,6 +54,8 @@ export const AppLayout: React.FC = () => {
         return <IntegrationsHealthPage />;
       case 'copilot':
         return <CopilotPage />;
+      case 'documents':
+        return <DocumentsPage />;
       case 'predictive-risk':
         return <PredictiveRiskPage />;
       case 'alerts':
@@ -81,6 +88,8 @@ export const AppLayout: React.FC = () => {
         return <DigitalTwinPage />;
       case 'risk-audit':
         return <RiskAuditPage />;
+      case 'analytics':
+        return <AnalyticsPage />;
       default:
         return <DashboardPage />;
     }

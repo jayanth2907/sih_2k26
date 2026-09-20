@@ -20,6 +20,10 @@ class Mine(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
+    # Data Trust classification (Distinguishes Real vs Simulated)
+    data_status = Column(String(50), default="SIMULATED", nullable=False) # SOURCE_DERIVED, APPROXIMATE, SIMULATED
+    is_simulated = Column(String(10), default="YES", nullable=False) # YES, NO
+
     # Hierarchical and asset relationships
     levels = relationship("MineLevel", back_populates="mine", cascade="all, delete-orphan")
     zones = relationship("MineZone", back_populates="mine", cascade="all, delete-orphan")
@@ -31,3 +35,13 @@ class Mine(Base):
     risk_scores = relationship("RiskScore", back_populates="mine", cascade="all, delete-orphan")
     anomalies = relationship("AnomalyEvent", back_populates="mine", cascade="all, delete-orphan")
     user_assignments = relationship("UserMineAssignment", back_populates="mine", cascade="all, delete-orphan")
+
+    # Real Mine Data Foundation relationships (Phase 11A)
+    profile = relationship("MineProfile", back_populates="mine", uselist=False, cascade="all, delete-orphan")
+    boundaries = relationship("MineBoundary", back_populates="mine", cascade="all, delete-orphan")
+    coordinates = relationship("MineCoordinate", back_populates="mine", cascade="all, delete-orphan")
+    seams = relationship("MineSeam", back_populates="mine", cascade="all, delete-orphan")
+    clearances = relationship("MineClearance", back_populates="mine", cascade="all, delete-orphan")
+    data_attributes = relationship("MineDataAttribute", back_populates="mine", cascade="all, delete-orphan")
+    quality_record = relationship("MineDataQualityRecord", back_populates="mine", uselist=False, cascade="all, delete-orphan")
+

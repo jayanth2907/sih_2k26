@@ -1,33 +1,336 @@
 import * as THREE from 'three';
-import { Mine, MineLevel, MineZone } from '../../types';
+import { Mine, MineLevel, MineZone, DigitalTwinState, MineCoordinateDTO, MineSeamDTO, MineBoundaryDTO } from '../../types';
 
 export class MineGeometryBuilder {
   /**
-   * Builds the procedural 3D structural mesh of the mine based on mine type and spatial levels/zones.
+   * Builds the 3D structural mesh of the mine:
+   * - If real source-derived data exists (boundary, coordinates, seams), builds the traceable real block geometry.
+   * - If simulated mine, builds the procedural shaft/opencast/incline structure.
    */
   static buildMineStructure(
-    mine: Mine,
-    levels: MineLevel[],
-    zones: MineZone[],
+    twinData: DigitalTwinState,
     viewMode: 'OPERATIONAL' | 'RISK_HEATMAP' = 'OPERATIONAL'
   ): THREE.Group {
     const rootGroup = new THREE.Group();
+    const mine = twinData.mine;
     rootGroup.name = `MINE_STRUCTURE_${mine.code}`;
 
-    const mineType = mine.mine_type?.toUpperCase() || 'UNDERGROUND';
+    const isRealBlock = mine.code.startsWith('BLOCK-') || !!twinData.profile || (twinData.coordinates && twinData.coordinates.length > 0);
 
-    if (mineType === 'OPENCAST') {
-      this.buildOpencastMine(rootGroup, mine, levels, zones);
-    } else if (mine.code === 'MINE-RS-07') {
-      this.buildInclineMine(rootGroup, mine, levels, zones);
+    if (isRealBlock) {
+      this.buildRealSourceDerivedBlock(rootGroup, twinData);
     } else {
-      this.buildUndergroundMine(rootGroup, mine, levels, zones);
+      const mineType = mine.mine_type?.toUpperCase() || 'UNDERGROUND';
+      if (mineType === 'OPENCAST') {
+        this.buildOpencastMine(rootGroup, mine, twinData.levels, twinData.zones);
+      } else if (mine.code === 'MINE-RS-07') {
+        this.buildInclineMine(rootGroup, mine, twinData.levels, twinData.zones);
+      } else {
+        this.buildUndergroundMine(rootGroup, mine, twinData.levels, twinData.zones);
+      }
     }
 
     // Add Zone Volume Bounds & Ribbons
-    this.buildZoneVolumes(rootGroup, zones, viewMode);
+    if (twinData.zones && twinData.zones.length > 0) {
+      this.buildZoneVolumes(rootGroup, twinData.zones, viewMode);
+    }
 
     return rootGroup;
+  }
+
+  /**
+   * Builds the Real Source-Derived Coal Block:
+   * 1. 3D Boundary Polygon (Solid for SOURCE_DERIVED, Dashed for APPROXIMATE)
+   * 2. Cardinal Coordinate Pins A–I with interactive labels and DMS citations
+   * 3. Stratigraphic Coal Seams Column Layers at documented depths
+   * 4. Notice badge for exploration status / no fabricated underground tunnels
+   */
+  private static buildRealSourceDerivedBlock(
+    group: THREE.Group,
+    twinData: DigitalTwinState
+  ) {
+    const boundary = twinData.boundary;
+    const coordinates = twinData.coordinates || [];
+    const seams = twinData.seams || [];
+    const isApproximate = boundary?.geometry_status === 'APPROXIMATE';
+
+    // 1. Surface Plane / Terrain Grid
+    const surfaceY = 0;
+    const surfaceGrid = new THREE.GridHelper(1200, 40, isApproximate ? 0xf59e0b : 0x06b6d4, 0x1e293b);
+    surfaceGrid.position.set(0, surfaceY, 0);
+    group.add(surfaceGrid);
+
+    // 2. Boundary Polygon Outline and Extrusion
+    if (boundary && boundary.vertices_3d && boundary.vertices_3d.length >= 3) {
+      const pts = boundary.vertices_3d.map((v) => new THREE.Vector3(v.x, surfaceY + 0.5, v.z));
+      pts.push(pts[0].clone()); // Close loop
+
+      // Polygon Outline
+      const lineGeo = new THREE.BufferGeometry().setFromPoints(pts);
+      let boundaryLineMesh: THREE.Object3D;
+
+      if (isApproximate) {
+        // Dashed Amber Line for APPROXIMATE
+        const dashedMat = new THREE.LineDashedMaterial({
+          color: 0xf59e0b,
+          dashSize: 15,
+          gapSize: 8,
+          linewidth: 3
+        });
+        const line = new THREE.Line(lineGeo, dashedMat);
+        line.computeLineDistances();
+        boundaryLineMesh = line;
+      } else {
+        // Solid Cyan Line for SOURCE_DERIVED
+        const solidMat = new THREE.LineBasicMaterial({
+          color: 0x06b6d4,
+          linewidth: 3
+        });
+        boundaryLineMesh = new THREE.Line(lineGeo, solidMat);
+      }
+
+      boundaryLineMesh.name = 'SOURCE_BOUNDARY_OUTLINE';
+      boundaryLineMesh.userData = {
+        type: 'boundary',
+        data: boundary,
+        id: twinData.mine.code
+      };
+      group.add(boundaryLineMesh);
+
+      // Boundary Surface Fill Shape (2D projected on X-Z)
+      const shape = new THREE.Shape();
+      shape.moveTo(pts[0].x, pts[0].z);
+      for (let i = 1; i < pts.length - 1; i++) {
+        shape.lineTo(pts[i].x, pts[i].z);
+      }
+      shape.closePath();
+
+      const shapeGeo = new THREE.ShapeGeometry(shape);
+      const shapeMat = new THREE.MeshStandardMaterial({
+        color: isApproximate ? 0x78350f : 0x0e7490,
+        transparent: true,
+        opacity: 0.18,
+        roughness: 0.9,
+        side: THREE.DoubleSide
+      });
+      const shapeMesh = new THREE.Mesh(shapeGeo, shapeMat);
+      shapeMesh.rotation.x = Math.PI / 2; // Lay flat on X-Z plane
+      shapeMesh.position.y = surfaceY + 0.1;
+      shapeMesh.userData = {
+        type: 'boundary',
+        data: boundary,
+        id: twinData.mine.code
+      };
+      group.add(shapeMesh);
+    }
+
+    // 3. Cardinal Coordinate Points (A, B, C, ... I)
+    coordinates.forEach((coord: MineCoordinateDTO) => {
+      const posX = coord.x ?? coord.local_x ?? 0;
+      const posZ = coord.z ?? coord.local_z ?? 0;
+
+      const coordGroup = new THREE.Group();
+      coordGroup.name = `COORD_POINT_${coord.point_label}`;
+      coordGroup.position.set(posX, surfaceY, posZ);
+
+      // Vertical Marker Pillar
+      const pillarGeo = new THREE.CylinderGeometry(1.5, 2.5, 30, 8);
+      const pillarMat = new THREE.MeshStandardMaterial({
+        color: isApproximate ? 0xf59e0b : 0x38bdf8,
+        metalness: 0.8,
+        roughness: 0.2
+      });
+      const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+      pillar.position.y = 15;
+      coordGroup.add(pillar);
+
+      // Glowing Sphere Top Beacon
+      const sphereGeo = new THREE.SphereGeometry(3.5, 16, 16);
+      const sphereMat = new THREE.MeshStandardMaterial({
+        color: isApproximate ? 0xfbbf24 : 0x06b6d4,
+        emissive: isApproximate ? 0xd97706 : 0x0284c7,
+        emissiveIntensity: 0.8,
+        roughness: 0.1
+      });
+      const sphere = new THREE.Mesh(sphereGeo, sphereMat);
+      sphere.position.y = 30;
+      coordGroup.add(sphere);
+
+      // Canvas-based Sprite Label
+      const dmsText = coord.lat_dms_raw || coord.latitude_dms;
+      const sprite = this.createTextSprite(
+        `Point ${coord.point_label}`,
+        dmsText ? `${dmsText.slice(0, 10)}...` : `(${posX.toFixed(0)}m, ${posZ.toFixed(0)}m)`,
+        isApproximate ? '#fbbf24' : '#38bdf8'
+      );
+      sprite.position.set(0, 42, 0);
+      coordGroup.add(sprite);
+
+      coordGroup.userData = {
+        type: 'coordinate',
+        data: coord,
+        id: `COORD_${coord.point_label}`
+      };
+
+      // Set interactive flag on children
+      pillar.userData = coordGroup.userData;
+      sphere.userData = coordGroup.userData;
+      sprite.userData = coordGroup.userData;
+
+      group.add(coordGroup);
+    });
+
+    // 4. Stratigraphic Coal Seams (Depth Slices / Plates)
+    if (seams.length > 0) {
+      const seamColors = [0x334155, 0x1e293b, 0x0f172a, 0x475569, 0x18181b, 0x27272a];
+      const ribbonColors = ['#f59e0b', '#06b6d4', '#8b5cf6', '#10b981', '#ec4899', '#3b82f6'];
+
+      // Find approximate bounding radius for seam plates
+      let maxRadius = 350;
+      if (coordinates.length > 0) {
+        maxRadius = Math.max(
+          ...coordinates.map((c) => {
+            const cx = c.x ?? c.local_x ?? 0;
+            const cz = c.z ?? c.local_z ?? 0;
+            return Math.sqrt(cx * cx + cz * cz);
+          })
+        ) * 1.1;
+        maxRadius = Math.max(maxRadius, 200);
+      }
+
+      seams.forEach((seam: MineSeamDTO, idx: number) => {
+        const seamGroup = new THREE.Group();
+        seamGroup.name = `SEAM_${seam.seam_name}`;
+
+        // Compute depth: use documented depth range or fallback based on order
+        const depthFrom = seam.depth_from_m ?? seam.depth_min_m ?? (50 + idx * 60);
+        const depthTo = seam.depth_to_m ?? seam.depth_max_m ?? (depthFrom + (seam.thickness_max_m || 8));
+        const avgDepth = (depthFrom + depthTo) / 2;
+        const thickness = Math.max(depthTo - depthFrom, 4);
+
+        // Seam Volume Cylinder Slab
+        const slabGeo = new THREE.CylinderGeometry(maxRadius, maxRadius, thickness, 32);
+        const slabMat = new THREE.MeshStandardMaterial({
+          color: seamColors[idx % seamColors.length],
+          roughness: 0.9,
+          metalness: 0.1,
+          transparent: true,
+          opacity: 0.75
+        });
+        const slabMesh = new THREE.Mesh(slabGeo, slabMat);
+        slabMesh.position.set(0, -avgDepth, 0);
+        seamGroup.add(slabMesh);
+
+        // Seam Outer Edge Ribbon
+        const edgeGeo = new THREE.RingGeometry(maxRadius - 4, maxRadius + 2, 32);
+        const edgeMat = new THREE.MeshBasicMaterial({
+          color: ribbonColors[idx % ribbonColors.length],
+          side: THREE.DoubleSide
+        });
+        const edgeMesh = new THREE.Mesh(edgeGeo, edgeMat);
+        edgeMesh.rotation.x = -Math.PI / 2;
+        edgeMesh.position.set(0, -avgDepth + thickness / 2 + 0.1, 0);
+        seamGroup.add(edgeMesh);
+
+        // Seam Label Sprite
+        const sprite = this.createTextSprite(
+          seam.seam_name,
+          `Depth: ${depthFrom}m - ${depthTo}m • Grade: ${seam.coal_grade || seam.grade || 'Documented'}`,
+          ribbonColors[idx % ribbonColors.length]
+        );
+        sprite.position.set(maxRadius * 0.75, -avgDepth + thickness / 2 + 15, maxRadius * 0.4);
+        seamGroup.add(sprite);
+
+        seamGroup.userData = {
+          type: 'seam',
+          data: seam,
+          id: seam.seam_name
+        };
+
+        slabMesh.userData = seamGroup.userData;
+        edgeMesh.userData = seamGroup.userData;
+        sprite.userData = seamGroup.userData;
+
+        group.add(seamGroup);
+      });
+    }
+
+    // 5. Exploration Status & Provenance Notice Floating Marker
+    const statusText = isApproximate
+      ? 'APPROXIMATE GEOMETRY (Coal Atlas / Tender Notice)'
+      : 'SOURCE-DERIVED GEOMETRY (Govt Exploration Document)';
+    const statusSubtext = `Provenance: ${twinData.quality_record?.source_title || 'Ministry of Coal Data'}`;
+    const statusSprite = this.createTextSprite(
+      statusText,
+      statusSubtext,
+      isApproximate ? '#fbbf24' : '#10b981',
+      'rgba(15, 23, 42, 0.92)'
+    );
+    statusSprite.scale.set(70, 24, 1);
+    statusSprite.position.set(0, surfaceY + 70, 0);
+    statusSprite.userData = {
+      type: 'provenance',
+      data: twinData.profile || twinData.quality_record || {},
+      id: 'PROVENANCE_BADGE'
+    };
+    group.add(statusSprite);
+  }
+
+  /**
+   * Helper to create high-contrast, crisp Canvas-based text sprite labels.
+   */
+  private static createTextSprite(
+    text: string,
+    subtext?: string,
+    accentColor: string = '#38bdf8',
+    bgColor: string = 'rgba(15, 23, 42, 0.88)'
+  ): THREE.Sprite {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 180;
+    const ctx = canvas.getContext('2d');
+
+    if (ctx) {
+      // Rounded Card Background
+      ctx.fillStyle = bgColor;
+      ctx.strokeStyle = accentColor;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.roundRect(12, 12, 488, 156, 18);
+      ctx.fill();
+      ctx.stroke();
+
+      // Top Accent Header Line
+      ctx.fillStyle = accentColor;
+      ctx.fillRect(24, 20, 464, 4);
+
+      // Main Text
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 30px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(text, 256, 75);
+
+      // Subtext
+      if (subtext) {
+        ctx.fillStyle = accentColor;
+        ctx.font = 'bold 20px monospace';
+        ctx.textAlign = 'center';
+        // Truncate if too long
+        const displaySubtext = subtext.length > 38 ? subtext.slice(0, 36) + '...' : subtext;
+        ctx.fillText(displaySubtext, 256, 125);
+      }
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.minFilter = THREE.LinearFilter;
+    const spriteMat = new THREE.SpriteMaterial({
+      map: texture,
+      transparent: true,
+      depthTest: false
+    });
+    const sprite = new THREE.Sprite(spriteMat);
+    sprite.scale.set(38, 14, 1);
+    return sprite;
   }
 
   /**
@@ -46,7 +349,6 @@ export class MineGeometryBuilder {
       color: 0x1e293b,
       roughness: 0.9,
       metalness: 0.1,
-      wireframe: false,
       side: THREE.DoubleSide
     });
     const surfaceMesh = new THREE.Mesh(surfaceYardGeo, surfaceMat);
@@ -225,7 +527,7 @@ export class MineGeometryBuilder {
       color: colorHex,
       roughness: 0.85,
       metalness: 0.15,
-      side: THREE.BackSide, // Visible from inside the tunnel
+      side: THREE.BackSide,
       transparent: true,
       opacity: 0.55
     });
@@ -307,7 +609,7 @@ export class MineGeometryBuilder {
         side: THREE.DoubleSide
       });
       const zoneMesh = new THREE.Mesh(zoneGeo, zoneMat);
-      zoneMesh.position.set(ox + w / 2, oz + h / 2, oy + l / 2); // Map spatial coords
+      zoneMesh.position.set(ox + w / 2, oz + h / 2, oy + l / 2);
       zoneMesh.userData = { type: 'zone', data: zone, id: zone.id };
       group.add(zoneMesh);
 

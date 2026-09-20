@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useMineContext } from '../context/MineContext';
+import { useLanguage } from '../context/LanguageContext';
 import { governanceService } from '../services';
 import { Worker, AttendanceRecord } from '../types';
 import { Users, Clock, Plus, X, UserCheck, ShieldCheck } from 'lucide-react';
 
 export const WorkforcePage: React.FC = () => {
   const { selectedMine } = useMineContext();
+  const { t } = useLanguage();
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -81,14 +83,14 @@ export const WorkforcePage: React.FC = () => {
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
               <Users className="w-5 h-5 text-amber-400" />
-              Workforce Roster & Shift Attendance
+              {t('workforceManagement')}
             </h2>
             <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-blue-950/80 text-blue-400 border border-blue-800">
-              SIMULATED ROSTER
+              FORM-E COMPLIANT
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Track daily underground and surface personnel assignments, contractor staffing, and shift muster rolls.
+            {t('workforceSubtitle')}
           </p>
         </div>
 
@@ -104,19 +106,19 @@ export const WorkforcePage: React.FC = () => {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 font-mono text-xs">
         <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-md space-y-1">
-          <span className="text-slate-500 text-[10px] uppercase">Registered Personnel</span>
+          <span className="text-slate-500 text-[10px] uppercase">{t('activeWorkers')}</span>
           <p className="text-2xl font-bold text-white">{totalWorkers}</p>
         </div>
         <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-md space-y-1">
-          <span className="text-slate-500 text-[10px] uppercase">Present on Duty</span>
+          <span className="text-slate-500 text-[10px] uppercase">{t('attendance')}</span>
           <p className="text-2xl font-bold text-emerald-400">{presentCount}</p>
         </div>
         <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-md space-y-1">
-          <span className="text-slate-500 text-[10px] uppercase">Late / Deviations</span>
+          <span className="text-slate-500 text-[10px] uppercase">{t('shiftsToday')}</span>
           <p className="text-2xl font-bold text-amber-400">{lateCount}</p>
         </div>
         <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-md space-y-1">
-          <span className="text-slate-500 text-[10px] uppercase">Muster Roll Compliance</span>
+          <span className="text-slate-500 text-[10px] uppercase">{t('attendanceRate')}</span>
           <p className="text-2xl font-bold text-cyan-400">{attendanceRate.toFixed(1)}%</p>
         </div>
       </div>
@@ -229,11 +231,15 @@ export const WorkforcePage: React.FC = () => {
                 <label className="block text-[11px] text-slate-400 mb-1">Select Worker</label>
                 <select
                   value={selectedWorkerId}
-                  onChange={(e) => setSelectedWorkerId(Number(e.target.value))}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 text-xs focus:border-amber-500"
+                  onChange={(e) => setSelectedWorkerId(e.target.value ? Number(e.target.value) : '')}
+                  className="w-full px-3 py-2 bg-[#0D100F] border border-[#232A26] rounded-lg text-slate-200 text-xs focus:border-amber-500 focus:outline-none"
+                  required
                 >
+                  <option value="" disabled>
+                    {workers.length === 0 ? '-- No registered workers found for this mine --' : '-- Choose Worker Personnel --'}
+                  </option>
                   {workers.map((w) => (
-                    <option key={w.id} value={w.id}>
+                    <option key={w.id} value={w.id} className="bg-[#0D100F] text-slate-200">
                       {w.worker_code} - {w.full_name} ({w.designation})
                     </option>
                   ))}
@@ -246,11 +252,11 @@ export const WorkforcePage: React.FC = () => {
                   <select
                     value={shiftCode}
                     onChange={(e) => setShiftCode(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 text-xs focus:border-amber-500"
+                    className="w-full px-3 py-2 bg-[#0D100F] border border-[#232A26] rounded-lg text-slate-200 text-xs focus:border-amber-500 focus:outline-none"
                   >
-                    <option value="A">Shift A (06:00 - 14:00)</option>
-                    <option value="B">Shift B (14:00 - 22:00)</option>
-                    <option value="C">Shift C (22:00 - 06:00)</option>
+                    <option value="A" className="bg-[#0D100F] text-slate-200">Shift A (06:00 - 14:00)</option>
+                    <option value="B" className="bg-[#0D100F] text-slate-200">Shift B (14:00 - 22:00)</option>
+                    <option value="C" className="bg-[#0D100F] text-slate-200">Shift C (22:00 - 06:00)</option>
                   </select>
                 </div>
                 <div>
@@ -258,12 +264,12 @@ export const WorkforcePage: React.FC = () => {
                   <select
                     value={attendanceStatus}
                     onChange={(e) => setAttendanceStatus(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 text-xs focus:border-amber-500"
+                    className="w-full px-3 py-2 bg-[#0D100F] border border-[#232A26] rounded-lg text-slate-200 text-xs focus:border-amber-500 focus:outline-none"
                   >
-                    <option value="PRESENT">PRESENT</option>
-                    <option value="LATE">LATE</option>
-                    <option value="ABSENT">ABSENT</option>
-                    <option value="ON_LEAVE">ON LEAVE</option>
+                    <option value="PRESENT" className="bg-[#0D100F] text-slate-200">PRESENT</option>
+                    <option value="LATE" className="bg-[#0D100F] text-slate-200">LATE</option>
+                    <option value="ABSENT" className="bg-[#0D100F] text-slate-200">ABSENT</option>
+                    <option value="ON_LEAVE" className="bg-[#0D100F] text-slate-200">ON LEAVE</option>
                   </select>
                 </div>
               </div>
@@ -275,7 +281,7 @@ export const WorkforcePage: React.FC = () => {
                   value={remarks}
                   onChange={(e) => setRemarks(e.target.value)}
                   placeholder="Gate 2 muster, safety briefing completed..."
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 text-xs focus:border-amber-500"
+                  className="w-full px-3 py-2 bg-[#0D100F] border border-[#232A26] rounded-lg text-slate-200 text-xs focus:border-amber-500 focus:outline-none"
                 />
               </div>
 

@@ -1,3 +1,5 @@
+export * from './analytics';
+
 export type RoleType = 
   | 'SYSTEM_ADMIN' 
   | 'MINE_MANAGER' 
@@ -35,6 +37,8 @@ export interface Mine {
   longitude?: number;
   elevation?: number;
   status: string;
+  is_simulated?: string;
+  data_status?: string;
   created_at: string;
   updated_at: string;
 }
@@ -418,7 +422,35 @@ export interface DigitalTwinState {
   anomalies: any[];
   current_risk_score?: number;
   current_risk_severity?: string;
+
+  // Phase 11B: Source-Derived Spatial Foundation & Provenance
+  profile?: MineProfileDTO;
+  spatial_reference?: {
+    source_crs: string;
+    source_datum: string;
+    visualization_crs: string;
+    origin_reference: { latitude: number; longitude: number; elevation: number };
+    transformation_method: string;
+    unit: string;
+  };
+  boundary?: MineBoundaryDTO & {
+    vertices_3d?: Array<{ x: number; y: number; z: number; label?: string; latitude?: number; longitude?: number }>;
+  };
+  coordinates?: Array<MineCoordinateDTO & { local_x: number; local_y: number; local_z: number }>;
+  seams?: MineSeamDTO[];
+  data_completeness?: {
+    boundary: string;
+    coordinates: string;
+    seams: string;
+    elevation: string;
+    underground_workings: string;
+    geometry_status: string;
+    is_simulated: string;
+    data_status: string;
+  };
+  quality_record?: MineDataQualityDTO;
 }
+
 
 export interface ProductionReport {
   id: number;
@@ -653,9 +685,22 @@ export interface MLModelInfo {
   description?: string;
 }
 
-// Phase 6 Copilot & Multilingual Interfaces
+// Phase 6 & Phase 11C Copilot & Multilingual Interfaces
 export interface EvidenceItem {
   source_type: string;
+  source_tier?: string;
+  source_title?: string;
+  organization?: string;
+  document_id?: string;
+  page_number?: number;
+  section?: string;
+  document_date?: string;
+  effective_from?: string;
+  effective_to?: string;
+  status?: string;
+  source_hash?: string;
+  excerpt?: string;
+  domain?: string;
   entity_id?: string;
   title: string;
   description: string;
@@ -697,6 +742,8 @@ export interface CopilotQueryResponse {
   language: 'en' | 'hi' | 'te';
   query: string;
   intent: string;
+  question_type?: string;
+  domain_detected?: string;
   tools_invoked: string[];
   summary: string;
   evidence: EvidenceItem[];
@@ -707,6 +754,9 @@ export interface CopilotQueryResponse {
   data_provenance: string;
   provider_used: string;
   data_coverage: string;
+  confidence?: string;
+  limitations?: string;
+  citation_validation_status?: string;
   timestamp: string;
 }
 
@@ -973,6 +1023,536 @@ export interface DemoResetResponse {
   records_reset: Record<string, number>;
   timestamp: string;
 }
+
+// ==========================================
+// PHASE 11A: REAL MINE DATA FOUNDATION & PROVENANCE
+// ==========================================
+
+export interface DataProvenanceDTO {
+  id: number;
+  document_title: string;
+  document_filename: string;
+  document_hash: string;
+  source_organization: string;
+  document_type: string;
+  publication_date?: string;
+  effective_date?: string;
+  source_url?: string;
+  page_number?: number;
+  section_heading?: string;
+  source_text_reference?: string;
+  extraction_method: string;
+  authority_level: string;
+  data_status: string;
+  notes?: string;
+  created_at: string;
+}
+
+export interface MineBoundaryDTO {
+  id: number;
+  mine_id: number;
+  boundary_type: string;
+  description?: string;
+  datum: string;
+  coordinate_system: string;
+  geometry_status: string;
+  min_latitude?: number;
+  max_latitude?: number;
+  min_longitude?: number;
+  max_longitude?: number;
+  area_sq_km?: number;
+  perimeter_km?: number;
+  raw_coordinate_text?: string;
+  prov_doc_title?: string;
+  prov_doc_hash?: string;
+  prov_page_number?: number;
+  prov_verbatim_text?: string;
+  vertices_3d?: Array<{
+    x: number;
+    y: number;
+    z: number;
+    point_label?: string;
+    label?: string;
+    latitude?: number;
+    longitude?: number;
+    sequence_order?: number;
+  }>;
+  provenance?: DataProvenanceDTO;
+}
+
+export interface MineCoordinateDTO {
+  id: number;
+  mine_id: number;
+  point_label: string;
+  sequence_order: number;
+  latitude?: number;
+  longitude?: number;
+  lat_dms_raw?: string;
+  lon_dms_raw?: string;
+  latitude_dms?: string;
+  longitude_dms?: string;
+  elevation_m?: number;
+  x_proj?: number;
+  y_proj?: number;
+  x_proj_raw?: string;
+  y_proj_raw?: string;
+  x?: number;
+  y?: number;
+  z?: number;
+  local_x?: number;
+  local_y?: number;
+  local_z?: number;
+  datum: string;
+  coordinate_system: string;
+  geometry_status: string;
+  notes?: string;
+  prov_doc_title?: string;
+  prov_doc_hash?: string;
+  prov_page_number?: number;
+  prov_verbatim_text?: string;
+  provenance?: DataProvenanceDTO;
+}
+
+export interface MineSeamDTO {
+  id: number;
+  mine_id: number;
+  seam_name: string;
+  seam_code?: string;
+  sequence_order: number;
+  thickness_min_m?: number;
+  thickness_max_m?: number;
+  thickness_raw?: string;
+  depth_min_m?: number;
+  depth_max_m?: number;
+  depth_from_m?: number;
+  depth_to_m?: number;
+  parting_min_m?: number;
+  parting_max_m?: number;
+  parting_raw?: string;
+  geological_reserve_mt?: number;
+  geological_reserve_raw?: string;
+  extractable_reserve_mt?: number;
+  extractable_reserve_raw?: string;
+  grade?: string;
+  coal_grade?: string;
+  stratigraphic_order?: number;
+  mining_method?: string;
+  workability_status: string;
+  data_status: string;
+  geometry_status?: string;
+  prov_doc_title?: string;
+  prov_doc_hash?: string;
+  prov_page_number?: number;
+  prov_verbatim_text?: string;
+  provenance?: DataProvenanceDTO;
+}
+
+export interface MineClearanceDTO {
+  id: number;
+  mine_id: number;
+  clearance_type: string;
+  status: string;
+  status_raw?: string;
+  reference_number?: string;
+  grant_date?: string;
+  authority?: string;
+  area_covered_ha?: number;
+  notes?: string;
+  data_status: string;
+  provenance?: DataProvenanceDTO;
+}
+
+export interface MineProfileDTO {
+  id: number;
+  mine_id: number;
+  official_name: string;
+  normalized_name: string;
+  display_name: string;
+  aliases?: string;
+  block_name?: string;
+  coalfield: string;
+  sub_basin?: string;
+  state: string;
+  district: string;
+  tehsil?: string;
+  villages?: string;
+  topo_sheet_no?: string;
+  geological_block_area_sq_km?: number;
+  mining_lease_area_ha?: number;
+  project_area_ha?: number;
+  forest_area_ha?: number;
+  non_forest_area_ha?: number;
+  nearest_rail_head?: string;
+  road_connectivity?: string;
+  nearest_airport?: string;
+  surface_infrastructure_built?: string;
+  annual_rainfall_mm?: string;
+  temperature_range?: string;
+  drainage_description?: string;
+  exploration_agency?: string;
+  exploration_status?: string;
+  total_boreholes?: number;
+  total_meterage_drilled?: number;
+  borehole_density_per_sq_km?: number;
+  general_dip?: string;
+  general_strike?: string;
+  mining_method_documented?: string;
+  target_capacity_mtpa?: number;
+  target_capacity_raw?: string;
+  total_geological_reserve_mt?: number;
+  geological_reserves_mt?: number;
+  total_extractable_reserve_mt?: number;
+  average_grade_documented?: string;
+  stripping_ratio_cum_per_te?: number;
+  total_overburden_mcum?: number;
+  prior_allocatee_name?: string;
+  project_status_documented?: string;
+  data_status: string;
+  geometry_status: string;
+  validation_status: string;
+  source_title?: string;
+  source_sha256?: string;
+  source_page_number?: number;
+  source_authority?: string;
+  provenance?: DataProvenanceDTO;
+}
+
+export interface RealMineSummaryDTO {
+  id: number;
+  code: string;
+  name: string;
+  official_name: string;
+  coalfield: string;
+  state: string;
+  district: string;
+  latitude?: number;
+  longitude?: number;
+  total_area_sq_km?: number;
+  mining_method?: string;
+  geological_reserve_mt?: number;
+  data_status: string;
+  geometry_status: string;
+  is_simulated: string;
+  provenance_doc: string;
+  provenance_hash: string;
+}
+
+export interface MineDataQualityDTO {
+  mine_id: number;
+  overall_status: string;
+  source_coverage: number;
+  provenance_coverage: number;
+  validation_errors: number;
+  approximate_geometry: boolean;
+  survey_grade_geometry: boolean;
+  total_attributes_extracted: number;
+  missing_critical_fields?: string;
+  source_title?: string;
+  source_sha256?: string;
+  source_page_number?: number;
+  source_authority?: string;
+  overall_score?: number;
+  calculated_at: string;
+}
+
+export interface RealMineDetailDTO {
+  id: number;
+  code: string;
+  name: string;
+  mine_type: string;
+  state: string;
+  district: string;
+  latitude?: number;
+  longitude?: number;
+  data_status: string;
+  is_simulated: string;
+  profile?: MineProfileDTO;
+  boundaries: MineBoundaryDTO[];
+  coordinates: MineCoordinateDTO[];
+  seams: MineSeamDTO[];
+  clearances: MineClearanceDTO[];
+  quality_record?: MineDataQualityDTO;
+}
+
+// Aliases for ease of consumption
+export type RealMineCoordinate = MineCoordinateDTO;
+export type RealMineSeam = MineSeamDTO;
+export type RealMineProfile = MineProfileDTO;
+export type RealMineQualityRecord = MineDataQualityDTO;
+export type MineBoundary = MineBoundaryDTO;
+
+// Phase 12A: Document Intelligence & OCR Types
+export interface DocumentPageDTO {
+  id: number;
+  document_id: number;
+  page_number: number;
+  extraction_method: 'TEXT_NATIVE' | 'OCR' | 'HYBRID' | 'FAILED';
+  ocr_provider: string;
+  ocr_confidence?: number;
+  ocr_confidence_band: 'HIGH' | 'MEDIUM' | 'LOW' | 'N/A';
+  quality_status: 'GOOD' | 'REVIEW' | 'POOR' | 'UNREADABLE' | 'UNAVAILABLE';
+  page_hash?: string;
+  page_image_path?: string;
+  text_content: string;
+  created_at: string;
+}
+
+export interface ExtractedDocumentFieldDTO {
+  id: number;
+  document_id: number;
+  page_number: number;
+  field_name: string;
+  field_value: string;
+  confidence: number;
+  source_text?: string;
+  extraction_method: string;
+  validation_status: 'VALID' | 'REVIEW_REQUIRED' | 'INVALID';
+  validation_error?: string;
+  is_verified: 'PENDING' | 'VERIFIED' | 'REJECTED' | 'EDITED';
+  verified_value?: string;
+  verified_by_user_id?: number;
+  verified_at?: string;
+  created_at: string;
+}
+
+export interface DocumentSummaryDTO {
+  id: number;
+  mine_id?: number;
+  title: string;
+  source_filename?: string;
+  doc_type: string;
+  source_tier: string;
+  source_category: string;
+  file_hash: string;
+  file_size_bytes: number;
+  page_count: number;
+  native_page_count: number;
+  ocr_page_count: number;
+  ocr_status: string;
+  processing_stage: 'RECEIVED' | 'VALIDATING' | 'TEXT_EXTRACTION' | 'OCR_PROCESSING' | 'FIELD_EXTRACTION' | 'VALIDATING_FIELDS' | 'INDEXING' | 'COMPLETED' | 'PARTIAL' | 'FAILED' | 'OCR_UNAVAILABLE';
+  quality_status: 'GOOD' | 'REVIEW' | 'POOR' | 'UNREADABLE' | 'UNAVAILABLE';
+  average_ocr_confidence?: number;
+  classification_confidence: number;
+  classification_reason?: string;
+  verification_status: string;
+  uploaded_at: string;
+}
+
+export interface DocumentDTO extends DocumentSummaryDTO {
+  extracted_text?: string;
+  processing_error?: string;
+  pages: DocumentPageDTO[];
+  fields: ExtractedDocumentFieldDTO[];
+}
+
+export interface DocumentProcessingStatusDTO {
+  document_id: number;
+  title: string;
+  file_hash: string;
+  processing_stage: string;
+  ocr_status: string;
+  quality_status: string;
+  page_count: number;
+  native_page_count: number;
+  ocr_page_count: number;
+  average_ocr_confidence?: number;
+  fields_count: number;
+  verification_status: string;
+}
+
+// ==========================================
+// Phase 12B: 2D GIS & Spatial Governance DTOs
+// ==========================================
+
+export interface GisProvenanceDTO {
+  document_title: string;
+  document_filename: string;
+  document_hash: string;
+  page_number?: number;
+  section_heading?: string;
+  authority_level: string;
+  data_status: string;
+  source_text_reference?: string;
+}
+
+export interface GisCoordinateFeatureDTO {
+  id: number;
+  point_label: string;
+  latitude?: number;
+  longitude?: number;
+  lat_dms_raw?: string;
+  lon_dms_raw?: string;
+  local_x: number;
+  local_z: number;
+  datum: string;
+  geometry_status: string;
+  provenance?: GisProvenanceDTO;
+}
+
+export interface GisBoundaryFeatureDTO {
+  id: number;
+  boundary_type: string;
+  min_latitude?: number;
+  max_latitude?: number;
+  min_longitude?: number;
+  max_longitude?: number;
+  geometry_status: string;
+  area_sq_km?: number;
+  coordinates_geojson: number[][]; // [ [lon, lat], ... ]
+  provenance?: GisProvenanceDTO;
+}
+
+export interface GisSeamFeatureDTO {
+  id: number;
+  seam_name: string;
+  thickness_min_m?: number;
+  thickness_max_m?: number;
+  depth_min_m?: number;
+  depth_max_m?: number;
+  geological_reserve_mt?: number;
+  is_schematic: boolean;
+  provenance?: GisProvenanceDTO;
+}
+
+export interface GisOperationalFeatureDTO {
+  id: string;
+  entity_id: number;
+  feature_type: 'SENSOR' | 'CAMERA' | 'INCIDENT' | 'ALERT' | 'INSPECTION' | 'GOVERNANCE_TASK' | 'ENVIRONMENTAL' | 'CMSMS';
+  code: string;
+  title: string;
+  status?: string;
+  severity?: string;
+  latitude: number;
+  longitude: number;
+  value?: string;
+  unit?: string;
+  trust_badge: 'SOURCE_DERIVED' | 'APPROXIMATE' | 'OPERATIONAL' | 'SIMULATED' | 'NOT_DOCUMENTED';
+  created_at?: string;
+  properties: Record<string, any>;
+}
+
+export interface GisRiskHotspotDTO {
+  id: string;
+  hotspot_type: 'CURRENT_RISK' | 'ANOMALY_HOTSPOT' | 'PREDICTIVE_HOTSPOT';
+  title: string;
+  latitude: number;
+  longitude: number;
+  risk_score: number;
+  risk_band: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  source_type: string;
+  source_model: string;
+  trust_badge: string;
+  prediction_horizon?: string;
+  escalation_probability?: number;
+  explanation: string;
+  contributing_factors: string[];
+  recommended_action: string;
+  created_at?: string;
+}
+
+export interface GisTrustMetricsDTO {
+  source_derived_count: number;
+  approximate_count: number;
+  operational_count: number;
+  simulated_count: number;
+  not_documented_count: number;
+}
+
+export interface GisDashboardStatsDTO {
+  current_risk_score: number;
+  current_risk_band: string;
+  predictive_hotspots_count: number;
+  open_incidents_count: number;
+  open_field_tasks_count: number;
+  sla_breaches_count: number;
+  active_alerts_count: number;
+  last_updated: string;
+}
+
+export interface GisMineMetadataDTO {
+  id: number;
+  code: string;
+  name: string;
+  official_name: string;
+  state: string;
+  district: string;
+  latitude: number;
+  longitude: number;
+  total_area_sq_km?: number;
+  data_status: string;
+  geometry_status: string;
+  is_simulated: string;
+  provenance_doc: string;
+  provenance_hash: string;
+}
+
+export interface GisMapDTO {
+  mine: GisMineMetadataDTO;
+  boundaries: GisBoundaryFeatureDTO[];
+  source_coordinates: GisCoordinateFeatureDTO[];
+  seams: GisSeamFeatureDTO[];
+  operational_features: GisOperationalFeatureDTO[];
+  risk_hotspots: GisRiskHotspotDTO[];
+  trust_metrics: GisTrustMetricsDTO;
+  dashboard_stats: GisDashboardStatsDTO;
+}
+
+export interface SpatialContextDTO {
+  target_coordinate: { latitude: number; longitude: number };
+  boundary_status: {
+    status: string;
+    label: string;
+    is_inside?: boolean;
+    notes?: string;
+  };
+  nearest_sensors: Array<{
+    id: number;
+    code: string;
+    name: string;
+    type: string;
+    distance_meters: number;
+    trust_badge: string;
+  }>;
+  nearest_incidents: Array<{
+    id: number;
+    code: string;
+    title: string;
+    severity: string;
+    distance_meters: number;
+    trust_badge: string;
+  }>;
+  nearest_inspections: Array<{
+    id: number;
+    code: string;
+    title: string;
+    distance_meters: number;
+    trust_badge: string;
+  }>;
+  total_entities_nearby: number;
+}
+
+export interface GisSearchItemDTO {
+  id: string;
+  title: string;
+  type: string;
+  category: string;
+  latitude?: number;
+  longitude?: number;
+  mine_id: number;
+  mine_name: string;
+  trust_badge: string;
+  snippet: string;
+}
+
+export interface GisSearchResponseDTO {
+  query: string;
+  results_count: number;
+  items: GisSearchItemDTO[];
+}
+
+
+
+
 
 
 

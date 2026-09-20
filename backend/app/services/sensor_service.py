@@ -271,8 +271,14 @@ class SensorService:
         readings = []
 
         if scenario == "SENSOR_OFFLINE":
-            # Simulate silence on target sensor or first sensor by creating SENSOR_OFFLINE anomaly
-            AnomalyDetectionService.detect_sensor_silence(db, mine_id, dormancy_minutes=0)
+            # Simulate silence on target sensor or all sensors by aging last_reading_at
+            silence_time = datetime.now(timezone.utc) - timedelta(minutes=45)
+            for s in sensors:
+                if target_sensor_code is None or s.sensor_code == target_sensor_code:
+                    s.last_reading_at = silence_time
+                    s.status = "OFFLINE"
+            db.commit()
+            AnomalyDetectionService.detect_sensor_silence(db, mine_id, dormancy_minutes=20)
             return []
 
         for s in sensors:

@@ -39,3 +39,5 @@ htmlcov/
 .env.production
 .env.*.local
 
+# Scratch
+scratch/

@@ -19,7 +19,10 @@ import {
   Bot,
   ClipboardCheck,
   Network,
-  Radio
+  Radio,
+  FileSearch,
+  Compass,
+  BarChart3
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -55,6 +58,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, setCurrentTab }) =
           label: t('liveDashboard'),
           icon: LayoutDashboard,
           roles: ['SYSTEM_ADMIN', 'MINE_MANAGER', 'MINE_SAFETY_OFFICER', 'FIELD_INSPECTOR', 'CONTRACTOR_MANAGER', 'REGULATOR']
+        },
+        {
+          id: 'gis-map',
+          label: t('gisCommandMap'),
+          icon: Compass,
+          roles: ['SYSTEM_ADMIN', 'MINE_MANAGER', 'MINE_SAFETY_OFFICER', 'FIELD_INSPECTOR', 'REGULATOR']
         },
         {
           id: 'digital-twin',
@@ -171,6 +180,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, setCurrentTab }) =
           id: 'copilot',
           label: t('aiCopilot'),
           icon: Bot,
+          roles: ['SYSTEM_ADMIN', 'MINE_MANAGER', 'MINE_SAFETY_OFFICER', 'FIELD_INSPECTOR', 'CONTRACTOR_MANAGER', 'REGULATOR']
+        },
+        {
+          id: 'documents',
+          label: t('documentIntelligence'),
+          icon: FileSearch,
+          roles: ['SYSTEM_ADMIN', 'MINE_MANAGER', 'MINE_SAFETY_OFFICER', 'FIELD_INSPECTOR', 'CONTRACTOR_MANAGER', 'REGULATOR']
+        },
+        {
+          id: 'analytics',
+          label: t('governanceIntelligence'),
+          icon: BarChart3,
           roles: ['SYSTEM_ADMIN', 'MINE_MANAGER', 'MINE_SAFETY_OFFICER', 'FIELD_INSPECTOR', 'CONTRACTOR_MANAGER', 'REGULATOR']
         }
       ]

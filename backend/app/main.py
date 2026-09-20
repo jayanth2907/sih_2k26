@@ -1,12 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
+import app.models  # Ensure all models are registered in Base.metadata before create_all
 from app.api.v1.router import api_v1_router
 from app.db.base import Base
 from app.db.session import engine
 
 # Create tables on startup for development setup
-Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine, checkfirst=True)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

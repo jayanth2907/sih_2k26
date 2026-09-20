@@ -62,6 +62,8 @@ class MineCreate(MineBase):
 
 class MineRead(MineBase):
     id: int
+    data_status: str = "SIMULATED"
+    is_simulated: str = "YES"
     created_at: datetime
     updated_at: datetime
 
@@ -78,12 +80,22 @@ class MineDetail(MineRead):
 
 class MineDigitalTwinResponse(BaseModel):
     mine: MineRead
-    levels: List[MineLevelRead]
-    zones: List[MineZoneRead]
-    sensors: List[dict]
-    cameras: List[dict]
-    equipment: List[dict]
-    active_incidents: List[dict]
-    anomalies: List[dict]
+    levels: List[MineLevelRead] = []
+    zones: List[MineZoneRead] = []
+    sensors: List[dict] = []
+    cameras: List[dict] = []
+    equipment: List[dict] = []
+    active_incidents: List[dict] = []
+    anomalies: List[dict] = []
     current_risk_score: Optional[float] = None
     current_risk_severity: Optional[str] = None
+    
+    # Phase 11B: Source-Derived Spatial Foundation & Provenance
+    profile: Optional[dict] = None
+    spatial_reference: Optional[dict] = None
+    boundary: Optional[dict] = None
+    coordinates: List[dict] = []
+    seams: List[dict] = []
+    data_completeness: Optional[dict] = None
+    quality_record: Optional[dict] = None
+
