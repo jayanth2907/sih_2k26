@@ -147,3 +147,26 @@
 .leaflet-tooltip-right:before {
   border-color: #0D100F !important;
 }
+
+/* Compact Leaflet Attribution & Controls (Prevent oversized boxes) */
+.leaflet-control-attribution {
+  background: rgba(13, 16, 15, 0.8) !important;
+  color: #94A3B8 !important;
+  font-size: 9px !important;
+  font-family: 'IBM Plex Mono', monospace !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  border: 1px solid rgba(35, 42, 38, 0.6) !important;
+  backdrop-filter: blur(4px);
+  margin: 0 4px 4px 0 !important;
+}
+
+.leaflet-control-attribution a {
+  color: #F59E0B !important;
+  text-decoration: none !important;
+}
+
+.leaflet-control-attribution a:hover {
+  text-decoration: underline !important;
+}
+

@@ -575,10 +575,15 @@ export const FieldOperationsPage: React.FC = () => {
           {/* Assigned Inspections List */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
-                <CheckSquare className="w-4 h-4 text-amber-400" />
-                Statutory Field Assignments
-              </h2>
+              <div>
+                <h2 className="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                  <CheckSquare className="w-4 h-4 text-amber-400" />
+                  {t('todaysFieldInspections')}
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {inspections.length} inspections assigned to your field schedule today
+                </p>
+              </div>
               <span className="text-xs text-slate-500 font-mono">Mine: {selectedMine?.code}</span>
             </div>
 
@@ -601,7 +606,7 @@ export const FieldOperationsPage: React.FC = () => {
                     <div 
                       key={insp.id}
                       className={clsx(
-                        'p-5 rounded-xl border transition-all duration-150 bg-slate-900/70',
+                        'p-5 rounded-2xl border transition-all duration-150 bg-slate-900/70',
                         activeInspection?.id === insp.id 
                           ? 'border-amber-500/60 bg-amber-500/5 shadow-lg shadow-amber-500/10' 
                           : 'border-slate-800 hover:border-slate-700'
@@ -609,7 +614,7 @@ export const FieldOperationsPage: React.FC = () => {
                     >
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div>
-                          <div className="flex items-center gap-2.5">
+                          <div className="flex items-center gap-2.5 flex-wrap">
                             <span className="font-mono font-black text-amber-400 text-sm">
                               {insp.inspection_code}
                             </span>
@@ -634,16 +639,16 @@ export const FieldOperationsPage: React.FC = () => {
                           </p>
                         </div>
 
-                        {/* Actions */}
+                        {/* Action Buttons */}
                         <div className="flex items-center gap-2 self-end sm:self-center">
                           <button
                             onClick={() => {
                               setActiveInspection(insp);
                               setActiveView('inspection');
                             }}
-                            className="px-3.5 py-1.5 rounded-lg bg-amber-500 text-slate-950 text-xs font-bold hover:bg-amber-400 transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                            className="px-3.5 py-1.5 rounded-xl bg-amber-500 text-slate-950 text-xs font-bold hover:bg-amber-400 transition flex items-center gap-1.5 cursor-pointer shadow-sm"
                           >
-                            <span>{insp.status === 'COMPLETED' ? 'Review Form' : 'Start / Open'}</span>
+                            <span>{insp.status === 'COMPLETED' ? 'View Details' : 'Start Inspection'}</span>
                             <ArrowRight className="w-3.5 h-3.5" />
                           </button>
                         </div>

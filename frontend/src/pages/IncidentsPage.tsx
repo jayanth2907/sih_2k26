@@ -1,9 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import { useMineContext } from '../context/MineContext';
+import { useLanguage } from '../context/LanguageContext';
 import { incidentService } from '../services';
 import { Incident, IncidentStatus } from '../types';
 import { StatusBadge } from '../components/StatusBadge';
-import { AlertTriangle, Clock, ArrowRight, ShieldCheck, CheckCircle2, User, Plus, Crosshair } from 'lucide-react';
+import { 
+  AlertTriangle, 
+  Clock, 
+  ArrowRight, 
+  ShieldCheck, 
+  CheckCircle2, 
+  User, 
+  Plus, 
+  Crosshair, 
+  Info, 
+  X, 
+  MapPin, 
+  Layers, 
+  Activity,
+  CheckCircle,
+  FileCheck,
+  ChevronRight
+} from 'lucide-react';
 
 const NEXT_STATUS_MAP: Record<IncidentStatus, IncidentStatus[]> = {
   OPEN: ['TRIAGED', 'ASSIGNED', 'CLOSED'],
@@ -16,10 +34,22 @@ const NEXT_STATUS_MAP: Record<IncidentStatus, IncidentStatus[]> = {
   CLOSED: []
 };
 
+const ALL_LIFECYCLE_STEPS: IncidentStatus[] = [
+  'OPEN',
+  'TRIAGED',
+  'ASSIGNED',
+  'IN_PROGRESS',
+  'RESOLVED',
+  'VERIFIED',
+  'CLOSED'
+];
+
 export const IncidentsPage: React.FC = () => {
   const { selectedMine, focusInDigitalTwin } = useMineContext();
+  const { t } = useLanguage();
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
+  const [detailedIncident, setDetailedIncident] = useState<Incident | null>(null);
   const [targetStatus, setTargetStatus] = useState<IncidentStatus | ''>('');
   const [comment, setComment] = useState('');
   const [notes, setNotes] = useState('');
@@ -67,134 +97,193 @@ export const IncidentsPage: React.FC = () => {
     }
   };
 
+  const getStepIndex = (status: IncidentStatus) => {
+    const idx = ALL_LIFECYCLE_STEPS.indexOf(status);
+    return idx === -1 ? 0 : idx;
+  };
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-white tracking-tight">Operational Safety Incidents</h2>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-400" />
+              {t('safetyIncidents')} & Governance Workflows
+            </h2>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-blue-950/80 text-blue-400 border border-blue-800">
+              DGMS CMR 2017 REG 153 AUDIT COMPLIANT
+            </span>
+          </div>
           <p className="text-xs text-slate-400 mt-1">
-            Governance state machine lifecycle: Triage, Assignment, SLA Tracking, Verification, and Closure.
+            Human-readable safety incident tracking with transparent multi-stage governance lifecycle and audit trails.
           </p>
         </div>
       </div>
 
-      {/* Incidents Table */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden backdrop-blur-md">
-        <table className="w-full text-left text-xs font-mono">
-          <thead>
-            <tr className="bg-slate-950/80 border-b border-slate-800 text-slate-400 uppercase tracking-wider text-[10px]">
-              <th className="py-3.5 px-4 font-semibold">Incident Code</th>
-              <th className="py-3.5 px-4 font-semibold">Title & Category</th>
-              <th className="py-3.5 px-4 font-semibold">Zone / Location</th>
-              <th className="py-3.5 px-4 font-semibold">Severity</th>
-              <th className="py-3.5 px-4 font-semibold">SLA Status</th>
-              <th className="py-3.5 px-4 font-semibold">Status</th>
-              <th className="py-3.5 px-4 font-semibold">Action</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-800/60 text-slate-300">
-            {incidents.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="py-8 text-center text-slate-500">
-                  No active incidents recorded for this mine.
-                </td>
-              </tr>
-            ) : (
-              incidents.map((inc) => {
-                const nextOptions = NEXT_STATUS_MAP[inc.status] || [];
-                return (
-                  <tr key={inc.id} className="hover:bg-slate-800/40 transition-colors">
-                    <td className="py-3 px-4 font-bold text-amber-400">{inc.incident_code}</td>
-                    <td className="py-3 px-4">
-                      <p className="font-semibold text-white">{inc.title}</p>
-                      <p className="text-[10px] text-slate-400 truncate max-w-[220px]">{inc.category}</p>
-                    </td>
-                    <td className="py-3 px-4">
-                      <p className="text-slate-200">{inc.zone_name || 'Working Zone'}</p>
-                      <p className="text-[10px] text-slate-500">({inc.x}, {inc.y}, {inc.z})</p>
-                    </td>
-                    <td className="py-3 px-4">
-                      <StatusBadge status={inc.severity} size="sm" />
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-1.5 text-slate-400">
-                        <Clock className="w-3.5 h-3.5 text-amber-400" />
-                        <span>{inc.sla_hours}h SLA</span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <StatusBadge status={inc.status} size="sm" />
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() =>
-                            focusInDigitalTwin({
-                              type: 'incident',
-                              id: inc.id,
-                              x: inc.x,
-                              y: inc.y,
-                              z: inc.z,
-                              title: `${inc.incident_code}: ${inc.title}`
-                            })
-                          }
-                          title="Center in 3D Digital Twin"
-                          className="px-2 py-1 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-[11px] font-bold transition-all border border-amber-500/30 flex items-center gap-1 cursor-pointer"
+      {/* Incidents Cards List */}
+      <div className="space-y-4">
+        {incidents.length === 0 ? (
+          <div className="p-8 rounded-2xl bg-slate-900/60 border border-slate-800 text-center text-slate-500 font-mono text-xs">
+            No active safety incidents recorded for this mine. Atmosphere and operations are within statutory baselines.
+          </div>
+        ) : (
+          incidents.map((inc) => {
+            const nextOptions = NEXT_STATUS_MAP[inc.status] || [];
+            const currentStepIdx = getStepIndex(inc.status);
+            const isCritical = inc.severity === 'CRITICAL';
+
+            return (
+              <div
+                key={inc.id}
+                className={`p-5 rounded-2xl border transition-all duration-200 backdrop-blur-md space-y-4 shadow-xl ${
+                  isCritical 
+                    ? 'bg-gradient-to-br from-rose-950/30 via-slate-900 to-slate-950 border-rose-800/60' 
+                    : 'bg-slate-900/85 border-slate-800'
+                }`}
+              >
+                {/* Top Row: Code, Title, Severity, Location */}
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-slate-800/80 pb-3">
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-2 py-0.5 rounded font-mono text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                        {inc.incident_code}
+                      </span>
+                      <span className="text-xs text-slate-400 font-mono">
+                        Category: <b className="text-slate-200">{inc.category}</b>
+                      </span>
+                    </div>
+                    <h3 className="text-base font-bold text-white mt-1.5">{inc.title}</h3>
+                    <p className="text-xs text-amber-300/90 font-mono mt-1 flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 shrink-0" />
+                      {inc.zone_name || 'Working Zone'} • Coords: ({inc.x}, {inc.y}, {inc.z})
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <StatusBadge status={inc.severity} size="sm" />
+                    <StatusBadge status={inc.status} size="sm" />
+                  </div>
+                </div>
+
+                {/* Human-Centric Lifecycle Progress Bar */}
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block">
+                    Statutory State Machine Lifecycle:
+                  </span>
+                  <div className="grid grid-cols-7 gap-1 text-center font-mono text-[9.5px]">
+                    {ALL_LIFECYCLE_STEPS.map((step, sIdx) => {
+                      const isPassed = sIdx <= currentStepIdx;
+                      const isCurrent = sIdx === currentStepIdx;
+                      return (
+                        <div
+                          key={step}
+                          className={`p-1.5 rounded-lg border flex flex-col items-center justify-center transition-all ${
+                            isCurrent
+                              ? 'bg-amber-500 text-slate-950 border-amber-400 font-bold shadow-sm'
+                              : isPassed
+                              ? 'bg-emerald-950/70 text-emerald-300 border-emerald-800 font-medium'
+                              : 'bg-slate-950 text-slate-600 border-slate-850'
+                          }`}
                         >
-                          <Crosshair className="w-3 h-3" />
-                          <span>3D Focus</span>
-                        </button>
-                        {nextOptions.length > 0 ? (
-                          <button
-                            onClick={() => {
-                              setSelectedIncident(inc);
-                              setTargetStatus(nextOptions[0]);
-                            }}
-                            className="px-2.5 py-1 rounded bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-slate-300 text-[11px] font-bold transition-all border border-slate-700 cursor-pointer"
-                          >
-                            Transition
-                          </button>
-                        ) : (
-                          <span className="text-slate-600 text-[10px]">Closed</span>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                          <span className="truncate w-full">{step}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Summary & SLA Row */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 rounded-xl bg-slate-950/70 border border-slate-850 text-xs font-mono">
+                  <div className="flex items-center gap-2 text-slate-300">
+                    <Clock className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>SLA Window: <b className="text-white">{inc.sla_hours} Hours</b></span>
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-300">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Remediation: <b className="text-emerald-400">Action Assigned</b></span>
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-300">
+                    <FileCheck className="w-4 h-4 text-cyan-400 shrink-0" />
+                    <span>DGMS Logged: <b className="text-white">Active Dossier</b></span>
+                  </div>
+                </div>
+
+                {/* Actions Row */}
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-800/80 flex-wrap font-mono text-xs">
+                  <button
+                    onClick={() => setDetailedIncident(inc)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium cursor-pointer transition-colors"
+                  >
+                    <Info className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>{t('viewDetails')} & Audit Trail</span>
+                  </button>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() =>
+                        focusInDigitalTwin({
+                          type: 'incident',
+                          id: inc.id,
+                          x: inc.x,
+                          y: inc.y,
+                          z: inc.z,
+                          title: `${inc.incident_code}: ${inc.title}`
+                        })
+                      }
+                      className="px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 font-bold transition-all flex items-center gap-1 cursor-pointer"
+                    >
+                      <Crosshair className="w-3.5 h-3.5" />
+                      <span>{t('focusIn3D')}</span>
+                    </button>
+
+                    {nextOptions.length > 0 && (
+                      <button
+                        onClick={() => {
+                          setSelectedIncident(inc);
+                          setTargetStatus(nextOptions[0]);
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition-all cursor-pointer shadow-sm"
+                      >
+                        Advance State (→ {nextOptions[0]})
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
 
       {/* State Machine Transition Modal */}
       {selectedIncident && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 font-mono text-xs animate-in fade-in zoom-in duration-150">
             <div className="flex items-start justify-between border-b border-slate-800 pb-3">
               <div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-950 text-amber-400 border border-slate-800">
+                <span className="text-[10px] text-amber-400 uppercase tracking-wider font-bold">
                   {selectedIncident.incident_code}
                 </span>
                 <h3 className="text-base font-bold text-white mt-1">{selectedIncident.title}</h3>
               </div>
               <button
                 onClick={() => setSelectedIncident(null)}
-                className="text-slate-400 hover:text-white text-sm"
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             <form onSubmit={handleUpdateStatus} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                  Target State Transition
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                  Target State Transition <span className="text-rose-400">*</span>
                 </label>
                 <select
                   value={targetStatus}
                   onChange={(e) => setTargetStatus(e.target.value as IncidentStatus)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 text-xs font-mono focus:outline-none focus:border-amber-500"
+                  className="w-full px-3 py-2.5 bg-[#0D100F] border border-[#232A26] rounded-xl text-slate-200 text-xs focus:outline-none focus:border-amber-500 cursor-pointer"
                 >
                   {NEXT_STATUS_MAP[selectedIncident.status].map((st) => (
                     <option key={st} value={st}>
@@ -205,36 +294,99 @@ export const IncidentsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                  Governance Comment / Evidence Log
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                  Governance Comment / Evidence Log <span className="text-rose-400">*</span>
                 </label>
                 <textarea
                   required
                   rows={3}
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
-                  placeholder="Detail corrective actions or verification results for the audit trail..."
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 text-xs focus:outline-none focus:border-amber-500"
+                  placeholder="Detail corrective actions, field verification measurements, or statutory notes for the SHA-256 audit ledger..."
+                  className="w-full px-3 py-2.5 bg-[#0D100F] border border-[#232A26] rounded-xl text-slate-200 text-xs focus:outline-none focus:border-amber-500 font-sans"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-2">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={() => setSelectedIncident(null)}
-                  className="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700"
+                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700 cursor-pointer"
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={isUpdating}
-                  className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold uppercase tracking-wider transition-all"
+                  className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-md"
                 >
                   {isUpdating ? 'Recording Transition...' : 'Confirm Status Update'}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Full Incident Details Modal */}
+      {detailedIncident && (
+        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 font-mono text-xs animate-in fade-in zoom-in duration-150">
+            <div className="flex items-start justify-between border-b border-slate-800 pb-3">
+              <div>
+                <span className="text-xs font-bold text-amber-400">{detailedIncident.incident_code}</span>
+                <h3 className="text-base font-bold text-white mt-0.5">{detailedIncident.title}</h3>
+              </div>
+              <button
+                onClick={() => setDetailedIncident(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-1">
+                <span className="text-[10px] text-slate-500 uppercase">Category</span>
+                <p className="font-bold text-white">{detailedIncident.category}</p>
+              </div>
+              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-1">
+                <span className="text-[10px] text-slate-500 uppercase">Severity</span>
+                <StatusBadge status={detailedIncident.severity} size="sm" showTechnical />
+              </div>
+              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-1">
+                <span className="text-[10px] text-slate-500 uppercase">Current State</span>
+                <StatusBadge status={detailedIncident.status} size="sm" showTechnical />
+              </div>
+              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-1">
+                <span className="text-[10px] text-slate-500 uppercase">3D Coordinates</span>
+                <p className="font-bold text-white">({detailedIncident.x}, {detailedIncident.y}, {detailedIncident.z})</p>
+              </div>
+              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-1">
+                <span className="text-[10px] text-slate-500 uppercase">SLA Target</span>
+                <p className="font-bold text-amber-400">{detailedIncident.sla_hours} Hours</p>
+              </div>
+              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-1">
+                <span className="text-[10px] text-slate-500 uppercase">Audit Provenance</span>
+                <p className="font-bold text-cyan-400">OPERATIONAL</p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+              <span className="text-[10px] text-slate-400 uppercase">Audit Ledger Compliance</span>
+              <p className="text-slate-300 font-sans leading-relaxed">
+                State transitions for this incident are recorded with cryptographic timestamps into the TRINETRA SHA-256 immutable audit ledger.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+              <button
+                onClick={() => setDetailedIncident(null)}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

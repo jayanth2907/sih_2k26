@@ -89,7 +89,7 @@ const BASEMAP_CONFIGS: Record<BasemapType, BasemapConfig> = {
   dark: {
     id: 'dark',
     name: 'Dark',
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png',
+    url: 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png',
     attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
     maxZoom: 19,
     subdomains: 'abcd'
@@ -263,7 +263,8 @@ export const GisMapPage: React.FC = () => {
       const config = BASEMAP_CONFIGS.satellite;
       const tileLayer = L.tileLayer(config.url, {
         maxZoom: config.maxZoom,
-        subdomains: config.subdomains || 'abc'
+        subdomains: config.subdomains || 'abc',
+        attribution: config.attribution
       });
 
       tileLayer.on('tileerror', () => {
@@ -310,7 +311,12 @@ export const GisMapPage: React.FC = () => {
     const config = BASEMAP_CONFIGS[type];
     const newLayer = L.tileLayer(config.url, {
       maxZoom: config.maxZoom,
-      subdomains: config.subdomains || 'abcd'
+      subdomains: config.subdomains || 'abcd',
+      attribution: config.attribution
+    });
+
+    newLayer.on('tileerror', () => {
+      console.warn(`Tile loading error for basemap: ${type}`);
     });
 
     newLayer.addTo(map);
@@ -845,7 +851,7 @@ export const GisMapPage: React.FC = () => {
             </div>
 
             {/* Floating Map Navigation Controls (Left-Middle vertical inside map) */}
-            <div className="absolute top-20 left-3.5 z-10 flex flex-col gap-1.5">
+            <div className="absolute top-16 left-3.5 z-10 flex flex-col gap-1.5">
               <button
                 onClick={() => mapInstanceRef.current?.zoomIn()}
                 title="Zoom In"
@@ -902,22 +908,29 @@ export const GisMapPage: React.FC = () => {
               <span className="text-[8px] -mt-1 text-slate-300">N</span>
             </div>
 
-            {/* Floating Basemap Switcher Dock (Bottom-Center inside map) */}
-            <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-10 bg-[#0D100F]/95 backdrop-blur-md border border-[#232A26] rounded-full px-4 py-1.5 shadow-2xl flex items-center gap-3 text-xs font-mono">
-              <span className="text-[10px] font-bold text-slate-400 uppercase">Basemap:</span>
-              <div className="flex items-center gap-2">
+            {/* Floating Basemap Switcher Dock (Bottom-Center inside map, spaced above legend) */}
+            <div
+              role="group"
+              aria-label="Basemap Selector"
+              className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20 bg-[#0D100F]/95 backdrop-blur-md border border-[#232A26] rounded-full px-3.5 py-1 shadow-2xl flex items-center gap-2 text-xs font-mono max-w-[calc(100%-2rem)] overflow-x-auto"
+            >
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider select-none shrink-0">Basemap:</span>
+              <div className="flex items-center gap-1.5 shrink-0">
                 {(['satellite', 'terrain', 'dark', 'street'] as BasemapType[]).map((type) => (
                   <button
                     key={type}
+                    type="button"
+                    role="button"
+                    aria-pressed={activeBasemap === type}
                     onClick={() => switchBasemap(type)}
                     className={clsx(
-                      'px-2.5 py-0.5 rounded-full text-[11px] font-medium transition-all cursor-pointer capitalize flex items-center gap-1.5',
+                      'px-2.5 py-0.5 rounded-full text-[11px] font-medium transition-all cursor-pointer capitalize flex items-center gap-1.5 focus:outline-hidden focus:ring-1 focus:ring-amber-400',
                       activeBasemap === type
                         ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
-                        : 'text-slate-400 hover:text-slate-200'
+                        : 'text-slate-400 hover:text-slate-100 hover:bg-[#1E2522]'
                     )}
                   >
-                    <span className={clsx('w-1.5 h-1.5 rounded-full', activeBasemap === type ? 'bg-slate-950' : 'bg-slate-500')} />
+                    <span className={clsx('w-1.5 h-1.5 rounded-full shrink-0', activeBasemap === type ? 'bg-slate-950' : 'bg-slate-500')} />
                     {type}
                   </button>
                 ))}
@@ -925,7 +938,7 @@ export const GisMapPage: React.FC = () => {
             </div>
 
             {/* Permanent Map Legend Bar (Bottom-Full inside map) */}
-            <div className="absolute bottom-2 left-3.5 right-3.5 z-10 bg-[#0D100F]/95 backdrop-blur-md border border-[#232A26] rounded-lg px-3 py-1.5 shadow-2xl flex flex-wrap items-center justify-between gap-2 text-[10px] font-mono">
+            <div className="absolute bottom-3 left-3.5 right-3.5 z-10 bg-[#0D100F]/95 backdrop-blur-md border border-[#232A26] rounded-lg px-3 py-1.5 shadow-2xl flex flex-wrap items-center justify-between gap-2 text-[10px] font-mono">
               <div className="flex flex-wrap items-center gap-3 text-slate-300">
                 <span className="flex items-center gap-1.5">
                   <span className="w-3 h-3 rounded-sm border border-emerald-400 bg-emerald-500/20" />
@@ -990,10 +1003,10 @@ export const GisMapPage: React.FC = () => {
             </div>
 
             <div className="space-y-2 text-xs font-mono max-h-48 overflow-y-auto pr-1">
-              {/* Category 1: SOURCE DATA */}
+              {/* Category 1: VERIFIED SOURCE DATA */}
               <div>
                 <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">
-                  ● SOURCE DATA
+                  ● VERIFIED SOURCE DATA
                 </span>
                 <div className="space-y-1 text-[11px]">
                   <label className="flex items-center justify-between cursor-pointer hover:text-slate-100">
@@ -1141,10 +1154,10 @@ export const GisMapPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Category 3: RISK */}
+              {/* Category 3: FORECASTED & SPATIAL RISK */}
               <div className="pt-1 border-t border-[#1B211E]">
                 <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">
-                  ● RISK
+                  ● FORECASTED & SPATIAL RISK
                 </span>
                 <div className="space-y-1 text-[11px]">
                   <label className="flex items-center justify-between cursor-pointer hover:text-slate-100">
@@ -1170,7 +1183,7 @@ export const GisMapPage: React.FC = () => {
                         onChange={() => toggleLayer('predictiveRisk')}
                         className="rounded accent-amber-500 cursor-pointer"
                       />
-                      Predictive Risk (30m)
+                      Forecasted Risk (30m)
                     </span>
                     <span className="text-[9px] text-amber-400 font-bold px-1.5 py-0.2 rounded bg-amber-950/60 border border-amber-800/60">
                       MODEL
@@ -1265,13 +1278,13 @@ export const GisMapPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Panel 2: SELECTED FEATURE & SPATIAL EVIDENCE (Matching Reference Screenshot) */}
+          {/* Panel 2: SELECTED FEATURE & LOCATION EVIDENCE (Matching Reference Screenshot) */}
           <div className="bg-[#0D100F] border border-[#1B211E] rounded-xl p-4 shadow-xl flex flex-col justify-between flex-1">
             <div>
               <div className="flex items-center justify-between border-b border-[#1B211E] pb-2 mb-3">
                 <h2 className="font-mono font-bold text-xs uppercase tracking-wider text-slate-200 flex items-center gap-2">
                   <Crosshair className="w-3.5 h-3.5 text-amber-400" />
-                  SELECTED FEATURE & SPATIAL EVIDENCE
+                  SELECTED FEATURE & LOCATION EVIDENCE
                 </h2>
                 {selectedFeature && (
                   <button

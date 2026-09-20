@@ -126,12 +126,12 @@ export const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Metric Cards Grid - Compact High Density */}
+      {/* Metric Cards Grid - Human-Centric Command Center */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <StatCard
-          title="Overall Risk"
+          title="Overall Governance Risk"
           value={`${risk?.score || 0} / 100`}
-          subtitle={risk?.severity || 'LOW'}
+          subtitle={risk?.severity ? `${risk.severity} — Composite Score` : 'Operating Normally'}
           icon={ShieldAlert}
           variant={
             risk?.severity === 'CRITICAL' ? 'rose' :
@@ -141,9 +141,9 @@ export const DashboardPage: React.FC = () => {
           onClick={() => setCurrentTab('risk-audit')}
         />
         <StatCard
-          title="Critical Nodes"
-          value={`${criticalSensorsCount}`}
-          subtitle={`${activeSensorsCount}/${sensors.length} online`}
+          title="Live Monitoring Nodes"
+          value={`${activeSensorsCount} / ${sensors.length}`}
+          subtitle={criticalSensorsCount > 0 ? `${criticalSensorsCount} nodes need review` : 'All telemetry online'}
           icon={Activity}
           variant={criticalSensorsCount > 0 ? 'rose' : 'emerald'}
           onClick={() => setCurrentTab('sensors')}
@@ -151,31 +151,31 @@ export const DashboardPage: React.FC = () => {
         <StatCard
           title="Open Incidents"
           value={openIncidentsCount}
-          subtitle="Triage in progress"
+          subtitle={openIncidentsCount > 0 ? `${openIncidentsCount} cases need attention` : 'No open safety alerts'}
           icon={AlertTriangle}
           variant={openIncidentsCount > 0 ? 'amber' : 'default'}
           onClick={() => setCurrentTab('incidents')}
         />
         <StatCard
-          title="Violations"
+          title="Statutory Notices"
           value={openViolationsCount}
-          subtitle="DGMS compliance notices"
+          subtitle={openViolationsCount > 0 ? 'DGMS remedial actions due' : 'Compliant with regulations'}
           icon={FileText}
           variant={openViolationsCount > 0 ? 'rose' : 'default'}
           onClick={() => setCurrentTab('violations')}
         />
         <StatCard
-          title="Predicted Risk"
-          value={predictiveSummary?.predicted_risk_score !== undefined ? `${predictiveSummary.predicted_risk_score}/100` : 'N/A'}
-          subtitle={predictiveSummary?.predicted_severity || 'NORMAL'}
+          title="Forecasted Risk (30m)"
+          value={predictiveSummary?.predicted_risk_score !== undefined ? `${predictiveSummary.predicted_risk_score} / 100` : 'N/A'}
+          subtitle={predictiveSummary?.predicted_severity ? `${predictiveSummary.predicted_severity} Forward Risk` : 'Baseline Stable'}
           icon={BrainCircuit}
           variant={highRiskEscalation ? 'rose' : 'cyan'}
           onClick={() => setCurrentTab('predictive-risk')}
         />
         <StatCard
-          title="Field Tasks"
+          title="Today's Field Actions"
           value="4"
-          subtitle="1 sync queued"
+          subtitle="2 inspections assigned"
           icon={ClipboardCheck}
           variant="default"
           onClick={() => setCurrentTab('field-operations')}

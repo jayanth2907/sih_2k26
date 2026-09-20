@@ -127,6 +127,34 @@ export interface Translations {
   exportData: string;
   filterBy: string;
   allStatus: string;
+  // Human-Centric Terminology Layer
+  liveMonitoring: string;
+  unusualReading: string;
+  safetyLimitExceeded: string;
+  sensorNotReporting: string;
+  missingMonitoringSignal: string;
+  actionRequired: string;
+  assignedAction: string;
+  forecastedRisk: string;
+  syncFieldRecords: string;
+  externalSignal: string;
+  riskAssessment: string;
+  nearbyInformation: string;
+  sourceAndEvidence: string;
+  fromSourceDocument: string;
+  demonstrationData: string;
+  aiModelForecast: string;
+  viewTechnicalDetails: string;
+  hideTechnicalDetails: string;
+  todaysFieldInspections: string;
+  recordAttendance: string;
+  saveAttendance: string;
+  cancel: string;
+  selectWorker: string;
+  currentCondition: string;
+  whatItMeans: string;
+  whyTitle: string;
+  decisionSupportDisclaimer: string;
 }
 
 export const translations: Record<SupportedLanguage, Translations> = {
@@ -253,7 +281,35 @@ export const translations: Record<SupportedLanguage, Translations> = {
     viewDetails: 'View Details',
     exportData: 'Export Data',
     filterBy: 'Filter By',
-    allStatus: 'ALL STATUS'
+    allStatus: 'ALL STATUS',
+    // Human-Centric Terminology Layer
+    liveMonitoring: 'Live Monitoring',
+    unusualReading: 'Unusual Reading',
+    safetyLimitExceeded: 'Safety Limit Exceeded',
+    sensorNotReporting: 'Sensor Not Reporting',
+    missingMonitoringSignal: 'Missing Monitoring Signal',
+    actionRequired: 'Action Required',
+    assignedAction: 'Assigned Action',
+    forecastedRisk: 'Forecasted Risk',
+    syncFieldRecords: 'Sync Field Records',
+    externalSignal: 'External Signal',
+    riskAssessment: 'Risk Assessment',
+    nearbyInformation: 'Nearby Information',
+    sourceAndEvidence: 'Source & Evidence',
+    fromSourceDocument: 'From Source Document',
+    demonstrationData: 'Demonstration Data',
+    aiModelForecast: 'AI/Model Forecast',
+    viewTechnicalDetails: 'View Technical Details',
+    hideTechnicalDetails: 'Hide Technical Details',
+    todaysFieldInspections: "Today's Field Inspections",
+    recordAttendance: 'Record Attendance',
+    saveAttendance: 'Save Attendance',
+    cancel: 'Cancel',
+    selectWorker: 'Select Worker',
+    currentCondition: 'Current Condition',
+    whatItMeans: 'What It Means',
+    whyTitle: 'Key Contributing Factors (Why?)',
+    decisionSupportDisclaimer: 'Decision Support Only: Human verification required before statutory or operational action.'
   },
   hi: {
     appName: 'त्रिनेत्र (TRINETRA)',
@@ -378,7 +434,35 @@ export const translations: Record<SupportedLanguage, Translations> = {
     viewDetails: 'विवरण देखें',
     exportData: 'डेटा निर्यात करें',
     filterBy: 'फ़िल्टर करें',
-    allStatus: 'सभी स्थितियां'
+    allStatus: 'सभी स्थितियां',
+    // Human-Centric Terminology Layer (Hindi)
+    liveMonitoring: 'लाइव निगरानी',
+    unusualReading: 'असामान्य रीडिंग',
+    safetyLimitExceeded: 'सुरक्षा सीमा पार',
+    sensorNotReporting: 'सेंसर रिपोर्ट नहीं कर रहा',
+    missingMonitoringSignal: 'निगरानी संकेत अनुपस्थित',
+    actionRequired: 'कार्रवाई आवश्यक',
+    assignedAction: 'आवंटित कार्रवाई',
+    forecastedRisk: 'पूर्वानुमानित जोखिम',
+    syncFieldRecords: 'फील्ड रिकॉर्ड सिंक करें',
+    externalSignal: 'बाहरी संकेत',
+    riskAssessment: 'जोखिम मूल्यांकन',
+    nearbyInformation: 'आस-पास की जानकारी',
+    sourceAndEvidence: 'स्रोत एवं साक्ष्य',
+    fromSourceDocument: 'स्रोत दस्तावेज़ से',
+    demonstrationData: 'प्रदर्शन डेटा (डेमो)',
+    aiModelForecast: 'AI/मॉडल पूर्वानुमान',
+    viewTechnicalDetails: 'तकनीकी विवरण देखें',
+    hideTechnicalDetails: 'तकनीकी विवरण छिपाएं',
+    todaysFieldInspections: 'आज के फील्ड निरीक्षण',
+    recordAttendance: 'उपस्थिति दर्ज करें',
+    saveAttendance: 'उपस्थिति सहेजें',
+    cancel: 'रद्द करें',
+    selectWorker: 'श्रमिक चुनें',
+    currentCondition: 'वर्तमान स्थिति',
+    whatItMeans: 'इसका क्या अर्थ है',
+    whyTitle: 'मुख्य योगदान कारक (कारण)',
+    decisionSupportDisclaimer: 'केवल निर्णय समर्थन: वैधानिक या परिचालन कार्रवाई से पहले मानव सत्यापन आवश्यक है।'
   },
   te: {
     appName: 'త్రినేత్ర (TRINETRA)',
@@ -503,7 +587,35 @@ export const translations: Record<SupportedLanguage, Translations> = {
     viewDetails: 'వివరాలు చూడండి',
     exportData: 'డేటాను ఎగుమతి చేయండి',
     filterBy: 'ఫిల్టర్ చేయండి',
-    allStatus: 'అన్ని స్థితులు'
+    allStatus: 'అన్ని స్థితులు',
+    // Human-Centric Terminology Layer (Telugu)
+    liveMonitoring: 'లైవ్ పర్యవేక్షణ',
+    unusualReading: 'అసాధారణ రీడింగ్',
+    safetyLimitExceeded: 'భద్రతా పరిమితి మించింది',
+    sensorNotReporting: 'సెన్సార్ నివేదించడం లేదు',
+    missingMonitoringSignal: 'పర్యవేక్షణ సంకేతం లోపించింది',
+    actionRequired: 'చర్య అవసరం',
+    assignedAction: 'కేటాయించిన చర్య',
+    forecastedRisk: 'అంచనా వేసిన ప్రమాదం',
+    syncFieldRecords: 'ఫీల్డ్ రికార్డులను సింక్ చేయండి',
+    externalSignal: 'బాహ్య సంకేతం',
+    riskAssessment: 'ప్రమాద మూల్యాంకనం',
+    nearbyInformation: 'సమీప సమాచారం',
+    sourceAndEvidence: 'మూలం & సాక్ష్యం',
+    fromSourceDocument: 'మూల పత్రం నుండి',
+    demonstrationData: 'ప్రదర్శన డేటా (డెమో)',
+    aiModelForecast: 'AI/మోడల్ అంచనా',
+    viewTechnicalDetails: 'సాంకేతిక వివరాలు చూడండి',
+    hideTechnicalDetails: 'సాంకేతిక వివరాలు దాచండి',
+    todaysFieldInspections: 'నేటి ఫీల్డ్ తనిఖీలు',
+    recordAttendance: 'హాజరు నమోదు చేయండి',
+    saveAttendance: 'హాజరును సేవ్ చేయండి',
+    cancel: 'రద్దు చేయండి',
+    selectWorker: 'కార్మికుడిని ఎంచుకోండి',
+    currentCondition: 'ప్రస్తుత పరిస్థితి',
+    whatItMeans: 'దీని అర్థం ఏమిటి',
+    whyTitle: 'ముఖ్య కారణాలు',
+    decisionSupportDisclaimer: 'కేవలం నిర్ణయ మద్దతు: చట్టబద్ధమైన లేదా కార్యాచరణ చర్యకు ముందు మానవ ధృవీకరణ అవసరం.'
   }
 };
 

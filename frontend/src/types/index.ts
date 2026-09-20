@@ -667,6 +667,7 @@ export interface PredictiveRiskSummary {
   is_alert_active: boolean;
   top_signals: SignalAttribution[];
   evaluated_at: string;
+  recommended_action?: string;
 }
 
 export interface MLModelInfo {
