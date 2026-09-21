@@ -296,6 +296,50 @@ class FieldService:
         return inspection
 
     @staticmethod
+    def get_single_evidence(
+        db: Session,
+        evidence_id: int,
+        user: User
+    ) -> Dict[str, Any]:
+        evidence = db.query(FieldEvidence).filter(FieldEvidence.id == evidence_id).first()
+        if not evidence:
+            raise EntityNotFoundError("FieldEvidence", evidence_id)
+
+        if not check_mine_access(user, evidence.mine_id, db):
+            raise PermissionDeniedError(f"Access denied to Mine ID {evidence.mine_id}")
+
+        return {
+            "id": evidence.id,
+            "evidence_code": evidence.evidence_code,
+            "mine_id": evidence.mine_id,
+            "mine_name": evidence.mine.name if evidence.mine else None,
+            "inspection_id": evidence.inspection_id,
+            "inspection_code": evidence.inspection.inspection_code if evidence.inspection else None,
+            "observation_id": evidence.observation_id,
+            "incident_id": evidence.incident_id,
+            "evidence_type": evidence.evidence_type,
+            "title": evidence.title,
+            "description": evidence.description,
+            "file_url_or_path": evidence.file_url_or_path,
+            "file_hash_sha256": evidence.file_hash_sha256,
+            "file_size_bytes": evidence.file_size_bytes,
+            "mime_type": evidence.mime_type,
+            "location_source": evidence.location_source,
+            "verification_status": evidence.verification_status,
+            "verified_by_id": evidence.verified_by_id,
+            "verified_by_name": evidence.verified_by.full_name if evidence.verified_by else None,
+            "verification_notes": evidence.verification_notes,
+            "latitude": evidence.latitude,
+            "longitude": evidence.longitude,
+            "gps_accuracy_meters": evidence.gps_accuracy_meters,
+            "client_capture_timestamp": evidence.client_capture_timestamp.isoformat() if evidence.client_capture_timestamp else None,
+            "server_received_timestamp": evidence.server_received_timestamp.isoformat() if evidence.server_received_timestamp else None,
+            "captured_by_id": evidence.captured_by_id,
+            "captured_by_name": evidence.captured_by.full_name if evidence.captured_by else None,
+            "created_at": evidence.created_at.isoformat()
+        }
+
+    @staticmethod
     def save_evidence(
         db: Session,
         user: User,
@@ -303,6 +347,30 @@ class FieldService:
     ) -> FieldEvidence:
         if not check_mine_access(user, data.mine_id, db):
             raise PermissionDeniedError(f"Access denied to Mine ID {data.mine_id}")
+
+        # 1. Validate file size (max 15MB)
+        MAX_EVIDENCE_SIZE_BYTES = 15 * 1024 * 1024 # 15MB
+        if data.file_size_bytes and data.file_size_bytes > MAX_EVIDENCE_SIZE_BYTES:
+            raise BusinessRuleViolationError("Evidence file exceeds maximum permitted size of 15MB.")
+
+        # 2. Validate SHA-256 hash format (must be 64-char hexadecimal string)
+        if not data.file_hash_sha256 or len(data.file_hash_sha256) != 64 or not all(c in "0123456789abcdefABCDEF" for c in data.file_hash_sha256):
+            raise BusinessRuleViolationError("Invalid SHA-256 evidence integrity hash format.")
+
+        # 3. Validate relationships if provided
+        if data.inspection_id:
+            insp = db.query(FieldInspection).filter(FieldInspection.id == data.inspection_id).first()
+            if not insp:
+                raise EntityNotFoundError("FieldInspection", data.inspection_id)
+            if insp.mine_id != data.mine_id:
+                raise BusinessRuleViolationError(f"Inspection #{data.inspection_id} does not belong to Mine ID {data.mine_id}.")
+
+        if data.observation_id:
+            obs = db.query(EnvironmentalObservation).filter(EnvironmentalObservation.id == data.observation_id).first()
+            if not obs:
+                raise EntityNotFoundError("EnvironmentalObservation", data.observation_id)
+            if obs.mine_id != data.mine_id:
+                raise BusinessRuleViolationError(f"Observation #{data.observation_id} does not belong to Mine ID {data.mine_id}.")
 
         evidence = FieldEvidence(
             evidence_code=data.evidence_code,
@@ -314,8 +382,11 @@ class FieldService:
             title=data.title,
             description=data.description,
             file_url_or_path=data.file_url_or_path,
-            file_hash_sha256=data.file_hash_sha256,
+            file_hash_sha256=data.file_hash_sha256.lower(),
             file_size_bytes=data.file_size_bytes,
+            mime_type=data.mime_type or "image/jpeg",
+            location_source=data.location_source or "ACTUAL_GPS",
+            verification_status="PENDING",
             latitude=data.latitude,
             longitude=data.longitude,
             gps_accuracy_meters=data.gps_accuracy_meters,
@@ -335,7 +406,54 @@ class FieldService:
             resource_type="FieldEvidence",
             resource_id=data.evidence_code,
             mine_id=data.mine_id,
-            metadata={"hash_sha256": data.file_hash_sha256, "type": data.evidence_type}
+            metadata={"hash_sha256": data.file_hash_sha256.lower(), "type": data.evidence_type, "location_source": data.location_source}
+        )
+
+        return evidence
+
+    @staticmethod
+    def verify_evidence(
+        db: Session,
+        evidence_id: int,
+        user: User,
+        status: str,
+        verification_notes: Optional[str] = None
+    ) -> FieldEvidence:
+        evidence = db.query(FieldEvidence).filter(FieldEvidence.id == evidence_id).first()
+        if not evidence:
+            raise EntityNotFoundError("FieldEvidence", evidence_id)
+
+        if not check_mine_access(user, evidence.mine_id, db):
+            raise PermissionDeniedError(f"Access denied to Mine ID {evidence.mine_id}")
+
+        user_roles = [ur.role.name for ur in user.user_roles] if user.user_roles else []
+        if getattr(user, "is_superuser", False) and "SYSTEM_ADMIN" not in user_roles:
+            user_roles.append("SYSTEM_ADMIN")
+        authorized_reviewer_roles = ["SYSTEM_ADMIN", "REGULATOR", "MINE_MANAGER", "MINE_SAFETY_OFFICER"]
+        if not any(r in authorized_reviewer_roles for r in user_roles):
+            raise PermissionDeniedError("Only Mine Managers, Safety Officers, Regulators, or Admins can verify evidence.")
+
+        # Separation of duties: Field Inspector cannot self-verify evidence they captured unless they have supervisory role
+        if evidence.captured_by_id == user.id and not any(r in ["SYSTEM_ADMIN", "REGULATOR", "MINE_MANAGER"] for r in user_roles):
+            raise BusinessRuleViolationError("Separation of Duties: Inspector cannot self-verify their own captured evidence.")
+
+        if status not in ["VERIFIED", "REJECTED"]:
+            raise BusinessRuleViolationError(f"Invalid verification status '{status}'. Must be VERIFIED or REJECTED.")
+
+        evidence.verification_status = status
+        evidence.verified_by_id = user.id
+        evidence.verification_notes = verification_notes
+        db.commit()
+        db.refresh(evidence)
+
+        AuditService.log_event(
+            db=db,
+            actor_id=user.id,
+            action=f"FIELD_EVIDENCE_{status}",
+            resource_type="FieldEvidence",
+            resource_id=evidence.evidence_code,
+            mine_id=evidence.mine_id,
+            after_state=f"VerificationStatus:{status}|Notes:{verification_notes}"
         )
 
         return evidence

@@ -380,6 +380,25 @@ export const mobileService = {
     return res.data;
   },
 
+  getEvidenceById: async (evidenceId: number): Promise<FieldEvidence> => {
+    const res = await api.get<FieldEvidence>(`/mobile/evidence/${evidenceId}`);
+    return res.data;
+  },
+
+  verifyEvidence: async (evidenceId: number, notes?: string): Promise<any> => {
+    const res = await api.post(`/mobile/evidence/${evidenceId}/verify`, null, {
+      params: notes ? { notes } : {}
+    });
+    return res.data;
+  },
+
+  rejectEvidence: async (evidenceId: number, reason?: string): Promise<any> => {
+    const res = await api.post(`/mobile/evidence/${evidenceId}/reject`, null, {
+      params: reason ? { reason } : {}
+    });
+    return res.data;
+  },
+
   syncBatch: async (data: SyncBatchRequest): Promise<SyncBatchResponse> => {
     const res = await api.post<SyncBatchResponse>('/mobile/sync', data);
     return res.data;

@@ -24,7 +24,16 @@ import {
   Activity,
   CheckCircle,
   HelpCircle,
-  Hash
+  Hash,
+  ChevronDown,
+  ChevronUp,
+  RotateCw,
+  Trash2,
+  Check,
+  Ban,
+  Shield,
+  Layers,
+  Image as ImageIcon
 } from 'lucide-react';
 import { mobileApi, FieldInspection, ChecklistItem, FieldEvidence } from '../../services';
 import clsx from 'clsx';
@@ -51,8 +60,16 @@ export const MobileInspectionExecutionScreen: React.FC<MobileInspectionExecution
   const [activeObservationIndex, setActiveObservationIndex] = useState<number | null>(null);
 
   // Evidence state
-  const [evidences, setEvidences] = useState<any[]>([]);
+  const [evidences, setEvidences] = useState<FieldEvidence[]>([]);
   const [isHashing, setIsHashing] = useState<boolean>(false);
+  const [activeEvidenceModal, setActiveEvidenceModal] = useState<any | null>(null);
+  const [isAddingNote, setIsAddingNote] = useState<boolean>(false);
+  const [noteTitle, setNoteTitle] = useState<string>('');
+  const [noteText, setNoteText] = useState<string>('');
+  const [linkedCheckIndex, setLinkedCheckIndex] = useState<number>(-1);
+  const [expandedTechDetails, setExpandedTechDetails] = useState<Record<string, boolean>>({});
+
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Location state
@@ -61,11 +78,13 @@ export const MobileInspectionExecutionScreen: React.FC<MobileInspectionExecution
     longitude: number;
     accuracy: number | null;
     isActualGps: boolean;
+    locationQuality: 'GOOD' | 'FAIR' | 'LOW' | 'SURVEYED';
   }>({
     latitude: selectedMine?.latitude || 23.75,
     longitude: selectedMine?.longitude || 86.42,
     accuracy: null,
-    isActualGps: false
+    isActualGps: false,
+    locationQuality: 'SURVEYED'
   });
   const [gpsStatus, setGpsStatus] = useState<'IDLE' | 'LOCATING' | 'ACQUIRED' | 'SURVEYED'>('IDLE');
 
@@ -74,13 +93,16 @@ export const MobileInspectionExecutionScreen: React.FC<MobileInspectionExecution
   const [isSavedOffline, setIsSavedOffline] = useState<boolean>(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
+  // User roles & Permissions
+  const userRoles = user?.roles || [];
+  const isSupervisor = userRoles.some((r: string) => ['SYSTEM_ADMIN', 'MINE_MANAGER', 'MINE_SAFETY_OFFICER', 'REGULATOR'].includes(r));
+
   // Initial load: Fetch inspection details
   useEffect(() => {
     let isMounted = true;
     const fetchInspection = async () => {
       setLoading(true);
       try {
-        // First check local draft cache
         const draftKey = `trinetra_field_draft_insp_${inspectionId}`;
         const cachedDraft = localStorage.getItem(draftKey);
         
@@ -100,7 +122,6 @@ export const MobileInspectionExecutionScreen: React.FC<MobileInspectionExecution
             if (data.evidences) setEvidences(data.evidences);
           }
 
-          // If status is already IN_PROGRESS, advance to checklist
           if (data.status === 'IN_PROGRESS') {
             setActiveStep('CHECKLIST');
           }
@@ -124,11 +145,15 @@ export const MobileInspectionExecutionScreen: React.FC<MobileInspectionExecution
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
+          const acc = Math.round(pos.coords.accuracy);
+          const quality: 'GOOD' | 'FAIR' | 'LOW' = acc <= 15 ? 'GOOD' : acc <= 50 ? 'FAIR' : 'LOW';
+
           setGpsLocation({
             latitude: pos.coords.latitude,
             longitude: pos.coords.longitude,
-            accuracy: Math.round(pos.coords.accuracy),
-            isActualGps: true
+            accuracy: acc,
+            isActualGps: true,
+            locationQuality: quality
           });
           setGpsStatus('ACQUIRED');
         },
@@ -138,7 +163,8 @@ export const MobileInspectionExecutionScreen: React.FC<MobileInspectionExecution
             latitude: selectedMine?.latitude || 23.75,
             longitude: selectedMine?.longitude || 86.42,
             accuracy: null,
-            isActualGps: false
+            isActualGps: false,
+            locationQuality: 'SURVEYED'
           });
           setGpsStatus('SURVEYED');
         },
@@ -154,7 +180,7 @@ export const MobileInspectionExecutionScreen: React.FC<MobileInspectionExecution
     try {
       setLoading(true);
       captureGps();
-      const updated = await mobileApi.updateInspection(inspectionId, {
+      await mobileApi.updateInspection(inspectionId, {
         status: 'IN_PROGRESS',
         latitude: gpsLocation.latitude,
         longitude: gpsLocation.longitude,
@@ -204,9 +230,8 @@ export const MobileInspectionExecutionScreen: React.FC<MobileInspectionExecution
     });
   };
 
-  // Browser Camera / File Capture with Live SHA-256 Hashing
-  const handleFileCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  // Browser Camera / File Selection with Live SHA-256 Hashing & Preview Modal
+  const handleFileSelected = async (file: File, isFromCamera: boolean) => {
     if (!file) return;
 
     setIsHashing(true);
@@ -216,58 +241,164 @@ export const MobileInspectionExecutionScreen: React.FC<MobileInspectionExecution
       const hashArray = Array.from(new Uint8Array(hashBuffer));
       const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 
-      const newEvidence = {
+      const previewUrl = URL.createObjectURL(file);
+      const isImage = file.type.startsWith('image/');
+
+      const preparedEvidence: FieldEvidence = {
         id: Date.now(),
         evidence_code: `EVID-${new Date().getFullYear()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
-        evidence_type: file.type.startsWith('image/') ? 'PHOTO' : 'DOCUMENT',
+        mine_id: selectedMine?.id || 1,
+        inspection_id: inspectionId,
+        evidence_type: isImage ? 'PHOTO' : 'DOCUMENT',
         title: file.name,
-        description: `Captured during inspection #${inspectionId}`,
-        file_url_or_path: URL.createObjectURL(file),
+        description: `Captured for Inspection #${inspectionId}`,
+        file_url_or_path: previewUrl,
+        preview_url: previewUrl,
         file_hash_sha256: hashHex,
         file_size_bytes: file.size,
+        mime_type: file.type || (isImage ? 'image/jpeg' : 'application/octet-stream'),
+        location_source: gpsLocation.isActualGps ? 'ACTUAL_GPS' : 'SURVEYED_MINE',
+        verification_status: 'PENDING',
         latitude: gpsLocation.latitude,
         longitude: gpsLocation.longitude,
-        gps_accuracy_meters: gpsLocation.accuracy,
+        gps_accuracy_meters: gpsLocation.accuracy || undefined,
         client_capture_timestamp: new Date().toISOString(),
+        sync_status: 'LOCAL',
         isLocal: true
       };
 
-      const nextEvidences = [...evidences, newEvidence];
-      setEvidences(nextEvidences);
-      saveDraftLocally(checklist, nextEvidences);
-
-      // Attempt immediate background upload if online
-      try {
-        if (navigator.onLine && selectedMine?.id) {
-          await mobileApi.recordEvidence({
-            evidence_code: newEvidence.evidence_code,
-            mine_id: selectedMine.id,
-            inspection_id: inspectionId,
-            evidence_type: newEvidence.evidence_type,
-            title: newEvidence.title,
-            description: newEvidence.description,
-            file_url_or_path: newEvidence.file_url_or_path,
-            file_hash_sha256: newEvidence.file_hash_sha256,
-            file_size_bytes: newEvidence.file_size_bytes,
-            latitude: newEvidence.latitude,
-            longitude: newEvidence.longitude,
-            gps_accuracy_meters: newEvidence.gps_accuracy_meters,
-            client_capture_timestamp: newEvidence.client_capture_timestamp
-          });
-        }
-      } catch (uploadErr) {
-        console.warn('Evidence queued for offline sync:', uploadErr);
-      }
+      // Open interactive preview modal before confirming
+      setActiveEvidenceModal({
+        evidence: preparedEvidence,
+        isFromCamera,
+        file
+      });
     } catch (err) {
       console.error('Failed to hash/capture file:', err);
     } finally {
       setIsHashing(false);
+      if (cameraInputRef.current) cameraInputRef.current.value = '';
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
+  // Confirm Evidence from Preview Modal
+  const handleConfirmEvidence = async (confirmedEvidence: FieldEvidence) => {
+    const nextEvidences = [...evidences, confirmedEvidence];
+    setEvidences(nextEvidences);
+    saveDraftLocally(checklist, nextEvidences);
+    setActiveEvidenceModal(null);
+
+    // Attempt immediate background sync if online
+    if (navigator.onLine && selectedMine?.id) {
+      try {
+        await mobileApi.recordEvidence({
+          evidence_code: confirmedEvidence.evidence_code,
+          mine_id: selectedMine.id,
+          inspection_id: inspectionId,
+          evidence_type: confirmedEvidence.evidence_type,
+          title: confirmedEvidence.title,
+          description: confirmedEvidence.description,
+          file_url_or_path: confirmedEvidence.file_url_or_path,
+          file_hash_sha256: confirmedEvidence.file_hash_sha256,
+          file_size_bytes: confirmedEvidence.file_size_bytes,
+          mime_type: confirmedEvidence.mime_type,
+          location_source: confirmedEvidence.location_source,
+          latitude: confirmedEvidence.latitude,
+          longitude: confirmedEvidence.longitude,
+          gps_accuracy_meters: confirmedEvidence.gps_accuracy_meters,
+          client_capture_timestamp: confirmedEvidence.client_capture_timestamp
+        });
+
+        // Mark as synced
+        setEvidences((prev) =>
+          prev.map((e) =>
+            e.evidence_code === confirmedEvidence.evidence_code
+              ? { ...e, sync_status: 'SYNCED', isLocal: false }
+              : e
+          )
+        );
+      } catch (uploadErr) {
+        console.warn('Evidence queued locally for offline batch sync:', uploadErr);
+      }
+    }
+  };
+
+  // Remove Evidence before final submission
+  const handleRemoveEvidence = (evidenceCode: string) => {
+    const target = evidences.find((e) => e.evidence_code === evidenceCode);
+    if (target?.preview_url) {
+      URL.revokeObjectURL(target.preview_url);
+    }
+    const nextEvidences = evidences.filter((e) => e.evidence_code !== evidenceCode);
+    setEvidences(nextEvidences);
+    saveDraftLocally(checklist, nextEvidences);
+  };
+
+  // Add Written Note Evidence
+  const handleAddNoteEvidence = () => {
+    if (!noteTitle.trim()) return;
+
+    const textEncoder = new TextEncoder();
+    const encoded = textEncoder.encode(noteText);
+    crypto.subtle.digest('SHA-256', encoded).then((hashBuffer) => {
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+
+      const newNoteEvidence: FieldEvidence = {
+        id: Date.now(),
+        evidence_code: `EVID-${new Date().getFullYear()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
+        mine_id: selectedMine?.id || 1,
+        inspection_id: inspectionId,
+        evidence_type: 'NOTE',
+        title: noteTitle,
+        description: noteText,
+        file_hash_sha256: hashHex,
+        file_size_bytes: encoded.length,
+        mime_type: 'text/plain',
+        location_source: gpsLocation.isActualGps ? 'ACTUAL_GPS' : 'SURVEYED_MINE',
+        verification_status: 'PENDING',
+        latitude: gpsLocation.latitude,
+        longitude: gpsLocation.longitude,
+        gps_accuracy_meters: gpsLocation.accuracy || undefined,
+        client_capture_timestamp: new Date().toISOString(),
+        sync_status: 'LOCAL',
+        isLocal: true
+      };
+
+      const nextEvidences = [...evidences, newNoteEvidence];
+      setEvidences(nextEvidences);
+      saveDraftLocally(checklist, nextEvidences);
+      setNoteTitle('');
+      setNoteText('');
+      setIsAddingNote(false);
+    });
+  };
+
+  // Supervisor Verify Evidence Handler
+  const handleVerifyEvidence = async (evidenceId: number, isApprove: boolean) => {
+    const notes = prompt(isApprove ? 'Enter verification confirmation notes (optional):' : 'Enter rejection reason (required):');
+    if (!isApprove && !notes) return;
+
+    try {
+      if (isApprove) {
+        await mobileApi.verifyEvidence(evidenceId, notes || undefined);
+        setEvidences((prev) =>
+          prev.map((e) => (e.id === evidenceId ? { ...e, verification_status: 'VERIFIED', verification_notes: notes || undefined } : e))
+        );
+      } else {
+        await mobileApi.rejectEvidence(evidenceId, notes || undefined);
+        setEvidences((prev) =>
+          prev.map((e) => (e.id === evidenceId ? { ...e, verification_status: 'REJECTED', verification_notes: notes || undefined } : e))
+        );
+      }
+    } catch (err: any) {
+      alert(`Verification action failed: ${err.message || err}`);
+    }
+  };
+
   // Local Draft Persistence
-  const saveDraftLocally = (currChecklist: ChecklistItem[], currEvidences: any[]) => {
+  const saveDraftLocally = (currChecklist: ChecklistItem[], currEvidences: FieldEvidence[]) => {
     const draftKey = `trinetra_field_draft_insp_${inspectionId}`;
     const payload = {
       inspectionId,
@@ -292,7 +423,6 @@ export const MobileInspectionExecutionScreen: React.FC<MobileInspectionExecution
   const validateInspection = (): boolean => {
     setValidationError(null);
 
-    // Check if any non-compliant items are missing notes
     const missingNotes = checklist.some(
       (c) => (c.status === 'NON_COMPLIANT' || c.status === 'OBSERVATION') && (!c.notes || c.notes.trim().length === 0)
     );
@@ -304,7 +434,7 @@ export const MobileInspectionExecutionScreen: React.FC<MobileInspectionExecution
     return true;
   };
 
-  // Submit Inspection Handler (Online + Offline Resilient)
+  // Submit Inspection Handler
   const handleSubmitInspection = async () => {
     if (!validateInspection()) return;
 
@@ -316,7 +446,6 @@ export const MobileInspectionExecutionScreen: React.FC<MobileInspectionExecution
 
     try {
       if (navigator.onLine) {
-        // Online Submission
         await mobileApi.updateInspection(inspectionId, {
           status: 'COMPLETED',
           checklist,
@@ -327,14 +456,13 @@ export const MobileInspectionExecutionScreen: React.FC<MobileInspectionExecution
           gps_accuracy_meters: gpsLocation.accuracy || undefined
         });
 
-        // Clear draft
         localStorage.removeItem(`trinetra_field_draft_insp_${inspectionId}`);
         setIsSavedOffline(false);
         setActiveStep('SUCCESS');
       } else {
         throw new Error('Network offline');
       }
-    } catch (err) {
+    } catch {
       // Offline fallback: Enqueue into Phase 7 offline sync queue
       const opId = `op-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
       const offlineQueueKey = 'trinetra_field_sync_queue';
@@ -493,7 +621,7 @@ export const MobileInspectionExecutionScreen: React.FC<MobileInspectionExecution
                       {item.category}
                     </span>
                     <h4 className="text-xs font-semibold text-slate-100 leading-snug">
-                      {item.item_text}
+                      {item.item_text || item.title}
                     </h4>
                   </div>
                   {item.status && item.status !== ('PENDING' as any) && (
@@ -648,7 +776,7 @@ export const MobileInspectionExecutionScreen: React.FC<MobileInspectionExecution
         </div>
       )}
 
-      {/* STEP 3: EVIDENCE & LOCATION */}
+      {/* STEP 3: EVIDENCE & LOCATION (MOBILE-03) */}
       {activeStep === 'EVIDENCE' && (
         <div className="space-y-4">
           {/* Location Capture Card */}
@@ -664,27 +792,41 @@ export const MobileInspectionExecutionScreen: React.FC<MobileInspectionExecution
                 className={clsx(
                   'text-[9px] font-mono px-2 py-0.5 rounded-full font-bold uppercase border',
                   gpsLocation.isActualGps
-                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                    : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                    ? gpsLocation.locationQuality === 'GOOD'
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                      : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                    : 'bg-slate-800 text-slate-300 border-slate-700'
                 )}
               >
                 {gpsLocation.isActualGps ? t('gpsAvailableLabel') : t('locationSimulatedLabel')}
               </span>
             </div>
 
-            <div className="bg-slate-900/80 rounded-xl p-3 border border-slate-800 space-y-1 font-mono text-xs text-slate-300">
+            <div className="bg-slate-900/80 rounded-xl p-3 border border-slate-800 space-y-1.5 font-mono text-xs text-slate-300">
               <div className="flex justify-between">
                 <span className="text-slate-500">LAT / LON:</span>
-                <span className="text-slate-200">
+                <span className="text-slate-200 font-semibold">
                   {gpsLocation.latitude.toFixed(6)}, {gpsLocation.longitude.toFixed(6)}
                 </span>
               </div>
               {gpsLocation.accuracy && (
                 <div className="flex justify-between">
                   <span className="text-slate-500">ACCURACY:</span>
-                  <span className="text-emerald-400">±{gpsLocation.accuracy} meters</span>
+                  <span className="text-emerald-400 font-bold">±{gpsLocation.accuracy} meters</span>
                 </div>
               )}
+              <div className="flex justify-between text-[10px] text-slate-400">
+                <span className="text-slate-500">QUALITY:</span>
+                <span>
+                  {gpsLocation.locationQuality === 'GOOD'
+                    ? t('locationQualityGood')
+                    : gpsLocation.locationQuality === 'FAIR'
+                    ? t('locationQualityFair')
+                    : gpsLocation.locationQuality === 'LOW'
+                    ? t('locationQualityLow')
+                    : 'Surveyed Reference'}
+                </span>
+              </div>
               <div className="flex justify-between text-[10px] text-slate-500">
                 <span>DATUM:</span>
                 <span>WGS84</span>
@@ -696,13 +838,13 @@ export const MobileInspectionExecutionScreen: React.FC<MobileInspectionExecution
               size="sm"
               fullWidth
               onClick={captureGps}
-              icon={<Navigation className="w-3.5 h-3.5 text-cyan-400" />}
+              icon={<RotateCw className={clsx('w-3.5 h-3.5 text-cyan-400', gpsStatus === 'LOCATING' && 'animate-spin')} />}
             >
-              {gpsStatus === 'LOCATING' ? 'Acquiring GPS Fix...' : 'Refresh GPS Coordinates'}
+              {gpsStatus === 'LOCATING' ? t('locatingStatus') : t('refreshLocationBtn')}
             </TouchButton>
           </MobileCard>
 
-          {/* Evidence Capture Card */}
+          {/* Evidence Capture Actions Card */}
           <MobileCard className="p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -716,67 +858,235 @@ export const MobileInspectionExecutionScreen: React.FC<MobileInspectionExecution
               </span>
             </div>
 
-            {/* Hidden native input for capture */}
+            {/* Hidden native inputs for camera capture & file selection */}
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={(e) => e.target.files?.[0] && handleFileSelected(e.target.files[0], true)}
+              className="hidden"
+            />
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*,application/pdf"
-              capture="environment"
-              onChange={handleFileCapture}
+              accept="image/*,application/pdf,text/plain"
+              onChange={(e) => e.target.files?.[0] && handleFileSelected(e.target.files[0], false)}
               className="hidden"
             />
 
-            {/* Evidence action buttons */}
-            <div className="grid grid-cols-2 gap-2">
+            {/* 3 Evidence Action Buttons */}
+            <div className="grid grid-cols-3 gap-2">
               <TouchButton
                 variant="primary"
-                size="md"
+                size="sm"
+                onClick={() => cameraInputRef.current?.click()}
+                disabled={isHashing}
+                icon={<Camera className="w-3.5 h-3.5" />}
+              >
+                {t('capturePhoto')}
+              </TouchButton>
+
+              <TouchButton
+                variant="secondary"
+                size="sm"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isHashing}
-                icon={<Camera className="w-4 h-4" />}
+                icon={<FileText className="w-3.5 h-3.5" />}
               >
-                {isHashing ? 'Hashing SHA-256...' : t('takePhotoBtn')}
+                {t('chooseFile')}
               </TouchButton>
 
               <TouchButton
                 variant="outline"
-                size="md"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isHashing}
-                icon={<FileText className="w-4 h-4" />}
+                size="sm"
+                onClick={() => setIsAddingNote(true)}
+                icon={<Plus className="w-3.5 h-3.5" />}
               >
-                {t('documentUploadBtn')}
+                {t('addNoteEvidence')}
               </TouchButton>
             </div>
 
-            {/* Evidence list items */}
-            {evidences.length > 0 && (
-              <div className="space-y-2 pt-2 border-t border-slate-800">
-                {evidences.map((ev, idx) => (
-                  <div
-                    key={ev.id || idx}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between gap-2"
-                  >
-                    <div className="flex items-center gap-2 overflow-hidden">
-                      <div className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center shrink-0 text-amber-400 font-mono text-xs">
-                        {ev.evidence_type === 'PHOTO' ? <Camera className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
-                      </div>
-                      <div className="truncate">
-                        <span className="text-xs font-bold text-slate-200 block truncate">
-                          {ev.title || `Evidence #${idx + 1}`}
-                        </span>
-                        <span className="text-[9px] font-mono text-emerald-400 flex items-center gap-1">
-                          <Hash className="w-2.5 h-2.5" />
-                          {ev.file_hash_sha256 ? `${ev.file_hash_sha256.substring(0, 12)}...` : 'Pending Hash'}
-                        </span>
-                      </div>
-                    </div>
+            {/* Inline Note Creation Form */}
+            {isAddingNote && (
+              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-2 mt-2 animate-in fade-in">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono text-amber-400 uppercase font-bold">
+                    Add Written Note Evidence
+                  </span>
+                  <button onClick={() => setIsAddingNote(false)} className="text-slate-500 hover:text-slate-300">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={noteTitle}
+                  onChange={(e) => setNoteTitle(e.target.value)}
+                  placeholder="Note Title / Subject..."
+                  className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500/50"
+                />
+                <textarea
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  placeholder={t('evidenceNotePlaceholder')}
+                  rows={3}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500/50"
+                />
+                <div className="flex justify-end gap-2 pt-1">
+                  <TouchButton variant="outline" size="sm" onClick={() => setIsAddingNote(false)}>
+                    Cancel
+                  </TouchButton>
+                  <TouchButton variant="primary" size="sm" onClick={handleAddNoteEvidence}>
+                    Save Note
+                  </TouchButton>
+                </div>
+              </div>
+            )}
 
-                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 shrink-0">
-                      {ev.isLocal ? 'Queued' : 'Synced'}
-                    </span>
-                  </div>
-                ))}
+            {/* List of Evidence Items with Collapsible Technical Details */}
+            {evidences.length > 0 && (
+              <div className="space-y-2.5 pt-2 border-t border-slate-800">
+                {evidences.map((ev, idx) => {
+                  const isExpanded = expandedTechDetails[ev.evidence_code || String(idx)] || false;
+
+                  return (
+                    <div
+                      key={ev.id || ev.evidence_code || idx}
+                      className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2 transition-all"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-2.5 overflow-hidden">
+                          {ev.preview_url || ev.file_url_or_path ? (
+                            <img
+                              src={ev.preview_url || ev.file_url_or_path}
+                              alt={ev.title}
+                              className="w-12 h-12 rounded-lg object-cover bg-slate-800 shrink-0 border border-slate-700"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-lg bg-slate-800 flex items-center justify-center shrink-0 text-amber-400 font-mono text-xs border border-slate-700">
+                              {ev.evidence_type === 'PHOTO' ? <Camera className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
+                            </div>
+                          )}
+
+                          <div className="truncate space-y-0.5">
+                            <span className="text-xs font-bold text-slate-100 block truncate">
+                              {ev.title || `Evidence #${idx + 1}`}
+                            </span>
+                            <span className="text-[10px] font-mono text-slate-400 block">
+                              {ev.evidence_type} • {ev.file_size_bytes ? `${Math.round(ev.file_size_bytes / 1024)} KB` : 'Local Note'}
+                            </span>
+                            <div className="flex items-center gap-1 text-[9px] font-mono text-emerald-400">
+                              <Hash className="w-2.5 h-2.5" />
+                              <span>{t('hashVerifiedLabel')}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Status badge & Delete local action */}
+                        <div className="flex flex-col items-end gap-1">
+                          <span
+                            className={clsx(
+                              'text-[9px] font-mono px-1.5 py-0.5 rounded font-bold uppercase border',
+                              ev.verification_status === 'VERIFIED'
+                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                                : ev.verification_status === 'REJECTED'
+                                ? 'bg-red-500/20 text-red-300 border-red-500/30'
+                                : ev.isLocal
+                                ? 'bg-amber-500/10 text-amber-300 border-amber-500/30'
+                                : 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30'
+                            )}
+                          >
+                            {ev.verification_status === 'VERIFIED'
+                              ? t('verifiedBadge')
+                              : ev.verification_status === 'REJECTED'
+                              ? t('rejectedBadge')
+                              : ev.isLocal
+                              ? t('syncStatusLocal')
+                              : t('syncStatusSynced')}
+                          </span>
+
+                          {ev.isLocal && (
+                            <button
+                              onClick={() => handleRemoveEvidence(ev.evidence_code)}
+                              className="text-slate-500 hover:text-red-400 p-1 transition-colors"
+                              title="Remove unsent local evidence"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Supervisor Verification Controls */}
+                      {isSupervisor && (
+                        <div className="pt-2 border-t border-slate-800/60 flex items-center justify-between text-xs">
+                          <span className="text-[10px] font-mono text-slate-400">Reviewer Verification:</span>
+                          <div className="flex gap-1.5">
+                            <button
+                              onClick={() => handleVerifyEvidence(ev.id, true)}
+                              className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/40 text-[10px] font-mono flex items-center gap-1 hover:bg-emerald-900"
+                            >
+                              <Check className="w-3 h-3" />
+                              <span>Verify</span>
+                            </button>
+                            <button
+                              onClick={() => handleVerifyEvidence(ev.id, false)}
+                              className="px-2 py-0.5 rounded bg-red-950 text-red-300 border border-red-500/40 text-[10px] font-mono flex items-center gap-1 hover:bg-red-900"
+                            >
+                              <Ban className="w-3 h-3" />
+                              <span>Reject</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Collapsible Technical Details Trigger */}
+                      <button
+                        onClick={() =>
+                          setExpandedTechDetails((prev) => ({
+                            ...prev,
+                            [ev.evidence_code || String(idx)]: !isExpanded
+                          }))
+                        }
+                        className="flex items-center justify-between w-full pt-1 text-[10px] font-mono text-slate-500 hover:text-slate-300 transition-colors"
+                      >
+                        <span>{isExpanded ? t('hideTechnicalDetailsTitle') : t('technicalDetailsTitle')}</span>
+                        {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                      </button>
+
+                      {/* Expanded Technical Details Card */}
+                      {isExpanded && (
+                        <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 space-y-1 font-mono text-[10px] text-slate-400 animate-in fade-in">
+                          <div className="flex justify-between">
+                            <span className="text-slate-500">CODE:</span>
+                            <span className="text-slate-300 font-semibold">{ev.evidence_code}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-500">MIME / SIZE:</span>
+                            <span className="text-slate-300">{ev.mime_type || 'image/jpeg'} • {ev.file_size_bytes} bytes</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-500">LOCATION SOURCE:</span>
+                            <span className="text-cyan-400">{ev.location_source || 'ACTUAL_GPS'}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-500">COORDINATES:</span>
+                            <span className="text-slate-300">{ev.latitude?.toFixed(6)}, {ev.longitude?.toFixed(6)}</span>
+                          </div>
+                          <div className="space-y-0.5 pt-1 border-t border-slate-800/80">
+                            <span className="text-slate-500 block">SHA-256 INTEGRITY FINGERPRINT:</span>
+                            <span className="text-emerald-400 break-all select-all font-bold block text-[9px]">
+                              {ev.file_hash_sha256}
+                            </span>
+                          </div>
+                          <p className="text-[9px] text-slate-500 italic pt-0.5">
+                            {t('sha256Explanation')}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </MobileCard>
@@ -840,12 +1150,12 @@ export const MobileInspectionExecutionScreen: React.FC<MobileInspectionExecution
             <div className="space-y-2 border-t border-slate-800 pt-3 text-xs font-mono text-slate-300">
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">EVIDENCE ITEMS:</span>
-                <span className="font-bold text-slate-200">{evidences.length} items</span>
+                <span className="font-bold text-slate-200">{evidences.length} items attached</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">LOCATION STATUS:</span>
                 <span className={gpsLocation.isActualGps ? 'text-emerald-400 font-bold' : 'text-amber-400 font-bold'}>
-                  {gpsLocation.isActualGps ? 'Actual GPS Fixed' : 'Surveyed Mine Coords'}
+                  {gpsLocation.isActualGps ? `Actual GPS Fixed (±${gpsLocation.accuracy}m)` : 'Surveyed Mine Coords'}
                 </span>
               </div>
               <div className="flex items-center justify-between">
@@ -946,6 +1256,120 @@ export const MobileInspectionExecutionScreen: React.FC<MobileInspectionExecution
               </TouchButton>
             </div>
           </MobileCard>
+        </div>
+      )}
+
+      {/* MODAL: Evidence Preview & Confirmation Before Adding (MOBILE-03) */}
+      {activeEvidenceModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-slate-900 border border-slate-800 p-4 space-y-3.5 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-mono font-bold text-slate-100 uppercase">
+                {t('evidencePreviewTitle')}
+              </h3>
+              <button
+                onClick={() => {
+                  if (activeEvidenceModal.evidence.preview_url) {
+                    URL.revokeObjectURL(activeEvidenceModal.evidence.preview_url);
+                  }
+                  setActiveEvidenceModal(null);
+                }}
+                className="text-slate-500 hover:text-slate-300"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Image Preview if photo */}
+            {activeEvidenceModal.evidence.preview_url && activeEvidenceModal.evidence.evidence_type === 'PHOTO' ? (
+              <div className="relative rounded-xl overflow-hidden bg-slate-950 border border-slate-800 max-h-48 flex items-center justify-center">
+                <img
+                  src={activeEvidenceModal.evidence.preview_url}
+                  alt="Captured Evidence Preview"
+                  className="w-full h-48 object-contain"
+                />
+              </div>
+            ) : (
+              <div className="p-6 rounded-xl bg-slate-950 border border-slate-800 text-center space-y-2">
+                <FileText className="w-8 h-8 text-amber-400 mx-auto" />
+                <span className="text-xs font-bold text-slate-200 block truncate">
+                  {activeEvidenceModal.evidence.title}
+                </span>
+              </div>
+            )}
+
+            {/* Metadata Summary */}
+            <div className="bg-slate-950 rounded-xl p-2.5 border border-slate-800 space-y-1 font-mono text-[10px] text-slate-400">
+              <div className="flex justify-between">
+                <span className="text-slate-500">SIZE / TYPE:</span>
+                <span className="text-slate-300">
+                  {Math.round(activeEvidenceModal.evidence.file_size_bytes / 1024)} KB • {activeEvidenceModal.evidence.mime_type}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">LOCATION:</span>
+                <span className="text-cyan-400">
+                  {gpsLocation.isActualGps ? `GPS ±${gpsLocation.accuracy}m` : 'Surveyed Mine Reference'}
+                </span>
+              </div>
+              <div className="pt-1 border-t border-slate-800/80">
+                <span className="text-slate-500 block">SHA-256 FINGERPRINT:</span>
+                <span className="text-emerald-400 font-bold block truncate">
+                  {activeEvidenceModal.evidence.file_hash_sha256}
+                </span>
+              </div>
+            </div>
+
+            {/* Link to Checklist Observation Selector */}
+            {checklist.length > 0 && (
+              <div className="space-y-1">
+                <label className="text-[10px] font-mono text-slate-400 block">
+                  {t('linkObservationLabel')}:
+                </label>
+                <select
+                  value={linkedCheckIndex}
+                  onChange={(e) => setLinkedCheckIndex(Number(e.target.value))}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500/50 font-mono"
+                >
+                  <option value={-1}>General Inspection Evidence</option>
+                  {checklist.map((c, i) => (
+                    <option key={i} value={i}>
+                      {c.category}: {c.item_text || c.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Action Buttons: Retake, Remove, Confirm */}
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <TouchButton
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (activeEvidenceModal.evidence.preview_url) {
+                    URL.revokeObjectURL(activeEvidenceModal.evidence.preview_url);
+                  }
+                  setActiveEvidenceModal(null);
+                  if (activeEvidenceModal.isFromCamera) {
+                    cameraInputRef.current?.click();
+                  } else {
+                    fileInputRef.current?.click();
+                  }
+                }}
+              >
+                {t('retakePhoto')}
+              </TouchButton>
+
+              <TouchButton
+                variant="primary"
+                size="sm"
+                onClick={() => handleConfirmEvidence(activeEvidenceModal.evidence)}
+              >
+                {t('usePhoto')}
+              </TouchButton>
+            </div>
+          </div>
         </div>
       )}
     </div>

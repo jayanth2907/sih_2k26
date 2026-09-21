@@ -247,6 +247,37 @@ export interface Translations {
   viewInspectionBtn: string;
   readyToSubmitStatus: string;
   evidenceItemsCount: string;
+  // Mobile Field Evidence & GPS (MOBILE-03)
+  capturePhoto: string;
+  chooseFile: string;
+  addNoteEvidence: string;
+  evidencePreviewTitle: string;
+  retakePhoto: string;
+  usePhoto: string;
+  removeEvidence: string;
+  evidenceNotePlaceholder: string;
+  linkObservationLabel: string;
+  locationQualityGood: string;
+  locationQualityFair: string;
+  locationQualityLow: string;
+  refreshLocationBtn: string;
+  locatingStatus: string;
+  evidenceFingerprintCreated: string;
+  sha256Explanation: string;
+  technicalDetailsTitle: string;
+  hideTechnicalDetailsTitle: string;
+  syncStatusLocal: string;
+  syncStatusQueued: string;
+  syncStatusSyncing: string;
+  syncStatusSynced: string;
+  syncStatusFailed: string;
+  retrySyncBtn: string;
+  verifyEvidenceBtn: string;
+  rejectEvidenceBtn: string;
+  verificationNotesPrompt: string;
+  verifiedBadge: string;
+  rejectedBadge: string;
+  pendingVerificationBadge: string;
 }
 
 export const translations: Record<SupportedLanguage, Translations> = {
@@ -493,7 +524,38 @@ export const translations: Record<SupportedLanguage, Translations> = {
     backToTaskListBtn: 'Back to Task List',
     viewInspectionBtn: 'View Inspection',
     readyToSubmitStatus: 'Ready to Submit',
-    evidenceItemsCount: 'Evidence Items'
+    evidenceItemsCount: 'Evidence Items',
+    // Mobile Field Evidence & GPS (MOBILE-03 - English)
+    capturePhoto: '+ Capture Photo',
+    chooseFile: '+ Choose File',
+    addNoteEvidence: '+ Add Note',
+    evidencePreviewTitle: 'Evidence Preview',
+    retakePhoto: 'Retake',
+    usePhoto: 'Use Photo',
+    removeEvidence: 'Remove',
+    evidenceNotePlaceholder: 'Enter written observation or note details...',
+    linkObservationLabel: 'Linked Observation / Check',
+    locationQualityGood: 'Good (High Precision)',
+    locationQualityFair: 'Fair (Medium Precision)',
+    locationQualityLow: 'Low Precision',
+    refreshLocationBtn: 'Refresh Location',
+    locatingStatus: 'Locating GPS...',
+    evidenceFingerprintCreated: 'SHA-256 integrity fingerprint generated',
+    sha256Explanation: 'SHA-256 records the integrity fingerprint of the evidence file processed by TRINETRA.',
+    technicalDetailsTitle: 'Technical Details',
+    hideTechnicalDetailsTitle: 'Hide Technical Details',
+    syncStatusLocal: 'Saved Locally',
+    syncStatusQueued: 'Queued for Sync',
+    syncStatusSyncing: 'Syncing with Server...',
+    syncStatusSynced: 'Synchronized',
+    syncStatusFailed: 'Upload Failed',
+    retrySyncBtn: 'Retry Upload',
+    verifyEvidenceBtn: 'Verify Evidence',
+    rejectEvidenceBtn: 'Reject Evidence',
+    verificationNotesPrompt: 'Supervisor Verification Notes',
+    verifiedBadge: 'Verified',
+    rejectedBadge: 'Rejected',
+    pendingVerificationBadge: 'Pending Review'
   },
   hi: {
     appName: 'त्रिनेत्र (TRINETRA)',
@@ -738,7 +800,38 @@ export const translations: Record<SupportedLanguage, Translations> = {
     backToTaskListBtn: 'कार्य सूची पर वापस जाएं',
     viewInspectionBtn: 'निरीक्षण देखें',
     readyToSubmitStatus: 'सबमिट करने के लिए तैयार',
-    evidenceItemsCount: 'साक्ष्य वस्तुएं'
+    evidenceItemsCount: 'साक्ष्य वस्तुएं',
+    // Mobile Field Evidence & GPS (MOBILE-03 - Hindi)
+    capturePhoto: '+ फोटो कैप्चर करें',
+    chooseFile: '+ फ़ाइल चुनें',
+    addNoteEvidence: '+ नोट जोड़ें',
+    evidencePreviewTitle: 'साक्ष्य पूर्वावलोकन',
+    retakePhoto: 'पुनः फोटो लें',
+    usePhoto: 'फोटो का उपयोग करें',
+    removeEvidence: 'हटाएं',
+    evidenceNotePlaceholder: 'लिखित अवलोकन या नोट का विवरण दर्ज करें...',
+    linkObservationLabel: 'संबंधित अवलोकन / जांच',
+    locationQualityGood: 'उत्कृष्ट (उच्च परिशुद्धता)',
+    locationQualityFair: 'मध्यम (संतोषजनक परिशुद्धता)',
+    locationQualityLow: 'कम परिशुद्धता',
+    refreshLocationBtn: 'स्थान रिफ्रेश करें',
+    locatingStatus: 'GPS स्थान खोजा जा रहा है...',
+    evidenceFingerprintCreated: 'SHA-256 अखंडता फिंगरप्रिंट तैयार किया गया',
+    sha256Explanation: 'SHA-256 त्रिनेत्र द्वारा संसाधित साक्ष्य फ़ाइल के अखंडता फिंगरप्रिंट को रिकॉर्ड करता है।',
+    technicalDetailsTitle: 'तकनीकी विवरण',
+    hideTechnicalDetailsTitle: 'तकनीकी विवरण छिपाएं',
+    syncStatusLocal: 'स्थानीय रूप से सहेजा गया',
+    syncStatusQueued: 'सिंक के लिए कतारबद्ध',
+    syncStatusSyncing: 'सर्वर के साथ सिंक हो रहा है...',
+    syncStatusSynced: 'सिंक्रनाइज़्ड',
+    syncStatusFailed: 'अपलोड विफल',
+    retrySyncBtn: 'पुनः अपलोड करें',
+    verifyEvidenceBtn: 'साक्ष्य सत्यापित करें',
+    rejectEvidenceBtn: 'साक्ष्य अस्वीकार करें',
+    verificationNotesPrompt: 'पर्यवेक्षक सत्यापन नोट्स',
+    verifiedBadge: 'सत्यापित',
+    rejectedBadge: 'अस्वीकृत',
+    pendingVerificationBadge: 'समीक्षा लंबित'
   },
   te: {
     appName: 'త్రినేత్ర (TRINETRA)',
@@ -983,7 +1076,38 @@ export const translations: Record<SupportedLanguage, Translations> = {
     backToTaskListBtn: 'టాస్క్ జాబితాకు తిరిగి వెళ్లండి',
     viewInspectionBtn: 'తనిఖీని చూడండి',
     readyToSubmitStatus: 'సమర్పణకు సిద్ధంగా ఉంది',
-    evidenceItemsCount: 'సాక్ష్య అంశాలు'
+    evidenceItemsCount: 'సాక్ష్య అంశాలు',
+    // Mobile Field Evidence & GPS (MOBILE-03 - Telugu)
+    capturePhoto: '+ ఫోటో తీయండి',
+    chooseFile: '+ ఫైల్ ఎంచుకోండి',
+    addNoteEvidence: '+ గమనిక జోడించండి',
+    evidencePreviewTitle: 'సాక్ష్య ప్రివ్యూ',
+    retakePhoto: 'మళ్లీ తీయండి',
+    usePhoto: 'ఫోటో ఉపయోగించండి',
+    removeEvidence: 'తొలగించండి',
+    evidenceNotePlaceholder: 'పరిశీలన లేదా గమనిక వివరాలను నమోదు చేయండి...',
+    linkObservationLabel: 'లింక్ చేయబడిన పరిశీలన / తనిఖీ',
+    locationQualityGood: 'ఉత్తమం (అధిక ఖచ్చితత్వం)',
+    locationQualityFair: 'మధ్యస్థం (సంతృప్తికర ఖచ్చితత్వం)',
+    locationQualityLow: 'తక్కువ ఖచ్చితత్వం',
+    refreshLocationBtn: 'స్థానాన్ని రిఫ్రెష్ చేయండి',
+    locatingStatus: 'GPS లొకేషన్ వెతుకుతోంది...',
+    evidenceFingerprintCreated: 'SHA-256 సమగ్రత వేలిముద్ర రూపొందించబడింది',
+    sha256Explanation: 'SHA-256 త్రినేత్ర ద్వారా ప్రాసెస్ చేయబడిన సాక్ష్య ఫైల్ యొక్క సమగ్రత వేలిముద్రను రికార్డ్ చేస్తుంది.',
+    technicalDetailsTitle: 'సాంకేతిక వివరాలు',
+    hideTechnicalDetailsTitle: 'సాంకేతిక వివరాలు దాచండి',
+    syncStatusLocal: 'స్థానికంగా భద్రపరచబడింది',
+    syncStatusQueued: 'సింక్ క్యూలో ఉంది',
+    syncStatusSyncing: 'సర్వర్‌తో సింక్ అవుతోంది...',
+    syncStatusSynced: 'సింక్రొనైజ్ చేయబడింది',
+    syncStatusFailed: 'అప్‌లోడ్ విఫలమైంది',
+    retrySyncBtn: 'మళ్లీ అప్‌లోడ్ చేయండి',
+    verifyEvidenceBtn: 'సాక్ష్యాన్ని ధృవీకరించండి',
+    rejectEvidenceBtn: 'సాక్ష్యాన్ని తిరస్కరించండి',
+    verificationNotesPrompt: 'పర్యవేక్షక ధృవీకరణ గమనికలు',
+    verifiedBadge: 'ధృవీకరించబడింది',
+    rejectedBadge: 'తిరస్కరించబడింది',
+    pendingVerificationBadge: 'సమీక్ష పెండింగ్‌లో ఉంది'
   }
 };
 

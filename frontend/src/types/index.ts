@@ -829,22 +829,37 @@ export interface FieldEvidence {
   id: number;
   evidence_code: string;
   mine_id: number;
+  mine_name?: string;
   inspection_id?: number;
+  inspection_code?: string;
   observation_id?: number;
   incident_id?: number;
   captured_by_id?: number;
-  evidence_type: string;
+  captured_by_name?: string;
+  evidence_type: string; // PHOTO, DOCUMENT, NOTE, SENSOR_LOG
   title: string;
   description?: string;
   file_url_or_path?: string;
   file_hash_sha256: string;
-  captured_at: string;
-  server_received_at: string;
+  file_size_bytes?: number;
+  mime_type?: string;
+  location_source?: string; // ACTUAL_GPS, SURVEYED_MINE, SIMULATED
+  verification_status?: 'PENDING' | 'VERIFIED' | 'REJECTED';
+  verified_by_id?: number;
+  verified_by_name?: string;
+  verification_notes?: string;
   latitude?: number;
   longitude?: number;
   accuracy_meters?: number;
-  sync_status: string;
-  created_at: string;
+  gps_accuracy_meters?: number;
+  client_capture_timestamp?: string;
+  server_received_timestamp?: string;
+  captured_at?: string;
+  server_received_at?: string;
+  sync_status?: string;
+  isLocal?: boolean;
+  preview_url?: string;
+  created_at?: string;
 }
 
 export interface SyncOperationItem {

@@ -74,3 +74,34 @@ def record_field_evidence(
     """Record geo-tagged and SHA-256 hashed field evidence."""
     ev = FieldService.save_evidence(db, current_user, data)
     return {"status": "SUCCESS", "evidence_code": ev.evidence_code, "id": ev.id}
+
+@router.get("/evidence/{evidence_id}", response_model=dict)
+def get_field_evidence(
+    evidence_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Retrieve complete evidence record, file hash, geo-tagging, and verification status."""
+    return FieldService.get_single_evidence(db, evidence_id, current_user)
+
+@router.post("/evidence/{evidence_id}/verify", status_code=status.HTTP_200_OK)
+def verify_field_evidence(
+    evidence_id: int,
+    notes: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Supervisory verification of field evidence with cryptographic audit log."""
+    ev = FieldService.verify_evidence(db, evidence_id, current_user, status="VERIFIED", verification_notes=notes)
+    return {"status": "SUCCESS", "evidence_code": ev.evidence_code, "verification_status": "VERIFIED"}
+
+@router.post("/evidence/{evidence_id}/reject", status_code=status.HTTP_200_OK)
+def reject_field_evidence(
+    evidence_id: int,
+    reason: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Supervisory rejection of field evidence with reason and cryptographic audit log."""
+    ev = FieldService.verify_evidence(db, evidence_id, current_user, status="REJECTED", verification_notes=reason)
+    return {"status": "SUCCESS", "evidence_code": ev.evidence_code, "verification_status": "REJECTED"}

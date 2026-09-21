@@ -52,6 +52,12 @@ class FieldEvidence(Base):
     file_url_or_path = Column(String(500), nullable=True)
     file_hash_sha256 = Column(String(64), nullable=False) # Integrity verification
     file_size_bytes = Column(Integer, default=0, nullable=False)
+    mime_type = Column(String(100), nullable=True) # image/jpeg, image/png, application/pdf, text/plain
+    location_source = Column(String(50), default="ACTUAL_GPS", nullable=False) # ACTUAL_GPS, SURVEYED_MINE, SIMULATED
+    
+    verification_status = Column(String(50), default="PENDING", nullable=False) # PENDING, VERIFIED, REJECTED
+    verified_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    verification_notes = Column(Text, nullable=True)
     
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
@@ -65,6 +71,7 @@ class FieldEvidence(Base):
     mine = relationship("Mine")
     inspection = relationship("FieldInspection", back_populates="evidences")
     captured_by = relationship("User", foreign_keys=[captured_by_id])
+    verified_by = relationship("User", foreign_keys=[verified_by_id])
 
 class FieldSyncLog(Base):
     __tablename__ = "field_sync_logs"
