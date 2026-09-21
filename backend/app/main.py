@@ -1,15 +1,33 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 import app.models  # Ensure all models are registered in Base.metadata before create_all
 from app.api.v1.router import api_v1_router
 from app.db.base import Base
-from app.db.session import engine
+from app.db.session import engine, SessionLocal
+from app.models import Role
+from app.db.seed_data import seed
 
-# Create tables on startup for development setup
+# Create tables on startup
 Base.metadata.create_all(bind=engine, checkfirst=True)
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    Base.metadata.create_all(bind=engine, checkfirst=True)
+    db = SessionLocal()
+    try:
+        if not db.query(Role).first():
+            print("[TRINETRA STARTUP] Database uninitialized. Running automatic seed data generator...")
+            seed()
+    except Exception as e:
+        print(f"[TRINETRA STARTUP] Seed check: {e}")
+    finally:
+        db.close()
+    yield
+
 app = FastAPI(
+    lifespan=lifespan,
     title=settings.PROJECT_NAME,
     description="""
 # TRINETRA: AI-Based Smart Governance and Compliance Monitoring System for Coal Mines
