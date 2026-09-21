@@ -13,6 +13,7 @@ from app.models.contractor import Contract
 from app.models.governance_task import GovernanceTask
 from app.models.field_operation import FieldInspection
 from app.models.risk_prediction import RiskPrediction
+from app.models.production import ProductionReport
 
 from app.schemas.analytics import (
     TimeRangeEnum,
@@ -213,6 +214,108 @@ class GovernanceAnalyticsService:
         prev_hotspots = count_hotspots(tr.prev_start_time, tr.prev_end_time) if tr.prev_start_time else None
         hotspots_metric = TimeRangeHelper.calculate_trend(curr_hotspots, prev_hotspots, data_mode="MODEL")
 
+        # 11. Dynamic "What Changed" Narrative Generation
+        what_changed = []
+
+        # Check critical risk escalation
+        crit_preds = db.query(RiskPrediction).filter(
+            RiskPrediction.mine_id == mine_id,
+            RiskPrediction.prediction_timestamp >= tr.start_time,
+            RiskPrediction.prediction_timestamp <= tr.end_time,
+            RiskPrediction.predicted_severity == "CRITICAL"
+        ).count()
+        if crit_preds > 0:
+            what_changed.append({
+                "id": "wc-risk-crit",
+                "domain": "PREDICTIVE_RISK",
+                "category": "PREDICTIVE_RISK",
+                "title": "Predictive Risk Spike Detected",
+                "description": f"{crit_preds} critical predictive risk escalation inferences recorded in the selected analytical window.",
+                "detail": f"{crit_preds} critical predictive risk escalation inferences recorded in the selected analytical window.",
+                "severity": "CRITICAL",
+                "timestamp": tr.end_time.isoformat()
+            })
+        elif curr_hotspots > 0:
+            what_changed.append({
+                "id": "wc-risk-high",
+                "domain": "PREDICTIVE_RISK",
+                "category": "PREDICTIVE_RISK",
+                "title": "High Risk Hotspot Activity",
+                "description": f"{curr_hotspots} high-risk spatial predictive inferences active in working galleries.",
+                "detail": f"{curr_hotspots} high-risk spatial predictive inferences active in working galleries.",
+                "severity": "WARNING",
+                "timestamp": tr.end_time.isoformat()
+            })
+        else:
+            what_changed.append({
+                "id": "wc-risk-normal",
+                "domain": "PREDICTIVE_RISK",
+                "category": "PREDICTIVE_RISK",
+                "title": "Predictive Risk Posture Stable",
+                "description": "Predictive risk model indicates steady-state baseline operations across all levels.",
+                "detail": "Predictive risk model indicates steady-state baseline operations across all levels.",
+                "severity": "INFO",
+                "timestamp": tr.end_time.isoformat()
+            })
+
+        # Check environmental deviations
+        env_devs = db.query(EnvironmentalObservation).filter(
+            EnvironmentalObservation.mine_id == mine_id,
+            EnvironmentalObservation.detected_at >= tr.start_time,
+            EnvironmentalObservation.detected_at <= tr.end_time,
+            EnvironmentalObservation.observed_value > EnvironmentalObservation.threshold_limit
+        ).all()
+        if env_devs:
+            latest_dev = env_devs[-1]
+            what_changed.append({
+                "id": "wc-env-dev",
+                "domain": "ENVIRONMENT",
+                "category": "ENVIRONMENT",
+                "title": f"Statutory {latest_dev.parameter_name} Threshold Crossed",
+                "description": f"{latest_dev.parameter_name} reached {latest_dev.observed_value} {latest_dev.unit} (Limit: {latest_dev.threshold_limit}). Mitigation action: {latest_dev.action_taken or 'Wetting/Ventilation initiated'}.",
+                "detail": f"{latest_dev.parameter_name} reached {latest_dev.observed_value} {latest_dev.unit} (Limit: {latest_dev.threshold_limit}). Mitigation action: {latest_dev.action_taken or 'Wetting/Ventilation initiated'}.",
+                "severity": "WARNING",
+                "timestamp": latest_dev.detected_at.isoformat()
+            })
+
+        # Check production deviation
+        prod_devs = db.query(ProductionReport).filter(
+            ProductionReport.mine_id == mine_id,
+            ProductionReport.report_date >= tr.start_time.date(),
+            ProductionReport.report_date <= tr.end_time.date(),
+            ProductionReport.deviation_flag != "NORMAL"
+        ).all()
+        if prod_devs:
+            what_changed.append({
+                "id": "wc-prod-dev",
+                "domain": "PRODUCTION",
+                "category": "PRODUCTION",
+                "title": "Production Variance Shift Flagged",
+                "description": f"{len(prod_devs)} production shift reports flagged for operational deviation or safety pause.",
+                "detail": f"{len(prod_devs)} production shift reports flagged for operational deviation or safety pause.",
+                "severity": "WARNING",
+                "timestamp": tr.end_time.isoformat()
+            })
+
+        # Check completed corrective actions
+        comp_cas = db.query(CorrectiveAction).join(Violation).filter(
+            Violation.mine_id == mine_id,
+            CorrectiveAction.created_at >= tr.start_time,
+            CorrectiveAction.created_at <= tr.end_time,
+            CorrectiveAction.status.in_(["COMPLETED", "VERIFIED"])
+        ).count()
+        if comp_cas > 0:
+            what_changed.append({
+                "id": "wc-ca-done",
+                "domain": "COMPLIANCE",
+                "category": "COMPLIANCE",
+                "title": "DGMS Corrective Action Rectified",
+                "description": f"{comp_cas} statutory corrective action(s) successfully completed and verified within SLA.",
+                "detail": f"{comp_cas} statutory corrective action(s) successfully completed and verified within SLA.",
+                "severity": "SUCCESS",
+                "timestamp": tr.end_time.isoformat()
+            })
+
         total_records = curr_total_inc + curr_alerts + curr_open_vio + curr_gov_tasks + curr_env_dev + curr_grievances
 
         data_quality = DataQualityDTO(
@@ -243,5 +346,6 @@ class GovernanceAnalyticsService:
             open_grievances=grievances_metric,
             active_contractor_issues=cont_metric,
             predictive_high_hotspots=hotspots_metric,
-            field_inspections_pending=pending_insp_metric
+            field_inspections_pending=pending_insp_metric,
+            what_changed=what_changed
         )

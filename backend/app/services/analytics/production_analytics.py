@@ -63,8 +63,10 @@ class ProductionAnalyticsService:
                 date=k,
                 value=round(v["actual"], 2),
                 count=len(v["ids"]),
-                label=f"Planned: {round(v['planned'], 1)} | Actual: {round(v['actual'], 1)}",
-                entity_ids=v["ids"]
+                label=f"Planned: {round(v['planned'], 1)} | Actual: {round(v['actual'], 1)} (Var: {round(v['actual'] - v['planned'], 1)} T)",
+                entity_ids=v["ids"],
+                observed_value=round(v["actual"], 2),
+                target_value=round(v["planned"], 2)
             )
             for k, v in sorted(trend_map.items())
         ]

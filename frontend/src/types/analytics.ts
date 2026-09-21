@@ -48,6 +48,26 @@ export interface TimeSeriesPointDTO {
   count: number;
   label?: string | null;
   entity_ids: number[];
+  observed_value?: number | null;
+  target_value?: number | null;
+  forecast_value?: number | null;
+  severity?: string | null;
+  probability?: number | null;
+}
+
+export interface WhatChangedItem {
+  id?: string;
+  domain?: string;
+  title: string;
+  description?: string;
+  detail?: string;
+  category?: string;
+  severity: 'INFO' | 'WARNING' | 'CRITICAL' | 'NORMAL' | 'SUCCESS';
+  delta_description?: string | null;
+  metric_name?: string | null;
+  current_value?: number | null;
+  previous_value?: number | null;
+  timestamp?: string;
 }
 
 export interface CategoryBreakdownDTO {
@@ -95,6 +115,7 @@ export interface GovernanceOverviewAnalyticsDTO {
   active_contractor_issues: TrendMetricDTO;
   predictive_high_hotspots: TrendMetricDTO;
   field_inspections_pending: TrendMetricDTO;
+  what_changed?: WhatChangedItem[];
 }
 
 export interface SafetyAnalyticsDTO {
@@ -145,6 +166,10 @@ export interface ComplianceAnalyticsDTO {
   escalations_count: number;
   
   compliance_chain: Array<Record<string, any>>;
+  compliance_trend?: TimeSeriesPointDTO[];
+  violations_by_day?: TimeSeriesPointDTO[];
+  actions_by_day?: TimeSeriesPointDTO[];
+  resolved_by_day?: TimeSeriesPointDTO[];
   drilldown_entities: DrillDownEntityDTO[];
 }
 
@@ -212,6 +237,7 @@ export interface EnvironmentalAnalyticsDTO {
   active_deviations: number;
   parameters: EnvironmentalParameterDTO[];
   readings_over_time: TimeSeriesPointDTO[];
+  parameter_trends?: Record<string, TimeSeriesPointDTO[]>;
   drilldown_entities: DrillDownEntityDTO[];
 }
 

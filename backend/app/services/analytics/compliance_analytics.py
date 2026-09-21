@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Optional, List, Dict, Any
 from sqlalchemy.orm import Session
 
@@ -10,6 +10,7 @@ from app.schemas.analytics import (
     TimeRangeDTO,
     DataQualityDTO,
     ComplianceAnalyticsDTO,
+    TimeSeriesPointDTO,
     CategoryBreakdownDTO,
     DrillDownEntityDTO,
 )
@@ -119,6 +120,58 @@ class ComplianceAnalyticsService:
                 "has_sla_breach": any(ca.target_completion_date and TimeRangeHelper.ensure_utc(ca.target_completion_date) < now and ca.status not in ["COMPLETED", "VERIFIED"] for ca in v_cas)
             })
 
+        # 5. Time-Series Trends by Day (Violations, Corrective Actions, Resolved Actions)
+        curr_d = tr.start_time.date()
+        end_d = tr.end_time.date()
+        date_map: Dict[str, Dict[str, Any]] = {}
+        while curr_d <= end_d:
+            d_str = curr_d.strftime("%Y-%m-%d")
+            date_map[d_str] = {"violations": [], "actions": [], "resolved": []}
+            curr_d += timedelta(days=1)
+
+        for v in violations:
+            d_str = v.created_at.date().strftime("%Y-%m-%d")
+            if d_str in date_map:
+                date_map[d_str]["violations"].append(v.id)
+
+        for ca in corrective_actions:
+            d_str = ca.created_at.date().strftime("%Y-%m-%d")
+            if d_str in date_map:
+                date_map[d_str]["actions"].append(ca.id)
+            if ca.completed_at:
+                c_d_str = ca.completed_at.date().strftime("%Y-%m-%d")
+                if c_d_str in date_map:
+                    date_map[c_d_str]["resolved"].append(ca.id)
+
+        compliance_trend = [
+            TimeSeriesPointDTO(
+                date=k,
+                value=float(len(v["violations"])),
+                count=len(v["actions"]),
+                label=f"Violations: {len(v['violations'])} | Actions: {len(v['actions'])} | Resolved: {len(v['resolved'])}",
+                entity_ids=v["violations"] + v["actions"],
+                observed_value=float(len(v["violations"])),
+                target_value=float(len(v["actions"])),
+                forecast_value=float(len(v["resolved"]))
+            )
+            for k, v in sorted(date_map.items())
+        ]
+
+        violations_by_day = [
+            TimeSeriesPointDTO(date=k, value=float(len(v["violations"])), count=len(v["violations"]), entity_ids=v["violations"])
+            for k, v in sorted(date_map.items())
+        ]
+
+        actions_by_day = [
+            TimeSeriesPointDTO(date=k, value=float(len(v["actions"])), count=len(v["actions"]), entity_ids=v["actions"])
+            for k, v in sorted(date_map.items())
+        ]
+
+        resolved_by_day = [
+            TimeSeriesPointDTO(date=k, value=float(len(v["resolved"])), count=len(v["resolved"]), entity_ids=v["resolved"])
+            for k, v in sorted(date_map.items())
+        ]
+
         # Drilldown entities
         drilldown: List[DrillDownEntityDTO] = []
         for v in violations:
@@ -164,5 +217,9 @@ class ComplianceAnalyticsService:
             sla_compliance_rate_percent=sla_rate,
             escalations_count=escalations_count,
             compliance_chain=chain,
+            compliance_trend=compliance_trend,
+            violations_by_day=violations_by_day,
+            actions_by_day=actions_by_day,
+            resolved_by_day=resolved_by_day,
             drilldown_entities=drilldown
         )

@@ -93,18 +93,23 @@ class EnvironmentalAnalyticsService:
                     )
                 )
 
-        # Readings over time
+        # Readings over time & per-parameter time-series
         readings_trend: List[TimeSeriesPointDTO] = []
+        parameter_trends: Dict[str, List[TimeSeriesPointDTO]] = {}
+
         for o in obs:
-            readings_trend.append(
-                TimeSeriesPointDTO(
-                    date=o.detected_at.strftime("%Y-%m-%d %H:%M"),
-                    value=round(o.observed_value, 2),
-                    count=1,
-                    label=f"{o.parameter_name}: {round(o.observed_value, 1)} {o.unit}",
-                    entity_ids=[o.id]
-                )
+            pt = TimeSeriesPointDTO(
+                date=o.detected_at.strftime("%Y-%m-%d %H:%M"),
+                value=round(o.observed_value, 2),
+                observed_value=round(o.observed_value, 2),
+                target_value=round(o.threshold_limit, 2),
+                count=1,
+                label=f"{o.parameter_name}: {round(o.observed_value, 1)} {o.unit}",
+                entity_ids=[o.id],
+                severity=o.severity
             )
+            readings_trend.append(pt)
+            parameter_trends.setdefault(o.parameter_name, []).append(pt)
 
         # Drilldown entities
         drilldown: List[DrillDownEntityDTO] = []
@@ -145,5 +150,6 @@ class EnvironmentalAnalyticsService:
             active_deviations=active_dev,
             parameters=param_dtos,
             readings_over_time=readings_trend,
-            drilldown_entities=drilldown
+            parameter_trends=parameter_trends,
+            drilldown_entities=drilldown,
         )

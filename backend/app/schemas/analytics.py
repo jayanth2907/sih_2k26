@@ -55,6 +55,11 @@ class TimeSeriesPointDTO(BaseModel):
     count: int = 0
     label: Optional[str] = None
     entity_ids: List[int] = []
+    observed_value: Optional[float] = None
+    target_value: Optional[float] = None
+    forecast_value: Optional[float] = None
+    severity: Optional[str] = None
+    probability: Optional[float] = None
 
 
 class CategoryBreakdownDTO(BaseModel):
@@ -106,6 +111,7 @@ class GovernanceOverviewAnalyticsDTO(BaseModel):
     active_contractor_issues: TrendMetricDTO
     predictive_high_hotspots: TrendMetricDTO
     field_inspections_pending: TrendMetricDTO
+    what_changed: List[Dict[str, Any]] = []
 
 
 class SafetyAnalyticsDTO(BaseModel):
@@ -156,6 +162,10 @@ class ComplianceAnalyticsDTO(BaseModel):
     escalations_count: int
     
     compliance_chain: List[Dict[str, Any]] = [] # Traceable violation -> corrective action -> escalation
+    compliance_trend: List[TimeSeriesPointDTO] = []
+    violations_by_day: List[TimeSeriesPointDTO] = []
+    actions_by_day: List[TimeSeriesPointDTO] = []
+    resolved_by_day: List[TimeSeriesPointDTO] = []
     drilldown_entities: List[DrillDownEntityDTO] = []
 
 
@@ -223,6 +233,7 @@ class EnvironmentalAnalyticsDTO(BaseModel):
     active_deviations: int
     parameters: List[EnvironmentalParameterDTO] = []
     readings_over_time: List[TimeSeriesPointDTO] = []
+    parameter_trends: Dict[str, List[TimeSeriesPointDTO]] = {}
     drilldown_entities: List[DrillDownEntityDTO] = []
 
 

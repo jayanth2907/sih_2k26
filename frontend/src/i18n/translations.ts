@@ -74,6 +74,7 @@ export interface Translations {
   simulatedLabel: string;
   modelDerivedLabel: string;
   attentionRequiredLabel: string;
+  whatChangedLabel: string;
   crossMineViewLabel: string;
   safetyIntelligenceLabel: string;
   complianceIntelligenceLabel: string;
@@ -236,6 +237,7 @@ export const translations: Record<SupportedLanguage, Translations> = {
     simulatedLabel: 'DATA MODE: SIMULATED',
     modelDerivedLabel: 'MODEL-DERIVED',
     attentionRequiredLabel: 'ATTENTION REQUIRED',
+    whatChangedLabel: 'WHAT CHANGED',
     crossMineViewLabel: 'CROSS-MINE VIEW',
     safetyIntelligenceLabel: 'SAFETY INTELLIGENCE',
     complianceIntelligenceLabel: 'COMPLIANCE INTELLIGENCE',
@@ -393,6 +395,7 @@ export const translations: Record<SupportedLanguage, Translations> = {
     simulatedLabel: 'डेटा मोड: सिम्युलेटेड',
     modelDerivedLabel: 'मॉडल-व्युत्पन्न',
     attentionRequiredLabel: 'ध्यान आवश्यक',
+    whatChangedLabel: 'क्या बदला (अवधि तुलना)',
     crossMineViewLabel: 'क्रॉस-माइन तुलना',
     safetyIntelligenceLabel: 'सुरक्षा आसूचना',
     complianceIntelligenceLabel: 'अनुपालन आसूचना',
@@ -550,6 +553,7 @@ export const translations: Record<SupportedLanguage, Translations> = {
     simulatedLabel: 'డేటా మోడ్: సిమ్యులేటెడ్',
     modelDerivedLabel: 'మోడల్-డెరైవ్డ్',
     attentionRequiredLabel: 'శ్రద్ధ అవసరం',
+    whatChangedLabel: 'ఏమి మారింది (మార్పుల వివరాలు)',
     crossMineViewLabel: 'క్రాస్-మైన్ పోలిక',
     safetyIntelligenceLabel: 'భద్రతా ఇంటెలిజెన్స్',
     complianceIntelligenceLabel: 'కంప్లైయన్స్ ఇంటెలిజెన్స్',

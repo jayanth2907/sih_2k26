@@ -48,7 +48,7 @@ class PredictiveRiskAnalyticsService:
         horizon = latest_p.horizon_minutes if latest_p else 30
         model_ver = latest_p.model_version if latest_p else "risk-escalation-v1.0"
 
-        # Risk trend
+        # Risk trend (Dual-series: Observed Risk vs Predicted Risk)
         risk_trend: List[TimeSeriesPointDTO] = []
         for p in preds:
             risk_trend.append(
@@ -56,8 +56,12 @@ class PredictiveRiskAnalyticsService:
                     date=p.prediction_timestamp.strftime("%Y-%m-%d %H:%M"),
                     value=round(p.predicted_risk_score, 2),
                     count=1,
-                    label=f"Severity: {p.predicted_severity} (P={round(p.probability, 2)})",
-                    entity_ids=[p.id]
+                    label=f"Observed: {round(p.current_risk_score, 1)} | Predicted: {round(p.predicted_risk_score, 1)} ({p.predicted_severity}, P={round(p.probability, 2)})",
+                    entity_ids=[p.id],
+                    observed_value=round(p.current_risk_score, 1),
+                    forecast_value=round(p.predicted_risk_score, 1),
+                    severity=p.predicted_severity,
+                    probability=round(p.probability, 2)
                 )
             )
 

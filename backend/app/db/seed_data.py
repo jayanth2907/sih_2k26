@@ -320,59 +320,13 @@ def seed():
         db.add_all(all_workers)
         db.commit()
 
-        for w in workers_m1:
-            att = AttendanceRecord(worker_id=w.id, mine_id=m1.id, shift_id=sh_a1.id, attendance_date=today_date, check_in_time=now - timedelta(hours=3), status="PRESENT", verification_mode="SIMULATED", marked_by_id=u_safety1.id)
-            db.add(att)
-        for w in workers_m2:
-            att = AttendanceRecord(worker_id=w.id, mine_id=m2.id, shift_id=sh_a2.id, attendance_date=today_date, check_in_time=now - timedelta(hours=4), status="PRESENT", verification_mode="SIMULATED", marked_by_id=u_mgr2.id)
-            db.add(att)
-        for w in workers_m3:
-            att = AttendanceRecord(worker_id=w.id, mine_id=m3.id, shift_id=sh_a3.id, attendance_date=today_date, check_in_time=now - timedelta(hours=2), status="PRESENT", verification_mode="SIMULATED", marked_by_id=u_admin.id)
-            db.add(att)
+        # 5. Environmental Rules
+        env_r1 = EnvironmentalRule(rule_code="ENV-RULE-PM10", parameter_name="PM10", threshold_limit=3.0, unit="µg/m³", severity="HIGH", statute_reference="CMR 2017 Reg 143", description="Maximum 8-hour continuous respirable coal dust exposure at transfer points.")
+        env_r2 = EnvironmentalRule(rule_code="ENV-RULE-PM25", parameter_name="PM2.5", threshold_limit=1.5, unit="µg/m³", severity="MEDIUM", statute_reference="CPCB Ambient Air Quality", description="Fine particulate matter exposure limit.")
+        env_r3 = EnvironmentalRule(rule_code="ENV-RULE-NOISE", parameter_name="NOISE_DB", threshold_limit=85.0, unit="dB(A)", severity="MEDIUM", statute_reference="DGMS Tech Circular 04/2010", description="Permissible worker noise exposure level.")
+        env_r4 = EnvironmentalRule(rule_code="ENV-RULE-WATER", parameter_name="WATER_PH", threshold_limit=8.5, unit="pH", severity="LOW", statute_reference="CPCB Effluent Standards", description="Mine drainage water pH permissible range.")
+        db.add_all([env_r1, env_r2, env_r3, env_r4])
         db.commit()
-
-        # 5. Production Reports
-        prod1 = ProductionReport(
-            report_code=f"PROD-1-{today_date.strftime('%Y%m%d')}-A",
-            mine_id=m1.id,
-            report_date=today_date,
-            shift="A",
-            material_type="COAL_RAW",
-            planned_quantity=4500.0,
-            actual_quantity=4120.0,
-            unit="TONNES",
-            variance_quantity=-380.0,
-            variance_percentage=-8.44,
-            status="APPROVED",
-            deviation_flag="NORMAL",
-            reporting_officer_id=u_mgr1.id,
-            notes="Seam 2 East Longwall face regular shearing output."
-        )
-        db.add(prod1)
-
-        # 6. Environmental Rules & Observation
-        env_r1 = EnvironmentalRule(rule_code="ENV-RULE-PM10", parameter_name="Respirable Dust PM10", threshold_limit=3.0, unit="mg/m3", severity="HIGH", statute_reference="CMR 2017 Reg 143", description="Maximum 8-hour continuous respirable coal dust exposure at transfer points.")
-        env_r2 = EnvironmentalRule(rule_code="ENV-RULE-NOISE", parameter_name="Ambient Machinery Noise", threshold_limit=85.0, unit="dBA", severity="MEDIUM", statute_reference="DGMS Tech Circular 04/2010", description="Permissible worker noise exposure level.")
-        db.add_all([env_r1, env_r2])
-        db.commit()
-
-        env_obs1 = EnvironmentalObservation(
-            mine_id=m1.id,
-            rule_id=env_r1.id,
-            parameter_name="Respirable Dust PM10",
-            observed_value=2.8,
-            threshold_limit=3.0,
-            unit="mg/m3",
-            severity="MEDIUM",
-            status="OPEN",
-            location_context="Seam 1 Main Haulage Transfer Drift",
-            x=15.0,
-            y=180.0,
-            z=-218.0,
-            action_taken="Water sprays activated at transfer chute.",
-            detected_at=now - timedelta(hours=2)
-        )
-        db.add(env_obs1)
 
         # 7. Grievance
         grv1 = Grievance(
@@ -434,17 +388,23 @@ def seed():
         real_reports = ingestion_svc.ingest_all()
         print(f"Phase 11A Real Mines Ingested: {len(real_reports)} blocks processed.")
 
+        # Seed Phase 12C-2A.2 Deterministic Historical Operational Dataset (Demo Mines only)
+        print("Seeding Phase 12C-2A.2 Deterministic Synthetic Operational History (90 Days / 6 Phases)...")
+        from app.services.synthetic_history_generator import SyntheticHistoryGenerator
+        hist_stats = SyntheticHistoryGenerator.generate_all(db=db, base_time=now, seed=42)
+        print(f"Phase 12C-2A.2 Operational History Ingested: {hist_stats}")
+
         # Seed Genesis Audit Log
         AuditService.log_event(
             db=db,
             actor_id=u_admin.id,
-            action="SYSTEM_PHASE11A_REAL_MINE_FOUNDATION_SEED",
+            action="SYSTEM_PHASE12C_HISTORICAL_OPERATIONAL_SEED",
             resource_type="SYSTEM",
             resource_id="0",
-            metadata={"environment": "development", "version": "1.0.0-phase11a", "real_blocks_count": len(real_reports)}
+            metadata={"environment": "development", "version": "1.0.0-phase12c", "real_blocks_count": len(real_reports), "historical_records": hist_stats}
         )
 
-        print("\nPhase 11A Seed data generated successfully!")
+        print("\nPhase 12C-2A.2 Seed data generated successfully!")
         print(f"Total Sensors: {len(sensors_list)} | Total Workers: {len(all_workers)} | Real Coal Blocks: {len(real_reports)}")
 
     except Exception as e:
