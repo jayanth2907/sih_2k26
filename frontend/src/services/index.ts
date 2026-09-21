@@ -356,7 +356,12 @@ export const copilotService = {
 
 export const mobileService = {
   getAssignedInspections: async (mineId: number): Promise<FieldInspection[]> => {
-    const res = await api.get<FieldInspection[]>(`/mobile/inspections/assigned`, { params: { mine_id: mineId } });
+    const res = await api.get<FieldInspection[]>(`/mobile/inspections`, { params: { mine_id: mineId } });
+    return res.data;
+  },
+
+  getInspectionById: async (id: number): Promise<FieldInspection> => {
+    const res = await api.get<FieldInspection>(`/mobile/inspections/${id}`);
     return res.data;
   },
 

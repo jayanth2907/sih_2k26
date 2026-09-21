@@ -35,6 +35,15 @@ def get_assigned_inspections(
     """Returns assigned field inspections enriched with level, zone, and real-time/predictive risk context."""
     return FieldService.get_inspector_inspections(db, current_user, mine_id)
 
+@router.get("/inspections/{inspection_id}", response_model=dict)
+def get_field_inspection(
+    inspection_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Retrieve complete field inspection details, checklist, risk context, and evidence."""
+    return FieldService.get_single_inspection(db, inspection_id, current_user)
+
 @router.post("/inspections", status_code=status.HTTP_201_CREATED)
 def create_field_inspection(
     data: FieldInspectionCreate,

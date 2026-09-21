@@ -4,9 +4,11 @@ from pydantic import BaseModel, Field
 
 class ChecklistItem(BaseModel):
     id: str
-    title: str
+    title: Optional[str] = "Inspection Check"
+    item_text: Optional[str] = None
+    regulatory_reference: Optional[str] = None
     category: str = "GENERAL" # ATMOSPHERIC, VENTILATION, STRATA, MACHINERY, PPE, EMERGENCY
-    status: str = "PENDING" # PENDING, SATISFACTORY, NON_COMPLIANT, HAZARD_FLAGGED, NOT_APPLICABLE
+    status: str = "PENDING" # PENDING, SATISFACTORY, COMPLIANT, OBSERVATION, NON_COMPLIANT, NOT_APPLICABLE
     notes: Optional[str] = None
     severity: Optional[str] = "LOW"
     evidence_codes: List[str] = []

@@ -776,13 +776,19 @@ export interface ToolDefinition {
   parameters: Record<string, any>;
 }
 
-// Phase 7: Field Operations & Offline Sync Types
+// Phase 7 & Mobile: Field Operations & Offline Sync Types
 export interface ChecklistItem {
   id: string;
+  title?: string;
+  item_text?: string;
   category: string;
-  item_text: string;
-  status: 'PENDING' | 'PASS' | 'FAIL' | 'FLAG';
-  notes?: string;
+  status: 'PENDING' | 'COMPLIANT' | 'OBSERVATION' | 'NON_COMPLIANT' | 'NOT_APPLICABLE' | 'PASS' | 'FAIL' | 'FLAG';
+  notes?: string | null;
+  severity?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | null;
+  evidence_codes?: string[];
+  recommendation?: string | null;
+  statute_reference?: string | null;
+  regulatory_reference?: string | null;
 }
 
 export interface FieldInspection {
@@ -792,16 +798,25 @@ export interface FieldInspection {
   level_id?: number;
   zone_id?: number;
   inspector_id?: number;
-  title: string;
+  title?: string;
   description?: string;
   inspection_type: string;
   scheduled_date?: string;
   started_at?: string;
   completed_at?: string;
-  status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'SUBMITTED' | 'VERIFIED' | 'CANCELLED';
+  checklist?: ChecklistItem[];
   checklist_items?: ChecklistItem[];
+  summary_notes?: string;
   findings_summary?: string;
+  severity_assessment?: string;
   overall_severity?: string;
+  latitude?: number;
+  longitude?: number;
+  gps_accuracy_meters?: number;
+  current_zone_risk?: number;
+  predicted_zone_risk?: number;
+  evidences?: FieldEvidence[];
   created_at: string;
   updated_at: string;
   mine_name?: string;

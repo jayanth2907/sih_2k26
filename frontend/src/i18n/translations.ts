@@ -205,6 +205,48 @@ export interface Translations {
   desktopPortalLink: string;
   signOutButton: string;
   phaseFoundationNotice: string;
+  // Mobile Field Execution (MOBILE-02)
+  taskDetailsTitle: string;
+  dueTimeLabel: string;
+  assignedByLabel: string;
+  reasonContextLabel: string;
+  predictiveRiskHotspotLabel: string;
+  contributingSignalsLabel: string;
+  startInspectionBtn: string;
+  openTaskBtn: string;
+  inspectionTitle: string;
+  checksCompletedLabel: string;
+  checkItemCompliant: string;
+  checkItemObservation: string;
+  checkItemNonCompliant: string;
+  checkItemNotApplicable: string;
+  addObservationNote: string;
+  observationSeverityLabel: string;
+  recommendationLabel: string;
+  statuteReferenceLabel: string;
+  humanVerificationNotice: string;
+  potentialNonComplianceNotice: string;
+  attachedEvidenceTitle: string;
+  browserCameraLabel: string;
+  takePhotoBtn: string;
+  documentUploadBtn: string;
+  hashVerifiedLabel: string;
+  captureLocationLabel: string;
+  gpsAvailableLabel: string;
+  locationSimulatedLabel: string;
+  datumWgs84Label: string;
+  inspectionReviewTitle: string;
+  saveDraftBtn: string;
+  submitInspectionBtn: string;
+  inspectionSubmittedSuccess: string;
+  auditRecordedConfirmed: string;
+  savedOfflineNotice: string;
+  validationErrorIncomplete: string;
+  validationErrorNotesRequired: string;
+  backToTaskListBtn: string;
+  viewInspectionBtn: string;
+  readyToSubmitStatus: string;
+  evidenceItemsCount: string;
 }
 
 export const translations: Record<SupportedLanguage, Translations> = {
@@ -409,7 +451,49 @@ export const translations: Record<SupportedLanguage, Translations> = {
     systemDiagnostics: 'Diagnostics & Sync',
     desktopPortalLink: 'Desktop Command Center',
     signOutButton: 'Sign Out',
-    phaseFoundationNotice: 'Mobile Foundation Shell Active (Phase 1). Operational engines activate in subsequent phases.'
+    phaseFoundationNotice: 'Mobile Foundation Shell Active (Phase 1). Operational engines activate in subsequent phases.',
+    // Mobile Field Execution (MOBILE-02)
+    taskDetailsTitle: 'Task Details',
+    dueTimeLabel: 'Due Time',
+    assignedByLabel: 'Assigned By',
+    reasonContextLabel: 'Reason & Context',
+    predictiveRiskHotspotLabel: 'Predictive Risk Hotspot',
+    contributingSignalsLabel: 'Contributing Signals',
+    startInspectionBtn: 'Start Inspection',
+    openTaskBtn: 'Open Task',
+    inspectionTitle: 'Field Inspection',
+    checksCompletedLabel: 'checks completed',
+    checkItemCompliant: 'Compliant',
+    checkItemObservation: 'Observation',
+    checkItemNonCompliant: 'Non-Compliant',
+    checkItemNotApplicable: 'N/A',
+    addObservationNote: 'Add Observation Note',
+    observationSeverityLabel: 'Severity',
+    recommendationLabel: 'Recommendation',
+    statuteReferenceLabel: 'Statute Reference',
+    humanVerificationNotice: 'Human Verification Required: Field observations do not automatically establish statutory violations.',
+    potentialNonComplianceNotice: 'Potential non-compliance recorded for supervisory verification.',
+    attachedEvidenceTitle: 'Attached Evidence',
+    browserCameraLabel: 'Browser Camera / File',
+    takePhotoBtn: 'Take Photo',
+    documentUploadBtn: 'Attach File',
+    hashVerifiedLabel: 'SHA-256 Hashed',
+    captureLocationLabel: 'Capture Location',
+    gpsAvailableLabel: 'Actual GPS Fixed',
+    locationSimulatedLabel: 'Surveyed Mine Coordinates',
+    datumWgs84Label: 'Datum: WGS84',
+    inspectionReviewTitle: 'Inspection Review',
+    saveDraftBtn: 'Save Draft',
+    submitInspectionBtn: 'Submit Inspection',
+    inspectionSubmittedSuccess: 'Inspection Submitted Successfully',
+    auditRecordedConfirmed: 'AUDIT: RECORDED',
+    savedOfflineNotice: 'SAVED OFFLINE — Work will synchronize when network connectivity returns.',
+    validationErrorIncomplete: 'Incomplete inspection checks remaining.',
+    validationErrorNotesRequired: 'Please provide notes and severity for non-compliant items.',
+    backToTaskListBtn: 'Back to Task List',
+    viewInspectionBtn: 'View Inspection',
+    readyToSubmitStatus: 'Ready to Submit',
+    evidenceItemsCount: 'Evidence Items'
   },
   hi: {
     appName: 'त्रिनेत्र (TRINETRA)',
@@ -612,7 +696,49 @@ export const translations: Record<SupportedLanguage, Translations> = {
     systemDiagnostics: 'डायग्नोस्टिक्स एवं सिंक',
     desktopPortalLink: 'डेस्कटॉप कमांड सेंटर',
     signOutButton: 'साइन आउट',
-    phaseFoundationNotice: 'मोबाइल फाउंडेशन शेल सक्रिय (फेज 1)। परिचालन इंजन बाद के चरणों में सक्रिय होंगे।'
+    phaseFoundationNotice: 'मोबाइल फाउंडेशन शेल सक्रिय (फेज 1)। परिचालन इंजन बाद के चरणों में सक्रिय होंगे।',
+    // Mobile Field Execution (MOBILE-02 - Hindi)
+    taskDetailsTitle: 'कार्य विवरण',
+    dueTimeLabel: 'नियत समय',
+    assignedByLabel: 'द्वारा आवंटित',
+    reasonContextLabel: 'कारण एवं संदर्भ',
+    predictiveRiskHotspotLabel: 'पूर्वानुमानित जोखिम हॉटस्पॉट',
+    contributingSignalsLabel: 'योगदान देने वाले संकेत',
+    startInspectionBtn: 'निरीक्षण शुरू करें',
+    openTaskBtn: 'कार्य खोलें',
+    inspectionTitle: 'फील्ड निरीक्षण',
+    checksCompletedLabel: 'जांच पूर्ण',
+    checkItemCompliant: 'अनुपालन',
+    checkItemObservation: 'अवलोकन',
+    checkItemNonCompliant: 'गैर-अनुपालन',
+    checkItemNotApplicable: 'लागू नहीं',
+    addObservationNote: 'अवलोकन नोट जोड़ें',
+    observationSeverityLabel: 'गंभीरता',
+    recommendationLabel: 'सिफारिश',
+    statuteReferenceLabel: 'वैधानिक संदर्भ',
+    humanVerificationNotice: 'मानव सत्यापन आवश्यक: फील्ड अवलोकन स्वतः कानूनी उल्लंघन स्थापित नहीं करते हैं।',
+    potentialNonComplianceNotice: 'पर्यवेक्षी सत्यापन के लिए संभावित गैर-अनुपालन दर्ज किया गया।',
+    attachedEvidenceTitle: 'संलग्न साक्ष्य',
+    browserCameraLabel: 'ब्राउज़र कैमरा / फ़ाइल',
+    takePhotoBtn: 'फोटो लें',
+    documentUploadBtn: 'फ़ाइल संलग्न करें',
+    hashVerifiedLabel: 'SHA-256 हैशेड',
+    captureLocationLabel: 'स्थान कैप्चर करें',
+    gpsAvailableLabel: 'वास्तविक GPS फिक्स',
+    locationSimulatedLabel: 'सर्वेक्षित खदान निर्देशांक',
+    datumWgs84Label: 'डेटम: WGS84',
+    inspectionReviewTitle: 'निरीक्षण समीक्षा',
+    saveDraftBtn: 'ड्राफ्ट सहेजें',
+    submitInspectionBtn: 'निरीक्षण सबमिट करें',
+    inspectionSubmittedSuccess: 'निरीक्षण सफलतापूर्वक सबमिट किया गया',
+    auditRecordedConfirmed: 'ऑडिट: रिकॉर्ड किया गया',
+    savedOfflineNotice: 'ऑफ़लाइन सहेजा गया — नेटवर्क वापस आने पर कार्य सिंक हो जाएगा।',
+    validationErrorIncomplete: 'अपूर्ण निरीक्षण जांच शेष हैं।',
+    validationErrorNotesRequired: 'कृपया गैर-अनुपालन वस्तुओं के लिए नोट और गंभीरता प्रदान करें।',
+    backToTaskListBtn: 'कार्य सूची पर वापस जाएं',
+    viewInspectionBtn: 'निरीक्षण देखें',
+    readyToSubmitStatus: 'सबमिट करने के लिए तैयार',
+    evidenceItemsCount: 'साक्ष्य वस्तुएं'
   },
   te: {
     appName: 'త్రినేత్ర (TRINETRA)',
@@ -815,7 +941,49 @@ export const translations: Record<SupportedLanguage, Translations> = {
     systemDiagnostics: 'డయాగ్నస్టిక్స్ & సింక్',
     desktopPortalLink: 'డెస్క్‌టాప్ కమాండ్ సెంటర్',
     signOutButton: 'సైన్ అవుట్',
-    phaseFoundationNotice: 'మొబైల్ ఫౌండేషన్ షెల్ సక్రియంగా ఉంది (ఫేజ్ 1). తరువాతి దశలలో కార్యాచరణ ఇంజిన్లు ప్రారంభించబడతాయి.'
+    phaseFoundationNotice: 'మొబైల్ ఫౌండేషన్ షెల్ సక్రియంగా ఉంది (ఫేజ్ 1). తరువాతి దశలలో కార్యాచరణ ఇంజిన్లు ప్రారంభించబడతాయి.',
+    // Mobile Field Execution (MOBILE-02 - Telugu)
+    taskDetailsTitle: 'టాస్క్ వివరాలు',
+    dueTimeLabel: 'గడువు సమయం',
+    assignedByLabel: 'కేటాయించిన వారు',
+    reasonContextLabel: 'కారణం & సందర్భం',
+    predictiveRiskHotspotLabel: 'ప్రిడిక్టివ్ రిస్క్ హాట్‌స్పాట్',
+    contributingSignalsLabel: 'సంబంధిత సంకేతాలు',
+    startInspectionBtn: 'తనిఖీ ప్రారంభించండి',
+    openTaskBtn: 'టాస్క్ తెరవండి',
+    inspectionTitle: 'ఫీల్డ్ తనిఖీ',
+    checksCompletedLabel: 'తనిఖీలు పూర్తయ్యాయి',
+    checkItemCompliant: 'అనుగుణంగా ఉంది (Compliant)',
+    checkItemObservation: 'పరిశీలన (Observation)',
+    checkItemNonCompliant: 'ఉల్లంఘన/అసమ్మతి (Non-Compliant)',
+    checkItemNotApplicable: 'వర్తించదు (N/A)',
+    addObservationNote: 'పరిశీలన గమనికను జోడించండి',
+    observationSeverityLabel: 'తీవ్రత',
+    recommendationLabel: 'సిఫార్సు',
+    statuteReferenceLabel: 'చట్టబద్ధ నిబంధన సూచన',
+    humanVerificationNotice: 'మానవ ధృవీకరణ అవసరం: ఫీల్డ్ పరిశీలనలు స్వయంచాలకంగా చట్టబద్ధమైన ఉల్లంఘనలుగా నిర్ధారించబడవు.',
+    potentialNonComplianceNotice: 'పర్యవేక్షక ధృవీకరణ కోసం సంభావ్య అసమ్మతి నమోదు చేయబడింది.',
+    attachedEvidenceTitle: 'జతచేసిన సాక్ష్యాలు',
+    browserCameraLabel: 'బ్రౌజర్ కెమెరా / ఫైల్',
+    takePhotoBtn: 'ఫోటో తీయండి',
+    documentUploadBtn: 'ఫైల్ జతచేయండి',
+    hashVerifiedLabel: 'SHA-256 హ్యాష్ చేయబడింది',
+    captureLocationLabel: 'స్థానాన్ని నమోదు చేయండి',
+    gpsAvailableLabel: 'వాస్తవ GPS స్థిరీకరణ',
+    locationSimulatedLabel: 'సర్వే చేసిన గని కోఆర్డినేట్స్',
+    datumWgs84Label: 'డేటమ్: WGS84',
+    inspectionReviewTitle: 'తనిఖీ సమీక్ష',
+    saveDraftBtn: 'డ్రాఫ్ట్ సేవ్ చేయండి',
+    submitInspectionBtn: 'తనిఖీని సమర్పించండి',
+    inspectionSubmittedSuccess: 'తనిఖీ విజయవంతంగా సమర్పించబడింది',
+    auditRecordedConfirmed: 'ఆడిట్: నమోదు చేయబడింది',
+    savedOfflineNotice: 'ఆఫ్‌లైన్‌లో సేవ్ చేయబడింది — నెట్‌వర్క్ పునరుద్ధరించబడినప్పుడు సింక్ అవుతుంది.',
+    validationErrorIncomplete: 'అసంపూర్ణ తనిఖీ అంశాలు ఉన్నాయి.',
+    validationErrorNotesRequired: 'దయచేసి అసమ్మతి అంశాలకు తీవ్రత మరియు గమనికను నమోదు చేయండి.',
+    backToTaskListBtn: 'టాస్క్ జాబితాకు తిరిగి వెళ్లండి',
+    viewInspectionBtn: 'తనిఖీని చూడండి',
+    readyToSubmitStatus: 'సమర్పణకు సిద్ధంగా ఉంది',
+    evidenceItemsCount: 'సాక్ష్య అంశాలు'
   }
 };
 

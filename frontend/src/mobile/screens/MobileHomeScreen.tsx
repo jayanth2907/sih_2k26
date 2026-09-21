@@ -219,7 +219,7 @@ export const MobileHomeScreen: React.FC<MobileHomeScreenProps> = ({ onNavigateTa
             <TouchButton
               variant="secondary"
               className="flex-col !items-start !justify-between p-3.5 h-auto min-h-[80px] bg-slate-900/90 text-left border-slate-800"
-              onClick={() => handleActionClick('Start Inspection')}
+              onClick={() => onNavigateTab('tasks')}
             >
               <div className="flex items-center justify-between w-full">
                 <CheckCircle2 className="w-5 h-5 text-emerald-400" />

@@ -1,6 +1,7 @@
 import sys
 import os
 import random
+import json
 from datetime import datetime, timezone, timedelta
 
 # Ensure backend root is on sys.path
@@ -22,7 +23,8 @@ from app.models import (
     Contractor, Contract, ContractRequirement,
     ProductionReport, EnvironmentalRule, EnvironmentalObservation,
     Grievance, RegulatoryReport, ReportVersion,
-    GovernanceTask, ApprovalRequest, ApprovalAction
+    GovernanceTask, ApprovalRequest, ApprovalAction,
+    FieldInspection, FieldEvidence, FieldSyncLog
 )
 from app.services.audit_service import AuditService
 
@@ -419,6 +421,80 @@ def seed():
             }
         )
         db.add(rep1)
+
+        # 9. Seed Field Inspections & Tasks (MOBILE-02)
+        print("Seeding Field Inspections & Tasks for Mobile Field Operations...")
+        chk_default = [
+            {"id": "CHK-01", "title": "Methane & Toxic Gas Detection (CH4 < 0.5%, CO < 25ppm)", "category": "ATMOSPHERE", "status": "PENDING", "notes": None, "severity": "LOW", "evidence_codes": []},
+            {"id": "CHK-02", "title": "Ventilation Airflow & Auxiliary Fan Operation (Velocity >= 1.5 m/s)", "category": "VENTILATION", "status": "PENDING", "notes": None, "severity": "LOW", "evidence_codes": []},
+            {"id": "CHK-03", "title": "Roof & Side Strata Support Integrity (Rock Bolts & W-Straps)", "category": "STRATA", "status": "PENDING", "notes": None, "severity": "LOW", "evidence_codes": []},
+            {"id": "CHK-04", "title": "Emergency Escapeway Signage & Refuge Chambers", "category": "SAFETY", "status": "PENDING", "notes": None, "severity": "LOW", "evidence_codes": []},
+            {"id": "CHK-05", "title": "PPE Compliance & Flameproof Cap Lamps (DGMS Approved)", "category": "PPE", "status": "PENDING", "notes": None, "severity": "LOW", "evidence_codes": []},
+            {"id": "CHK-06", "title": "Haulage Track & Conveyor Belt Emergency Pull-Wires", "category": "MACHINERY", "status": "PENDING", "notes": None, "severity": "LOW", "evidence_codes": []}
+        ]
+
+        chk_in_progress = [
+            {"id": "CHK-01", "title": "Methane & Toxic Gas Detection (CH4 < 0.5%, CO < 25ppm)", "category": "ATMOSPHERE", "status": "COMPLIANT", "notes": "Handheld gas detector probe reads 0.32% CH4, 8ppm CO at face.", "severity": "LOW", "evidence_codes": []},
+            {"id": "CHK-02", "title": "Ventilation Airflow & Auxiliary Fan Operation (Velocity >= 1.5 m/s)", "category": "VENTILATION", "status": "COMPLIANT", "notes": "Vane anemometer measured 1.85 m/s airflow.", "severity": "LOW", "evidence_codes": []},
+            {"id": "CHK-03", "title": "Roof & Side Strata Support Integrity (Rock Bolts & W-Straps)", "category": "STRATA", "status": "PENDING", "notes": None, "severity": "LOW", "evidence_codes": []},
+            {"id": "CHK-04", "title": "Emergency Escapeway Signage & Refuge Chambers", "category": "SAFETY", "status": "PENDING", "notes": None, "severity": "LOW", "evidence_codes": []},
+            {"id": "CHK-05", "title": "PPE Compliance & Flameproof Cap Lamps (DGMS Approved)", "category": "PPE", "status": "PENDING", "notes": None, "severity": "LOW", "evidence_codes": []},
+            {"id": "CHK-06", "title": "Haulage Track & Conveyor Belt Emergency Pull-Wires", "category": "MACHINERY", "status": "PENDING", "notes": None, "severity": "LOW", "evidence_codes": []}
+        ]
+
+        fi1 = FieldInspection(
+            inspection_code="INS-2026-BDS04-001",
+            mine_id=m1.id,
+            level_id=m1_l2.id,
+            zone_id=m1_z_east.id,
+            inspector_id=u_insp.id,
+            inspection_type="VENTILATION_AUDIT",
+            scheduled_date=now + timedelta(hours=2),
+            status="SCHEDULED",
+            checklist_json=json.dumps(chk_default),
+            summary_notes="Predictive risk hotspot detected on Seam 2 return airway. Statutory verification required.",
+            severity_assessment="HIGH",
+            latitude=23.7957,
+            longitude=86.4304,
+            gps_accuracy_meters=8.0
+        )
+
+        fi2 = FieldInspection(
+            inspection_code="INS-2026-BDS04-002",
+            mine_id=m1.id,
+            level_id=m1_l1.id,
+            zone_id=m1_z_haul.id,
+            inspector_id=u_insp.id,
+            inspection_type="STRATA_CONTROL",
+            scheduled_date=now - timedelta(hours=1),
+            status="IN_PROGRESS",
+            checklist_json=json.dumps(chk_in_progress),
+            summary_notes="Routine shift strata control inspection on Main Haulage Drift A.",
+            severity_assessment="MEDIUM",
+            started_at=now - timedelta(minutes=45),
+            latitude=23.7960,
+            longitude=86.4310,
+            gps_accuracy_meters=6.5
+        )
+
+        fi3 = FieldInspection(
+            inspection_code="INS-2026-SOB02-001",
+            mine_id=m2.id,
+            level_id=m2_l1.id,
+            zone_id=m2_z_b3.id,
+            inspector_id=u_insp.id,
+            inspection_type="ROUTINE_SAFETY",
+            scheduled_date=now + timedelta(hours=5),
+            status="SCHEDULED",
+            checklist_json=json.dumps(chk_default),
+            summary_notes="Shovel Bench 3A highwall berm height and haul road dust suppression audit.",
+            severity_assessment="MEDIUM",
+            latitude=24.1997,
+            longitude=82.6645,
+            gps_accuracy_meters=5.0
+        )
+
+        db.add_all([fi1, fi2, fi3])
         db.commit()
 
         # Seed Phase 11A Real Mine Data Foundation (6 Official Coal Blocks)

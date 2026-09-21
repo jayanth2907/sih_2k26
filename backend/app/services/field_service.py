@@ -103,6 +103,85 @@ class FieldService:
         return results
 
     @staticmethod
+    def get_single_inspection(
+        db: Session,
+        inspection_id: int,
+        user: User
+    ) -> Dict[str, Any]:
+        inspection = db.query(FieldInspection).filter(FieldInspection.id == inspection_id).first()
+        if not inspection:
+            raise EntityNotFoundError("FieldInspection", inspection_id)
+
+        if not check_mine_access(user, inspection.mine_id, db):
+            raise PermissionDeniedError(f"Access denied to Mine ID {inspection.mine_id}")
+
+        ch_items = []
+        if inspection.checklist_json:
+            try:
+                ch_items = json.loads(inspection.checklist_json)
+            except Exception:
+                ch_items = []
+
+        evidences = []
+        for ev in inspection.evidences:
+            evidences.append({
+                "id": ev.id,
+                "evidence_code": ev.evidence_code,
+                "mine_id": ev.mine_id,
+                "inspection_id": ev.inspection_id,
+                "evidence_type": ev.evidence_type,
+                "title": ev.title,
+                "description": ev.description,
+                "file_url_or_path": ev.file_url_or_path,
+                "file_hash_sha256": ev.file_hash_sha256,
+                "latitude": ev.latitude,
+                "longitude": ev.longitude,
+                "gps_accuracy_meters": ev.gps_accuracy_meters,
+                "client_capture_timestamp": ev.client_capture_timestamp.isoformat() if ev.client_capture_timestamp else None,
+                "server_received_timestamp": ev.server_received_timestamp.isoformat() if ev.server_received_timestamp else None,
+                "captured_by_id": ev.captured_by_id
+            })
+
+        c_risk = 25.0
+        p_risk = 35.0
+        if inspection.zone_id and inspection.mine_id:
+            try:
+                p_summary = PredictiveRiskService.generate_prediction(db, inspection.mine_id)
+                c_risk = p_summary.get("current_risk_score", 25.0)
+                p_risk = p_summary.get("predicted_risk_score", 35.0)
+            except Exception:
+                pass
+
+        return {
+            "id": inspection.id,
+            "inspection_code": inspection.inspection_code,
+            "mine_id": inspection.mine_id,
+            "mine_name": inspection.mine.name if inspection.mine else None,
+            "level_id": inspection.level_id,
+            "level_name": inspection.level.name if inspection.level else None,
+            "zone_id": inspection.zone_id,
+            "zone_name": inspection.zone.name if inspection.zone else None,
+            "inspector_id": inspection.inspector_id,
+            "inspector_name": inspection.inspector.full_name if inspection.inspector else None,
+            "inspection_type": inspection.inspection_type,
+            "scheduled_date": inspection.scheduled_date.isoformat(),
+            "status": inspection.status,
+            "checklist": ch_items,
+            "summary_notes": inspection.summary_notes,
+            "severity_assessment": inspection.severity_assessment,
+            "latitude": inspection.latitude,
+            "longitude": inspection.longitude,
+            "gps_accuracy_meters": inspection.gps_accuracy_meters,
+            "current_zone_risk": c_risk,
+            "predicted_zone_risk": p_risk,
+            "started_at": inspection.started_at.isoformat() if inspection.started_at else None,
+            "completed_at": inspection.completed_at.isoformat() if inspection.completed_at else None,
+            "evidences": evidences,
+            "created_at": inspection.created_at.isoformat(),
+            "updated_at": inspection.updated_at.isoformat()
+        }
+
+    @staticmethod
     def create_inspection(
         db: Session,
         user: User,
