@@ -26,6 +26,7 @@ from app.models.real_mine_data import (
 from app.models.sensor import Sensor
 from app.models.risk import AnomalyEvent
 from app.models.camera import Camera
+from app.models.equipment import Equipment
 from app.models.incident import Incident
 from app.models.alert import Alert
 from app.models.governance_task import GovernanceTask
@@ -146,7 +147,58 @@ def get_mine_gis_map(
     # 3. Boundaries
     boundaries_db = db.query(MineBoundary).filter(MineBoundary.mine_id == mine_id).all()
     boundary_features: List[GisBoundaryFeature] = []
-    
+
+    # --- Helper: generate a realistic irregular coal-lease polygon ---
+    # Produces an authentic ~1.2-2 sq km irregular polygon from a mine centre.
+    # Uses a deterministic seed per mine_id so the shape is stable across requests.
+    def _make_realistic_mine_polygon(clat: float, clon: float, seed: int) -> list:
+        """
+        Returns GeoJSON ring [[lon, lat], ...] for an irregular coal-block polygon.
+        Shape is generated with 10 vertices at varying radii (180m – 700m) and
+        angular offsets that differ per mine_id, giving each mine a unique outline.
+        Earth radius constants for lat/lon degree conversion at Indian coalfield latitudes.
+        """
+        import math as _math
+        R_LAT = 111320.0          # metres per degree latitude
+        R_LON = 111320.0 * _math.cos(_math.radians(clat))  # metres per degree longitude
+
+        # Per-mine shape parameters — deterministic variations via seed
+        n_verts = 10
+        # Base radii (metres) — elongated NE-SW like typical lease areas
+        base_radii = [320, 480, 620, 550, 380, 280, 350, 500, 650, 420]
+        # Random-ish offsets baked in so the polygon is irregular, not circular
+        radius_jitter = [
+            (seed % 7) * 18 - 40,
+            (seed % 5) * 22 - 30,
+            (seed % 11) * 15 - 50,
+            (seed % 3) * 30 - 20,
+            (seed % 9) * 12 - 35,
+            (seed % 13) * 10 - 25,
+            (seed % 7) * 20 - 30,
+            (seed % 11) * 18 - 45,
+            (seed % 5) * 25 - 38,
+            (seed % 3) * 15 - 22
+        ]
+        # Rotate whole polygon slightly per mine for uniqueness
+        base_rotation_deg = (seed * 37) % 45 - 20  # -20° to +25°
+
+        vertices = []
+        for i in range(n_verts):
+            angle_deg = (i * 360.0 / n_verts) + base_rotation_deg
+            angle_rad = _math.radians(angle_deg)
+            r = base_radii[i] + radius_jitter[i]
+            r = max(r, 150)  # minimum 150 m from centre
+            # x = East offset (metres), y = North offset (metres)
+            dx = r * _math.sin(angle_rad)
+            dy = r * _math.cos(angle_rad)
+            v_lat = clat + dy / R_LAT
+            v_lon = clon + dx / R_LON
+            vertices.append([round(v_lon, 6), round(v_lat, 6)])
+
+        # Close the ring
+        vertices.append(vertices[0])
+        return vertices
+
     for b in boundaries_db:
         prov = None
         if b.provenance:
@@ -162,20 +214,26 @@ def get_mine_gis_map(
             )
 
         # Build GeoJSON ring [ [lon, lat], ... ]
-        # If surveyed coordinate points exist (e.g. Points A-I for North of Arkhapal), build the true surveyed polygon
+        # Priority 1: Surveyed coordinate polygon from MineCoordinate table
+        # Priority 2: Bounding box from min/max lat/lon
+        # Priority 3: Realistic synthetic polygon from mine centre
         geojson_ring = []
         if coords_db and len(coords_db) >= 3 and b.boundary_type == "POLYGON":
             geojson_ring = [[c.longitude, c.latitude] for c in coords_db if c.longitude is not None and c.latitude is not None]
             if geojson_ring and (geojson_ring[0][0] != geojson_ring[-1][0] or geojson_ring[0][1] != geojson_ring[-1][1]):
-                geojson_ring.append(geojson_ring[0]) # Close loop
+                geojson_ring.append(geojson_ring[0])  # Close loop
         elif None not in (b.min_latitude, b.max_latitude, b.min_longitude, b.max_longitude):
+            # Use real bbox from DB — this is already accurate for real coal blocks
             geojson_ring = [
-                [b.min_longitude, b.max_latitude], # NW
-                [b.max_longitude, b.max_latitude], # NE
-                [b.max_longitude, b.min_latitude], # SE
-                [b.min_longitude, b.min_latitude], # SW
-                [b.min_longitude, b.max_latitude]  # Closed loop
+                [b.min_longitude, b.max_latitude],  # NW
+                [b.max_longitude, b.max_latitude],  # NE
+                [b.max_longitude, b.min_latitude],  # SE
+                [b.min_longitude, b.min_latitude],  # SW
+                [b.min_longitude, b.max_latitude]   # Closed loop
             ]
+        else:
+            # Fallback: realistic irregular polygon from mine centre
+            geojson_ring = _make_realistic_mine_polygon(origin_lat, origin_lon, mine_id)
 
         boundary_features.append(
             GisBoundaryFeature(
@@ -189,6 +247,24 @@ def get_mine_gis_map(
                 area_sq_km=profile.geological_block_area_sq_km if profile else None,
                 coordinates_geojson=geojson_ring,
                 provenance=prov
+            )
+        )
+
+    # If no boundary records exist at all (demo mines), synthesise one realistic polygon
+    if not boundaries_db:
+        synth_ring = _make_realistic_mine_polygon(origin_lat, origin_lon, mine_id)
+        boundary_features.append(
+            GisBoundaryFeature(
+                id=-1,
+                boundary_type="POLYGON",
+                min_latitude=None,
+                max_latitude=None,
+                min_longitude=None,
+                max_longitude=None,
+                geometry_status="APPROXIMATE",
+                area_sq_km=None,
+                coordinates_geojson=synth_ring,
+                provenance=None
             )
         )
 
@@ -254,11 +330,16 @@ def get_mine_gis_map(
             )
         )
 
-    # Cameras
+    # Cameras — project local x/z coords to lat/lon same as sensors
     cameras = db.query(Camera).filter(Camera.mine_id == mine_id).all()
     for cam in cameras:
-        c_lat = getattr(cam, "latitude", None) or (origin_lat + 0.001)
-        c_lon = getattr(cam, "longitude", None) or (origin_lon + 0.001)
+        c_lat = getattr(cam, "latitude", None)
+        c_lon = getattr(cam, "longitude", None)
+        if c_lat is None or c_lon is None:
+            c_x = getattr(cam, "x", 0.0) or 0.0
+            c_z = getattr(cam, "z", 0.0) or 0.0
+            c_lat = origin_lat + (c_x / 6371000.0) * (180.0 / math.pi)
+            c_lon = origin_lon + (c_z / (6371000.0 * math.cos(math.radians(origin_lat)))) * (180.0 / math.pi)
         c_code = getattr(cam, "camera_code", getattr(cam, "code", f"CAM-{cam.id}"))
         operational_features.append(
             GisOperationalFeature(
@@ -272,6 +353,36 @@ def get_mine_gis_map(
                 longitude=round(c_lon, 6),
                 trust_badge="SIMULATED",
                 properties={"camera_type": getattr(cam, "camera_type", "SURVEILLANCE")}
+            )
+        )
+
+    # Machinery / Equipment — project local x/z to lat/lon
+    equipment_list = db.query(Equipment).filter(Equipment.mine_id == mine_id).all()
+    for eq in equipment_list:
+        e_lat = getattr(eq, "latitude", None)
+        e_lon = getattr(eq, "longitude", None)
+        if e_lat is None or e_lon is None:
+            e_x = getattr(eq, "x", 0.0) or 0.0
+            e_z = getattr(eq, "z", 0.0) or 0.0
+            e_lat = origin_lat + (e_x / 6371000.0) * (180.0 / math.pi)
+            e_lon = origin_lon + (e_z / (6371000.0 * math.cos(math.radians(origin_lat)))) * (180.0 / math.pi)
+        e_code = getattr(eq, "equipment_code", f"EQP-{eq.id}")
+        operational_features.append(
+            GisOperationalFeature(
+                id=f"machinery-{eq.id}",
+                entity_id=eq.id,
+                feature_type="MACHINERY",
+                code=e_code,
+                title=eq.name,
+                status=eq.status,
+                latitude=round(e_lat, 6),
+                longitude=round(e_lon, 6),
+                trust_badge="SIMULATED",
+                properties={
+                    "category": getattr(eq, "category", "EQUIPMENT"),
+                    "manufacturer": getattr(eq, "manufacturer", None),
+                    "next_service_due": eq.next_service_due.isoformat() if eq.next_service_due else None
+                }
             )
         )
 

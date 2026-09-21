@@ -353,11 +353,54 @@ export const GisMapPage: React.FC = () => {
 
     // 1. Render Mine Boundaries
     if (layerVisibility.mineBoundary) {
-      mapData.boundaries.forEach(b => {
-        const isApprox = b.geometry_status === 'APPROXIMATE';
-        const latLngs = b.coordinates_geojson.map(([lon, lat]) => [lat, lon] as [number, number]);
+      // Helper: build bounding rectangle from min/max lat/lon fields
+      const buildBboxRing = (b: any): [number, number][] => {
+        if (
+          b.min_latitude != null && b.max_latitude != null &&
+          b.min_longitude != null && b.max_longitude != null
+        ) {
+          return [
+            [b.max_latitude, b.min_longitude], // NW
+            [b.max_latitude, b.max_longitude], // NE
+            [b.min_latitude, b.max_longitude], // SE
+            [b.min_latitude, b.min_longitude], // SW
+          ];
+        }
+        return [];
+      };
 
-        if (latLngs.length > 0) {
+      // Emergency fallback: tight ~330m box when all else fails (backend should always provide coords)
+      const buildEmergencyRing = (lat: number, lon: number): [number, number][] => [
+        [lat + 0.003, lon - 0.003],
+        [lat + 0.003, lon + 0.003],
+        [lat - 0.003, lon + 0.003],
+        [lat - 0.003, lon - 0.003],
+      ];
+
+      const hasAnyBoundaryData = mapData.boundaries.length > 0;
+      const boundariesToRender = hasAnyBoundaryData
+        ? mapData.boundaries
+        : [{ coordinates_geojson: [] as [number, number][], geometry_status: 'APPROXIMATE', min_latitude: null, max_latitude: null, min_longitude: null, max_longitude: null, id: -1 }];
+
+      boundariesToRender.forEach((b: any) => {
+        const isApprox = b.geometry_status === 'APPROXIMATE' || !hasAnyBoundaryData || b.id === -1;
+
+        // Priority 1: Real polygon from backend (surveyed or synthetic)
+        // Priority 2: Bounding box from min/max lat/lon
+        // Priority 3: Emergency tight fallback box
+        let latLngs: [number, number][] = [];
+
+        if (b.coordinates_geojson && b.coordinates_geojson.length >= 3) {
+          latLngs = b.coordinates_geojson.map(([lon, lat]: [number, number]) => [lat, lon] as [number, number]);
+        } else {
+          latLngs = buildBboxRing(b);
+        }
+
+        if (latLngs.length < 3 && mapData.mine.latitude && mapData.mine.longitude) {
+          latLngs = buildEmergencyRing(mapData.mine.latitude, mapData.mine.longitude);
+        }
+
+        if (latLngs.length >= 3) {
           latLngs.forEach(([lat, lon]) => allLatLngs.push(L.latLng(lat, lon)));
 
           const polygon = L.polygon(latLngs, {
@@ -365,25 +408,26 @@ export const GisMapPage: React.FC = () => {
             color: isApprox ? '#F59E0B' : '#10B981',
             weight: 3.5,
             opacity: 0.95,
-            dashArray: isApprox ? '8, 8' : undefined,
+            dashArray: isApprox ? '8, 6' : undefined,
             fillColor: isApprox ? '#F59E0B' : '#059669',
-            fillOpacity: 0.22,
+            fillOpacity: 0.12,
             lineCap: 'round',
             lineJoin: 'round'
           });
 
           polygon.on('click', () => {
-            setSelectedFeature({ type: 'BOUNDARY', data: b });
+            if (b.id && b.id !== -1) setSelectedFeature({ type: 'BOUNDARY', data: b });
           });
 
+          const statusLabel = b.id === -1 ? 'SIMULATED (Operational Boundary)' : b.geometry_status;
           polygon.bindTooltip(
-            `<div class="font-mono text-xs font-bold text-slate-100">${mapData.mine.name} Boundary (${b.geometry_status})</div>`,
-            { className: 'custom-gis-tooltip' }
+            `<div class="font-mono text-xs font-bold text-slate-100">${mapData.mine.name} — Lease Boundary<br/><span class="text-[10px] font-normal text-slate-400">${statusLabel}</span></div>`,
+            { className: 'custom-gis-tooltip', sticky: false }
           );
 
           groups.boundary.addLayer(polygon);
 
-          // Add Central Mine Label Marker
+          // Mine centre label marker
           if (mapData.mine.latitude && mapData.mine.longitude) {
             const mineCenterIcon = L.divIcon({
               className: 'custom-mine-center-label',
@@ -393,8 +437,8 @@ export const GisMapPage: React.FC = () => {
                   <span class="text-amber-400">⛯</span> ${mapData.mine.name}
                 </div>
               `,
-              iconSize: [200, 32],
-              iconAnchor: [100, 16]
+              iconSize: [220, 32],
+              iconAnchor: [110, 16]
             });
 
             const centerLabel = L.marker([mapData.mine.latitude, mapData.mine.longitude], {
@@ -893,11 +937,11 @@ export const GisMapPage: React.FC = () => {
               <span className="text-[8px] -mt-1 text-slate-300">N</span>
             </div>
 
-            {/* Floating Basemap Switcher Dock (Bottom-Center inside map, spaced above legend) */}
+            {/* Floating Basemap Switcher Dock (Top-Right, below north arrow) */}
             <div
               role="group"
               aria-label="Basemap Selector"
-              className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20 bg-[#0D100F]/95 backdrop-blur-md border border-[#232A26] rounded-full px-3.5 py-1 shadow-2xl flex items-center gap-2 text-xs font-mono max-w-[calc(100%-2rem)] overflow-x-auto"
+              className="absolute top-16 right-3.5 z-20 bg-[#0D100F]/95 backdrop-blur-md border border-[#232A26] rounded-full px-3.5 py-1 shadow-2xl flex items-center gap-2 text-xs font-mono"
             >
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider select-none shrink-0">Basemap:</span>
               <div className="flex items-center gap-1.5 shrink-0">

@@ -182,12 +182,23 @@ def seed():
             db.add(s)
             sensors_list.append(s)
 
-        # Mine 3 Sensors (RS-07)
+        # Mine 3 Sensors (RS-07) — 12 sensors across headings and surface
         m3_sensor_configs = [
+            # North Heading
             ("SN-RS07-CH4-301", "CH4", "North Heading Telemetric Gas Sensor", 0.02, 0.35, 0.70, 1.20, 95.0, 320.0, -178.0, m3_l1.id, m3_z_hd.id, 0.28),
             ("SN-RS07-CO-301", "CO", "Incline Workings Carbon Monoxide Sensor", 1.0, 10.0, 20.0, 45.0, 90.0, 310.0, -178.0, m3_l1.id, m3_z_hd.id, 4.8),
             ("SN-RS07-VEL-301", "VEL", "North Incline Airflow Anemometer", 1.5, 3.8, 1.0, 0.5, 85.0, 290.0, -179.0, m3_l1.id, m3_z_hd.id, 2.4),
-            ("SN-RS07-DUST-301", "DUST", "Heading Face Dust Transmissometer", 0.3, 1.5, 2.5, 4.0, 100.0, 330.0, -177.0, m3_l1.id, m3_z_hd.id, 1.2)
+            ("SN-RS07-DUST-301", "DUST", "Heading Face Dust Transmissometer", 0.3, 1.5, 2.5, 4.0, 100.0, 330.0, -177.0, m3_l1.id, m3_z_hd.id, 1.2),
+            # South Heading
+            ("SN-RS07-CH4-302", "CH4", "South Heading Return Gas Monitor", 0.02, 0.35, 0.70, 1.20, -80.0, 280.0, -176.0, m3_l1.id, m3_z_hd.id, 0.19),
+            ("SN-RS07-CO-302", "CO", "South Seam 7 CO Early Warning Probe", 1.0, 10.0, 20.0, 45.0, -75.0, 265.0, -175.0, m3_l1.id, m3_z_hd.id, 3.1),
+            ("SN-RS07-TEMP-301", "TEMP", "Seam 7 Incline Ambient Temp Probe", 22.0, 32.0, 36.0, 42.0, 88.0, 305.0, -178.0, m3_l1.id, m3_z_hd.id, 28.4),
+            ("SN-RS07-VIB-301", "VIB", "Roof Strata Geophone — Incline Seam 7", 0.1, 2.0, 5.0, 9.0, 92.0, 318.0, -177.0, m3_l1.id, m3_z_hd.id, 0.9),
+            ("SN-RS07-HUM-301", "HUM", "Gallery Relative Humidity Probe", 45.0, 78.0, 88.0, 95.0, -70.0, 270.0, -176.0, m3_l1.id, m3_z_hd.id, 71.0),
+            # Main Incline / Surface
+            ("SN-RS07-PRES-301", "PRES", "Shaft Bottom Barometric Sensor", 99.0, 102.5, 96.0, 93.0, 20.0, 50.0, -90.0, m3_l1.id, m3_z_hd.id, 101.1),
+            ("SN-RS07-VEL-302", "VEL", "Main Incline Return Airway Anemometer", 1.8, 4.2, 1.0, 0.5, -30.0, 120.0, -100.0, m3_l1.id, m3_z_hd.id, 3.1),
+            ("SN-RS07-DUST-302", "DUST", "Incline Haulage Road Dust Monitor", 0.2, 1.2, 2.0, 3.5, 10.0, 80.0, -60.0, m3_l1.id, m3_z_hd.id, 0.85),
         ]
         for code, type_key, name, n_min, n_max, w_th, c_th, x, y, z, lvl_id, zn_id, last_v in m3_sensor_configs:
             s = Sensor(
@@ -201,15 +212,44 @@ def seed():
         db.commit()
 
         print("Seeding Cameras and Machinery...")
+        # Mine 1 Cameras
         c1 = Camera(camera_code="CAM-BDS04-SHAFT-01", mine_id=m1.id, level_id=m1_l0.id, zone_id=m1_z_vent.id, name="Shaft Top Winding Engine Camera", camera_type="FLAME_PROOF_EX", stream_url="rtsp://demo.mine.lan/bds04/cam01", status="ACTIVE", x=-45.0, y=-25.0, z=212.0, yaw=135.0, pitch=-15.0, fov=85.0, is_simulated="SIMULATED")
         c2 = Camera(camera_code="CAM-BDS04-LW-02", mine_id=m1.id, level_id=m1_l2.id, zone_id=m1_z_east.id, name="East Longwall Tailgate Camera", camera_type="FIXED_OPTICAL", stream_url="rtsp://demo.mine.lan/bds04/cam02", status="ACTIVE", x=130.0, y=460.0, z=-317.0, yaw=45.0, pitch=-10.0, fov=90.0, is_simulated="SIMULATED")
         c3 = Camera(camera_code="CAM-BDS04-LW-03", mine_id=m1.id, level_id=m1_l2.id, zone_id=m1_z_east.id, name="East Face Shearer Pan Camera", camera_type="FLAME_PROOF_EX", stream_url="rtsp://demo.mine.lan/bds04/cam03", status="ACTIVE", x=142.0, y=468.0, z=-318.0, yaw=90.0, pitch=-5.0, fov=110.0, is_simulated="SIMULATED")
         db.add_all([c1, c2, c3])
 
+        # Mine 2 Cameras (Opencast — surface mounted)
+        c4 = Camera(camera_code="CAM-SOB02-BENCH-01", mine_id=m2.id, level_id=m2_l1.id, zone_id=m2_z_b3.id, name="Bench 3A Shovel Monitoring Camera", camera_type="PTZ_OUTDOOR", stream_url="rtsp://demo.mine.lan/sob02/cam01", status="ACTIVE", x=305.0, y=225.0, z=237.0, yaw=180.0, pitch=-20.0, fov=120.0, is_simulated="SIMULATED")
+        c5 = Camera(camera_code="CAM-SOB02-HAUL-02", mine_id=m2.id, level_id=m2_l1.id, zone_id=m2_z_haul.id, name="East Haul Road Truck Monitor", camera_type="FIXED_OPTICAL", stream_url="rtsp://demo.mine.lan/sob02/cam02", status="ACTIVE", x=110.0, y=60.0, z=252.0, yaw=90.0, pitch=-10.0, fov=100.0, is_simulated="SIMULATED")
+        c6 = Camera(camera_code="CAM-SOB02-HIGHWALL-03", mine_id=m2.id, level_id=m2_l2.id, zone_id=m2_z_b3.id, name="Highwall Slope Stability Camera", camera_type="FIXED_OPTICAL", stream_url="rtsp://demo.mine.lan/sob02/cam03", status="ACTIVE", x=280.0, y=185.0, z=200.0, yaw=270.0, pitch=10.0, fov=95.0, is_simulated="SIMULATED")
+        db.add_all([c4, c5, c6])
+
+        # Mine 3 Cameras (Underground incline)
+        c7 = Camera(camera_code="CAM-RS07-INCL-01", mine_id=m3.id, level_id=m3_l1.id, zone_id=m3_z_hd.id, name="Incline Top Surface Safety Camera", camera_type="FIXED_OPTICAL", stream_url="rtsp://demo.mine.lan/rs07/cam01", status="ACTIVE", x=15.0, y=45.0, z=-50.0, yaw=0.0, pitch=-15.0, fov=90.0, is_simulated="SIMULATED")
+        c8 = Camera(camera_code="CAM-RS07-HD-NORTH-02", mine_id=m3.id, level_id=m3_l1.id, zone_id=m3_z_hd.id, name="North Heading Continuous Miner Camera", camera_type="FLAME_PROOF_EX", stream_url="rtsp://demo.mine.lan/rs07/cam02", status="ACTIVE", x=88.0, y=315.0, z=-178.0, yaw=45.0, pitch=-5.0, fov=85.0, is_simulated="SIMULATED")
+        c9 = Camera(camera_code="CAM-RS07-HD-SOUTH-03", mine_id=m3.id, level_id=m3_l1.id, zone_id=m3_z_hd.id, name="South Heading Junction Monitor", camera_type="FLAME_PROOF_EX", stream_url="rtsp://demo.mine.lan/rs07/cam03", status="ACTIVE", x=-72.0, y=260.0, z=-175.0, yaw=270.0, pitch=-8.0, fov=95.0, is_simulated="SIMULATED")
+        db.add_all([c7, c8, c9])
+
+        # Mine 1 Equipment
         eq1 = Equipment(equipment_code="EQP-BDS04-SHR-01", mine_id=m1.id, level_id=m1_l2.id, zone_id=m1_z_east.id, name="Joy Heavy Longwall Double-Drum Shearer", category="SHEARER", status="OPERATIONAL", manufacturer="Komatsu Mining", x=140.0, y=465.0, z=-320.0, last_serviced_at=now - timedelta(days=12), next_service_due=now + timedelta(days=18))
         eq2 = Equipment(equipment_code="EQP-BDS04-FAN-01", mine_id=m1.id, level_id=m1_l0.id, zone_id=m1_z_vent.id, name="Main Surface Centrifugal Exhauster Fan", category="VENTILATION_FAN", status="OPERATIONAL", manufacturer="Voltas", x=-50.0, y=-30.0, z=210.0, last_serviced_at=now - timedelta(days=5), next_service_due=now + timedelta(days=25))
         eq3 = Equipment(equipment_code="EQP-BDS04-CONV-01", mine_id=m1.id, level_id=m1_l1.id, zone_id=m1_z_haul.id, name="Armoured Face Main Trunk Conveyor", category="CONVEYOR", status="OPERATIONAL", manufacturer="Elecon", x=10.0, y=150.0, z=-220.0, last_serviced_at=now - timedelta(days=8), next_service_due=now + timedelta(days=22))
         db.add_all([eq1, eq2, eq3])
+
+        # Mine 2 Equipment (Heavy opencast)
+        eq4 = Equipment(equipment_code="EQP-SOB02-DRAG-01", mine_id=m2.id, level_id=m2_l2.id, zone_id=m2_z_b3.id, name="BE1570W Walking Dragline — Bench 6", category="DRAGLINE", status="OPERATIONAL", manufacturer="Bharat Earth Movers", x=295.0, y=195.0, z=192.0, last_serviced_at=now - timedelta(days=30), next_service_due=now + timedelta(days=60))
+        eq5 = Equipment(equipment_code="EQP-SOB02-SHOVEL-01", mine_id=m2.id, level_id=m2_l1.id, zone_id=m2_z_b3.id, name="PC2000 Electric Rope Shovel — Bench 3", category="SHOVEL", status="OPERATIONAL", manufacturer="Komatsu", x=318.0, y=238.0, z=236.0, last_serviced_at=now - timedelta(days=6), next_service_due=now + timedelta(days=44))
+        eq6 = Equipment(equipment_code="EQP-SOB02-TRUCK-01", mine_id=m2.id, level_id=m2_l1.id, zone_id=m2_z_haul.id, name="Caterpillar 793F Haul Truck Unit-01", category="HAUL_TRUCK", status="OPERATIONAL", manufacturer="Caterpillar", x=125.0, y=72.0, z=250.0, last_serviced_at=now - timedelta(days=3), next_service_due=now + timedelta(days=27))
+        eq7 = Equipment(equipment_code="EQP-SOB02-TRUCK-02", mine_id=m2.id, level_id=m2_l1.id, zone_id=m2_z_haul.id, name="Caterpillar 793F Haul Truck Unit-02", category="HAUL_TRUCK", status="MAINTENANCE", manufacturer="Caterpillar", x=105.0, y=58.0, z=251.0, last_serviced_at=now - timedelta(days=1), next_service_due=now + timedelta(days=14))
+        db.add_all([eq4, eq5, eq6, eq7])
+
+        # Mine 3 Equipment (Underground incline mine)
+        eq8 = Equipment(equipment_code="EQP-RS07-CM-01", mine_id=m3.id, level_id=m3_l1.id, zone_id=m3_z_hd.id, name="AM-50 Continuous Miner — North Heading", category="CONTINUOUS_MINER", status="OPERATIONAL", manufacturer="Joy Global", x=96.0, y=325.0, z=-179.0, last_serviced_at=now - timedelta(days=9), next_service_due=now + timedelta(days=21))
+        eq9 = Equipment(equipment_code="EQP-RS07-CM-02", mine_id=m3.id, level_id=m3_l1.id, zone_id=m3_z_hd.id, name="AM-50 Continuous Miner — South Heading", category="CONTINUOUS_MINER", status="STANDBY", manufacturer="Joy Global", x=-78.0, y=272.0, z=-176.0, last_serviced_at=now - timedelta(days=15), next_service_due=now + timedelta(days=15))
+        eq10 = Equipment(equipment_code="EQP-RS07-CONV-01", mine_id=m3.id, level_id=m3_l1.id, zone_id=m3_z_hd.id, name="Incline Belt Conveyor — Stage Loader", category="CONVEYOR", status="OPERATIONAL", manufacturer="Fenner", x=25.0, y=90.0, z=-85.0, last_serviced_at=now - timedelta(days=4), next_service_due=now + timedelta(days=26))
+        eq11 = Equipment(equipment_code="EQP-RS07-PUMP-01", mine_id=m3.id, level_id=m3_l1.id, zone_id=m3_z_hd.id, name="Sump Dewatering Pump — Incline Bottom", category="WATER_PUMP", status="OPERATIONAL", manufacturer="Kirloskar", x=18.0, y=160.0, z=-140.0, last_serviced_at=now - timedelta(days=7), next_service_due=now + timedelta(days=23))
+        eq12 = Equipment(equipment_code="EQP-RS07-FAN-01", mine_id=m3.id, level_id=m3_l1.id, zone_id=m3_z_hd.id, name="Auxiliary Ventilation Fan — North Heading", category="VENTILATION_FAN", status="OPERATIONAL", manufacturer="Howden", x=82.0, y=270.0, z=-178.0, last_serviced_at=now - timedelta(days=2), next_service_due=now + timedelta(days=28))
+        db.add_all([eq8, eq9, eq10, eq11, eq12])
         db.commit()
 
         print("Seeding Initial Sensor Readings, Anomaly Events, and Alerts...")
