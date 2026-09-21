@@ -160,6 +160,51 @@ export interface Translations {
   whatItMeans: string;
   whyTitle: string;
   decisionSupportDisclaimer: string;
+  // Mobile Foundation (MOBILE-01)
+  trinetraField: string;
+  fieldIntelligence: string;
+  fieldMotto: string;
+  mobileHome: string;
+  mobileTasks: string;
+  mobileMap: string;
+  mobileCopilot: string;
+  mobileMore: string;
+  assignedTasks: string;
+  highPriority: string;
+  pendingSync: string;
+  todayOverview: string;
+  myTasks: string;
+  conductInspection: string;
+  fieldObservation: string;
+  safetyAudit: string;
+  statutoryAudit: string;
+  activeViolations: string;
+  riskHeatmap: string;
+  shiftApprovals: string;
+  incidentLog: string;
+  complianceEvidence: string;
+  officialReports: string;
+  noTasksAssigned: string;
+  noMinesAssigned: string;
+  sessionExpired: string;
+  sessionExpiredDesc: string;
+  signInAgain: string;
+  serverError: string;
+  serverErrorDesc: string;
+  networkOnlineNotice: string;
+  networkOfflineNotice: string;
+  networkSyncingNotice: string;
+  networkSyncCompleteNotice: string;
+  networkSyncErrorNotice: string;
+  authorizedMines: string;
+  switchMine: string;
+  selectMinePrompt: string;
+  profileAndRole: string;
+  languageSelection: string;
+  systemDiagnostics: string;
+  desktopPortalLink: string;
+  signOutButton: string;
+  phaseFoundationNotice: string;
 }
 
 export const translations: Record<SupportedLanguage, Translations> = {
@@ -319,7 +364,52 @@ export const translations: Record<SupportedLanguage, Translations> = {
     currentCondition: 'Current Condition',
     whatItMeans: 'What It Means',
     whyTitle: 'Key Contributing Factors (Why?)',
-    decisionSupportDisclaimer: 'Decision Support Only: Human verification required before statutory or operational action.'
+    decisionSupportDisclaimer: 'Decision Support Only: Human verification required before statutory or operational action.',
+    // Mobile Foundation (MOBILE-01)
+    trinetraField: 'TRINETRA FIELD',
+    fieldIntelligence: 'FIELD INTELLIGENCE',
+    fieldMotto: 'Observe. Verify. Record. Act.',
+    mobileHome: 'Home',
+    mobileTasks: 'Tasks',
+    mobileMap: 'Map',
+    mobileCopilot: 'Copilot',
+    mobileMore: 'More',
+    assignedTasks: 'Assigned Tasks',
+    highPriority: 'High Priority',
+    pendingSync: 'Pending Sync',
+    todayOverview: 'TODAY',
+    myTasks: 'My Tasks',
+    conductInspection: 'Start Inspection',
+    fieldObservation: 'Field Observation',
+    safetyAudit: 'Safety Audit',
+    statutoryAudit: 'Statutory Audit',
+    activeViolations: 'Active Violations',
+    riskHeatmap: 'Risk Heatmap',
+    shiftApprovals: 'Shift Approvals',
+    incidentLog: 'Incident Log',
+    complianceEvidence: 'Compliance Evidence',
+    officialReports: 'Official Reports',
+    noTasksAssigned: 'No field tasks are currently assigned to you.',
+    noMinesAssigned: 'No authorized mines found for this account.',
+    sessionExpired: 'SESSION EXPIRED',
+    sessionExpiredDesc: 'Your TRINETRA session has expired. Please sign in again.',
+    signInAgain: 'Sign In Again',
+    serverError: 'SERVER ERROR',
+    serverErrorDesc: 'TRINETRA could not reach the server.',
+    networkOnlineNotice: 'Connected to TRINETRA Core. Real-time sync operational.',
+    networkOfflineNotice: 'You are offline. Work will be saved locally.',
+    networkSyncingNotice: 'Synchronizing field records with TRINETRA Core...',
+    networkSyncCompleteNotice: 'All field operations synchronized successfully.',
+    networkSyncErrorNotice: 'Sync encounter errors. Queued for automatic retry.',
+    authorizedMines: 'Authorized Mines',
+    switchMine: 'Switch Mine',
+    selectMinePrompt: 'Select an authorized operational mine:',
+    profileAndRole: 'Profile & Role',
+    languageSelection: 'Language',
+    systemDiagnostics: 'Diagnostics & Sync',
+    desktopPortalLink: 'Desktop Command Center',
+    signOutButton: 'Sign Out',
+    phaseFoundationNotice: 'Mobile Foundation Shell Active (Phase 1). Operational engines activate in subsequent phases.'
   },
   hi: {
     appName: 'त्रिनेत्र (TRINETRA)',
@@ -477,7 +567,52 @@ export const translations: Record<SupportedLanguage, Translations> = {
     currentCondition: 'वर्तमान स्थिति',
     whatItMeans: 'इसका क्या अर्थ है',
     whyTitle: 'मुख्य योगदान कारक (कारण)',
-    decisionSupportDisclaimer: 'केवल निर्णय समर्थन: वैधानिक या परिचालन कार्रवाई से पहले मानव सत्यापन आवश्यक है।'
+    decisionSupportDisclaimer: 'केवल निर्णय समर्थन: वैधानिक या परिचालन कार्रवाई से पहले मानव सत्यापन आवश्यक है।',
+    // Mobile Foundation (MOBILE-01 - Hindi)
+    trinetraField: 'त्रिनेत्र फील्ड',
+    fieldIntelligence: 'फील्ड इंटेलिजेंस',
+    fieldMotto: 'निरीक्षण करें। सत्यापित करें। दर्ज करें। कार्रवाई करें।',
+    mobileHome: 'होम',
+    mobileTasks: 'कार्य',
+    mobileMap: 'मानचित्र',
+    mobileCopilot: 'को-पायलट',
+    mobileMore: 'अधिक',
+    assignedTasks: 'आवंटित कार्य',
+    highPriority: 'उच्च प्राथमिकता',
+    pendingSync: 'लंबित सिंक',
+    todayOverview: 'आज का विवरण',
+    myTasks: 'मेरे कार्य',
+    conductInspection: 'निरीक्षण शुरू करें',
+    fieldObservation: 'फील्ड अवलोकन',
+    safetyAudit: 'सुरक्षा ऑडिट',
+    statutoryAudit: 'वैधानिक ऑडिट',
+    activeViolations: 'सक्रिय उल्लंघन',
+    riskHeatmap: 'जोखिम हीटमैप',
+    shiftApprovals: 'शिफ्ट स्वीकृतियां',
+    incidentLog: 'घटना लॉग',
+    complianceEvidence: 'अनुपालन साक्ष्य',
+    officialReports: 'आधिकारिक रिपोर्ट',
+    noTasksAssigned: 'वर्तमान में आपको कोई फील्ड कार्य आवंटित नहीं है।',
+    noMinesAssigned: 'इस खाते के लिए कोई अधिकृत खदान नहीं मिली।',
+    sessionExpired: 'सत्र समाप्त हो गया',
+    sessionExpiredDesc: 'आपका त्रिनेत्र सत्र समाप्त हो गया है। कृपया पुनः साइन इन करें।',
+    signInAgain: 'पुनः साइन इन करें',
+    serverError: 'सर्वर त्रुटि',
+    serverErrorDesc: 'त्रिनेत्र सर्वर से कनेक्ट नहीं हो सका।',
+    networkOnlineNotice: 'त्रिनेत्र कोर से जुड़ा हुआ। रीयल-टाइम सिंक सक्रिय है।',
+    networkOfflineNotice: 'आप ऑफ़लाइन हैं। कार्य स्थानीय रूप से सहेजा जाएगा।',
+    networkSyncingNotice: 'फील्ड रिकॉर्ड्स को त्रिनेत्र कोर के साथ सिंक किया जा रहा है...',
+    networkSyncCompleteNotice: 'सभी फील्ड संचालन सफलतापूर्वक सिंक हो गए हैं।',
+    networkSyncErrorNotice: 'सिंक में त्रुटि। स्वतः पुनः प्रयास के लिए कतारबद्ध।',
+    authorizedMines: 'अधिकृत खदानें',
+    switchMine: 'खदान बदलें',
+    selectMinePrompt: 'एक अधिकृत परिचालन खदान चुनें:',
+    profileAndRole: 'प्रोफ़ाइल एवं भूमिका',
+    languageSelection: 'भाषा',
+    systemDiagnostics: 'डायग्नोस्टिक्स एवं सिंक',
+    desktopPortalLink: 'डेस्कटॉप कमांड सेंटर',
+    signOutButton: 'साइन आउट',
+    phaseFoundationNotice: 'मोबाइल फाउंडेशन शेल सक्रिय (फेज 1)। परिचालन इंजन बाद के चरणों में सक्रिय होंगे।'
   },
   te: {
     appName: 'త్రినేత్ర (TRINETRA)',
@@ -635,7 +770,52 @@ export const translations: Record<SupportedLanguage, Translations> = {
     currentCondition: 'ప్రస్తుత పరిస్థితి',
     whatItMeans: 'దీని అర్థం ఏమిటి',
     whyTitle: 'ముఖ్య కారణాలు',
-    decisionSupportDisclaimer: 'కేవలం నిర్ణయ మద్దతు: చట్టబద్ధమైన లేదా కార్యాచరణ చర్యకు ముందు మానవ ధృవీకరణ అవసరం.'
+    decisionSupportDisclaimer: 'కేవలం నిర్ణయ మద్దతు: చట్టబద్ధమైన లేదా కార్యాచరణ చర్యకు ముందు మానవ ధృవీకరణ అవసరం.',
+    // Mobile Foundation (MOBILE-01 - Telugu)
+    trinetraField: 'త్రినేత్ర ఫీల్డ్',
+    fieldIntelligence: 'ఫీల్డ్ ఇంటెలిజెన్స్',
+    fieldMotto: 'పరిశీలించండి. ధృవీకరించండి. నమోదు చేయండి. చర్య తీసుకోండి.',
+    mobileHome: 'హోమ్',
+    mobileTasks: 'టాస్క్‌లు',
+    mobileMap: 'మ్యాప్',
+    mobileCopilot: 'కో-పైలట్',
+    mobileMore: 'మరిన్ని',
+    assignedTasks: 'కేటాయించిన టాస్క్‌లు',
+    highPriority: 'అధిక ప్రాధాన్యత',
+    pendingSync: 'పెండింగ్ సింక్',
+    todayOverview: 'నేటి వివరాలు',
+    myTasks: 'నా టాస్క్‌లు',
+    conductInspection: 'తనిఖీని ప్రారంభించండి',
+    fieldObservation: 'ఫీల్డ్ పరిశీలన',
+    safetyAudit: 'భద్రతా ఆడిట్',
+    statutoryAudit: 'చట్టబద్ధ ఆడిట్',
+    activeViolations: 'క్రియాశీల ఉల్లంఘనలు',
+    riskHeatmap: 'రిస్క్ హీట్‌మ్యాప్',
+    shiftApprovals: 'షిఫ్ట్ ఆమోదాలు',
+    incidentLog: 'సంఘటన లాగ్',
+    complianceEvidence: 'సమ్మతి సాక్ష్యం',
+    officialReports: 'అధికారిక నివేదికలు',
+    noTasksAssigned: 'ప్రస్తుతం మీకు ఎలాంటి ఫీల్డ్ టాస్క్‌లు కేటాయించబడలేదు.',
+    noMinesAssigned: 'ఈ ఖాతా కోసం అధికారిక గనులు కనుగొనబడలేదు.',
+    sessionExpired: 'సెషన్ ముగిసింది',
+    sessionExpiredDesc: 'మీ త్రినేత్ర సెషన్ ముగిసింది. దయచేసి మళ్లీ సైన్ ఇన్ చేయండి.',
+    signInAgain: 'మళ్లీ సైన్ ఇన్ చేయండి',
+    serverError: 'సర్వర్ లోపం',
+    serverErrorDesc: 'త్రినేత్ర సర్వర్‌ను సంప్రదించలేకపోయింది.',
+    networkOnlineNotice: 'త్రినేత్ర కోర్‌కు అనుసంధానించబడింది. రియల్-టైమ్ సింక్ సక్రియంగా ఉంది.',
+    networkOfflineNotice: 'మీరు ఆఫ్‌లైన్‌లో ఉన్నారు. పని స్థానికంగా సేవ్ చేయబడుతుంది.',
+    networkSyncingNotice: 'ఫీల్డ్ రికార్డులు త్రినేత్ర కోర్‌తో సింక్ అవుతున్నాయి...',
+    networkSyncCompleteNotice: 'అన్ని ఫీల్డ్ కార్యకలాపాలు విజయవంతంగా సింక్ అయ్యాయి.',
+    networkSyncErrorNotice: 'సింక్ లోపం. స్వయంచాలక పునఃప్రయత్నం కోసం వేచి ఉంది.',
+    authorizedMines: 'అధికారిక గనులు',
+    switchMine: 'గనిని మార్చండి',
+    selectMinePrompt: 'అధికారిక కార్యాచరణ గనిని ఎంచుకోండి:',
+    profileAndRole: 'ప్రొఫైల్ & పాత్ర',
+    languageSelection: 'భాష',
+    systemDiagnostics: 'డయాగ్నస్టిక్స్ & సింక్',
+    desktopPortalLink: 'డెస్క్‌టాప్ కమాండ్ సెంటర్',
+    signOutButton: 'సైన్ అవుట్',
+    phaseFoundationNotice: 'మొబైల్ ఫౌండేషన్ షెల్ సక్రియంగా ఉంది (ఫేజ్ 1). తరువాతి దశలలో కార్యాచరణ ఇంజిన్లు ప్రారంభించబడతాయి.'
   }
 };
 

@@ -3,9 +3,13 @@ import { useAuth } from '../context/AuthContext';
 import { useMineContext } from '../context/MineContext';
 import { useLanguage } from '../context/LanguageContext';
 import { MineSelector } from './MineSelector';
-import { Shield, Bell, LogOut, Radio, BrainCircuit, Activity, CheckCircle2 } from 'lucide-react';
+import { Shield, Bell, LogOut, Radio, BrainCircuit, Activity, CheckCircle2, Smartphone } from 'lucide-react';
 
-export const Header: React.FC = () => {
+interface HeaderProps {
+  onSwitchToMobile?: () => void;
+}
+
+export const Header: React.FC<HeaderProps> = ({ onSwitchToMobile }) => {
   const { user, logout } = useAuth();
   const { setCurrentTab } = useMineContext();
   const { language, setLanguage } = useLanguage();
@@ -75,6 +79,18 @@ export const Header: React.FC = () => {
           <BrainCircuit className="w-3.5 h-3.5 text-amber-400" />
           <span className="hidden sm:inline">AI COPILOT</span>
         </button>
+
+        {/* Mobile Field App Switcher */}
+        {onSwitchToMobile && (
+          <button
+            onClick={onSwitchToMobile}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-slate-800/80 hover:bg-slate-700/80 text-amber-400 border border-slate-700 text-xs font-mono font-bold transition-all cursor-pointer shadow-xs"
+            title="Switch to TRINETRA FIELD Mobile Application (/mobile)"
+          >
+            <Smartphone className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden lg:inline">FIELD APP</span>
+          </button>
+        )}
 
         {/* User Info */}
         <div className="flex items-center gap-2.5 pl-3 border-l border-[#1B211E]">

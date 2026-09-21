@@ -1,12 +1,38 @@
-import React from 'react';
+import { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { MineProvider } from './context/MineContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { LoginPage } from './pages/LoginPage';
 import { AppLayout } from './layouts/AppLayout';
+import { MobileLayout } from './mobile/MobileLayout';
 
 const MainApp: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
+  const [isMobileMode, setIsMobileMode] = useState<boolean>(() => {
+    return window.location.pathname.startsWith('/mobile') || (window.innerWidth < 768 && window.location.pathname !== '/');
+  });
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setIsMobileMode(window.location.pathname.startsWith('/mobile'));
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const switchToDesktop = () => {
+    setIsMobileMode(false);
+    if (window.location.pathname.startsWith('/mobile')) {
+      window.history.pushState({}, '', '/');
+    }
+  };
+
+  const switchToMobile = () => {
+    setIsMobileMode(true);
+    if (!window.location.pathname.startsWith('/mobile')) {
+      window.history.pushState({}, '', '/mobile');
+    }
+  };
 
   if (isLoading) {
     return (
@@ -25,7 +51,11 @@ const MainApp: React.FC = () => {
 
   return (
     <MineProvider>
-      <AppLayout />
+      {isMobileMode ? (
+        <MobileLayout onSwitchToDesktop={switchToDesktop} />
+      ) : (
+        <AppLayout onSwitchToMobile={switchToMobile} />
+      )}
     </MineProvider>
   );
 };
