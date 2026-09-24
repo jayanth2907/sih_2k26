@@ -1749,6 +1749,57 @@ export interface GisSearchResponseDTO {
   items: GisSearchItemDTO[];
 }
 
+export interface GisMineOverviewItemDTO {
+  id: number;
+  code: string;
+  name: string;
+  official_name: string;
+  mine_type: string;
+  state: string;
+  district: string;
+  latitude: number;
+  longitude: number;
+  total_area_sq_km?: number;
+  data_status: string;
+  geometry_status: string;
+  is_simulated: string;
+  provenance_doc?: string;
+  provenance_hash?: string;
+  operator?: string;
+  coalfield?: string;
+  
+  // Operational & Risk State
+  current_risk_score: number;
+  current_risk_band: 'CRITICAL' | 'HIGH' | 'MED' | 'MEDIUM' | 'LOW';
+  open_incidents_count: number;
+  open_field_tasks_count: number;
+  total_sensors: number;
+  online_sensors: number;
+  offline_sensors: number;
+  reporting_rate_percent: number;
+  active_anomalies_count: number;
+  sla_breaches_count: number;
+  predictive_hotspots_count: number;
+  active_alerts_count: number;
+  
+  // Simplified bounding polygon for quick spatial boundary highlight
+  simplified_boundary: number[][]; // [ [lon, lat], ... ]
+}
+
+export interface GisOverviewResponseDTO {
+  total_authorized_mines: number;
+  critical_risk_mines: number;
+  high_risk_mines: number;
+  medium_risk_mines: number;
+  low_risk_mines: number;
+  total_active_incidents: number;
+  total_open_tasks: number;
+  total_sensors_online: number;
+  total_sensors_count: number;
+  mines: GisMineOverviewItemDTO[];
+}
+
+
 
 
 

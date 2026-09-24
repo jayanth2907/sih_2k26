@@ -252,3 +252,43 @@ def test_unified_gis_search(client: TestClient, db_session: Session):
     data = res.json()
     assert data["results_count"] >= 1
     assert any(item["mine_id"] == mine.id for item in data["items"])
+
+
+def test_gis_overview_multi_mine_and_rbac(client: TestClient, db_session: Session):
+    """Verify multi-mine overview endpoint returns authorized mines, risk scores, and isolation."""
+    admin_token = get_token(client, email="admin@trinetra.gov.in")
+    all_mines = db_session.query(Mine).all()
+    assert len(all_mines) >= 1
+
+    # 1. Admin gets all authorized mines
+    res_admin = client.get("/api/v1/gis/overview", headers={"Authorization": f"Bearer {admin_token}"})
+    assert res_admin.status_code == 200
+    data_admin = res_admin.json()
+    assert data_admin["total_authorized_mines"] == len(all_mines)
+    assert len(data_admin["mines"]) == len(all_mines)
+
+    for m_item in data_admin["mines"]:
+        assert "id" in m_item
+        assert "name" in m_item
+        assert "latitude" in m_item
+        assert "longitude" in m_item
+        assert "current_risk_score" in m_item
+        assert m_item["current_risk_band"] in ("CRITICAL", "HIGH", "MED", "MEDIUM", "LOW")
+        assert "total_sensors" in m_item
+        assert "online_sensors" in m_item
+        assert "open_incidents_count" in m_item
+        assert "open_field_tasks_count" in m_item
+        assert "simplified_boundary" in m_item
+
+    # 2. Manager RBAC isolation test
+    manager_user = db_session.query(User).filter(User.email == "manager.mine1@trinetra.gov.in").first()
+    if manager_user:
+        mgr_token = get_token(client, email=manager_user.email)
+        res_mgr = client.get("/api/v1/gis/overview", headers={"Authorization": f"Bearer {mgr_token}"})
+        assert res_mgr.status_code == 200
+        data_mgr = res_mgr.json()
+        # Manager should only see assigned mine(s)
+        assert data_mgr["total_authorized_mines"] <= len(all_mines)
+        for m_item in data_mgr["mines"]:
+            assert m_item["id"] == 1  # Assigned to mine 1
+

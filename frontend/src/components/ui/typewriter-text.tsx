@@ -32,7 +32,7 @@ export const TypewriterText: React.FC<TypewriterTextProps> = ({
     }
 
     let charIndex = 0;
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setInterval>;
 
     const startDelayTimer = setTimeout(() => {
       timer = setInterval(() => {

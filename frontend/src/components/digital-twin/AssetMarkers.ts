@@ -27,205 +27,199 @@ export class AssetMarkersBuilder {
    */
   static createSensorMesh(sensor: Sensor, isHeatmap: boolean = false): THREE.Group {
     const group = new THREE.Group();
-    // Map spatial coordinates: x -> x, z -> y (depth/elevation), y -> z (northing)
-    group.position.set(sensor.x, sensor.z, sensor.y);
+    group.name = `sensor_${sensor.id}`;
     group.userData = { type: 'sensor', data: sensor, id: sensor.id };
 
     const color = this.getSensorColor(sensor, isHeatmap);
 
-    // Core Sphere
-    const sphereGeo = new THREE.SphereGeometry(3.2, 16, 16);
-    const sphereMat = new THREE.MeshStandardMaterial({
+    // Main Sphere Node
+    const geometry = new THREE.SphereGeometry(2.0, 16, 16);
+    const material = new THREE.MeshStandardMaterial({
       color: color,
       emissive: color,
-      emissiveIntensity: sensor.status === 'CRITICAL' ? 0.8 : 0.35,
-      roughness: 0.2,
-      metalness: 0.8
+      emissiveIntensity: sensor.status === 'CRITICAL' ? 0.8 : 0.3,
+      metalness: 0.2,
+      roughness: 0.3
     });
-    const sphereMesh = new THREE.Mesh(sphereGeo, sphereMat);
-    sphereMesh.name = 'core_sphere';
-    group.add(sphereMesh);
+    const sphere = new THREE.Mesh(geometry, material);
+    sphere.name = 'sensor_core';
+    group.add(sphere);
 
-    // Outer Glow / Pulse Ring
-    const ringGeo = new THREE.RingGeometry(3.6, 5.2, 24);
+    // Outer Glow / Status Ring
+    const ringGeo = new THREE.RingGeometry(2.6, 3.4, 32);
     const ringMat = new THREE.MeshBasicMaterial({
       color: color,
       side: THREE.DoubleSide,
       transparent: true,
-      opacity: sensor.status === 'CRITICAL' ? 0.85 : 0.4
+      opacity: 0.7
     });
-    const ringMesh = new THREE.Mesh(ringGeo, ringMat);
-    ringMesh.name = 'pulse_ring';
-    ringMesh.rotation.x = -Math.PI / 2;
-    group.add(ringMesh);
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.name = 'sensor_ring';
+    ring.rotation.x = Math.PI / 2;
+    group.add(ring);
 
-    // Support Mast / Pin
-    const pinGeo = new THREE.CylinderGeometry(0.4, 0.4, 6, 8);
-    const pinMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.9 });
-    const pinMesh = new THREE.Mesh(pinGeo, pinMat);
-    pinMesh.position.y = -3;
-    group.add(pinMesh);
+    // Vertical Anchor Line to tunnel floor
+    const lineGeo = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(0, -6, 0)
+    ]);
+    const lineMat = new THREE.LineBasicMaterial({
+      color: color,
+      transparent: true,
+      opacity: 0.4
+    });
+    const stem = new THREE.Line(lineGeo, lineMat);
+    group.add(stem);
 
     return group;
   }
 
   /**
-   * Builds 3D Camera Marker with directional lens, body, and translucent Field of View (FOV) cone.
+   * Builds 3D Camera Frustum Marker showing field of view direction.
    */
   static createCameraMesh(camera: Camera): THREE.Group {
     const group = new THREE.Group();
-    group.position.set(camera.x, camera.z, camera.y);
+    group.name = `camera_${camera.id}`;
     group.userData = { type: 'camera', data: camera, id: camera.id };
 
-    // Camera Housing Body
-    const bodyGeo = new THREE.BoxGeometry(3.5, 2.5, 5);
-    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.8, roughness: 0.2 });
-    const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
-    group.add(bodyMesh);
+    const color = camera.status === 'ONLINE' ? 0x06b6d4 : 0x64748b;
+
+    // Camera Body Housing Box
+    const bodyGeo = new THREE.BoxGeometry(2.5, 1.8, 3.5);
+    const bodyMat = new THREE.MeshStandardMaterial({
+      color: 0x1e293b,
+      metalness: 0.8,
+      roughness: 0.2
+    });
+    const body = new THREE.Mesh(bodyGeo, bodyMat);
+    group.add(body);
 
     // Lens Cylinder
-    const lensGeo = new THREE.CylinderGeometry(1.2, 1.2, 2, 16);
-    const lensMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.1, metalness: 0.9 });
-    const lensMesh = new THREE.Mesh(lensGeo, lensMat);
-    lensMesh.rotation.x = Math.PI / 2;
-    lensMesh.position.z = 3;
-    group.add(lensMesh);
+    const lensGeo = new THREE.CylinderGeometry(0.8, 0.8, 1.2, 16);
+    const lensMat = new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.4 });
+    const lens = new THREE.Mesh(lensGeo, lensMat);
+    lens.rotation.x = Math.PI / 2;
+    lens.position.z = 2.2;
+    group.add(lens);
 
-    // Field of View (FOV) Cone
-    const fovAngle = (camera.fov || 90) * (Math.PI / 180);
-    const coneLength = 35;
-    const coneRadius = Math.tan(fovAngle / 2) * coneLength;
-
-    const coneGeo = new THREE.ConeGeometry(coneRadius, coneLength, 16, 1, true);
-    coneGeo.translate(0, -coneLength / 2, 0); // Origin at apex
-    coneGeo.rotateX(-Math.PI / 2); // Point forward along +Z
-
-    const coneMat = new THREE.MeshBasicMaterial({
-      color: 0x38bdf8,
+    // 3D Visual Frustum Pyramid (FOV Cone)
+    const fovGeo = new THREE.ConeGeometry(8, 20, 4, 1, true);
+    const fovMat = new THREE.MeshBasicMaterial({
+      color: color,
+      wireframe: true,
       transparent: true,
-      opacity: 0.18,
-      side: THREE.DoubleSide,
-      depthWrite: false
+      opacity: 0.25
     });
-    const coneMesh = new THREE.Mesh(coneGeo, coneMat);
-    coneMesh.name = 'camera_fov_cone';
-    group.add(coneMesh);
-
-    // FOV Cone Wireframe Outline
-    const wireGeo = new THREE.EdgesGeometry(coneGeo);
-    const wireMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.45 });
-    const wireMesh = new THREE.LineSegments(wireGeo, wireMat);
-    wireMesh.name = 'camera_fov_wire';
-    group.add(wireMesh);
-
-    // Apply Yaw (Y-rotation) and Pitch (X-rotation)
-    const yawRad = ((camera.yaw || 0) * Math.PI) / 180;
-    const pitchRad = ((camera.pitch || 0) * Math.PI) / 180;
-    group.rotation.y = yawRad;
-    group.rotation.x = pitchRad;
+    const fov = new THREE.Mesh(fovGeo, fovMat);
+    fov.rotation.x = -Math.PI / 2;
+    fov.position.z = 12;
+    group.add(fov);
 
     return group;
   }
 
   /**
-   * Builds Heavy Machinery / Ventilation 3D Equipment Glyphs
+   * Builds 3D Machinery / Equipment Mesh with status bounding indicator.
    */
   static createEquipmentMesh(eq: Equipment): THREE.Group {
     const group = new THREE.Group();
-    group.position.set(eq.x, eq.z, eq.y);
+    group.name = `equipment_${eq.id}`;
     group.userData = { type: 'equipment', data: eq, id: eq.id };
 
-    const cat = (eq.category || '').toUpperCase();
+    const isOp = eq.status === 'OPERATIONAL';
+    const isMaint = eq.status === 'MAINTENANCE';
+    const color = isOp ? 0xf59e0b : isMaint ? 0xef4444 : 0x64748b;
 
-    if (cat === 'VENTILATION_FAN') {
-      // Centrifugal Fan Housing
-      const housingGeo = new THREE.CylinderGeometry(7, 7, 6, 24);
-      const housingMat = new THREE.MeshStandardMaterial({ color: 0x10b981, metalness: 0.7, roughness: 0.3 });
-      const housing = new THREE.Mesh(housingGeo, housingMat);
-      housing.rotation.z = Math.PI / 2;
-      group.add(housing);
+    // Main Heavy Equipment Base Block
+    const baseGeo = new THREE.BoxGeometry(6, 3.5, 10);
+    const baseMat = new THREE.MeshStandardMaterial({
+      color: 0x334155,
+      metalness: 0.6,
+      roughness: 0.4
+    });
+    const base = new THREE.Mesh(baseGeo, baseMat);
+    group.add(base);
 
-      // Rotating Impeller Blades
-      const impellerGroup = new THREE.Group();
-      impellerGroup.name = 'fan_impeller';
-      const bladeMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.9 });
-      for (let b = 0; b < 6; b++) {
-        const bladeGeo = new THREE.BoxGeometry(0.4, 5.5, 1.5);
-        const blade = new THREE.Mesh(bladeGeo, bladeMat);
-        blade.rotation.x = (b * Math.PI) / 3;
-        impellerGroup.add(blade);
-      }
-      group.add(impellerGroup);
-    } else if (cat === 'SHEARER') {
-      // Longwall Double-Drum Shearer
-      const bodyGeo = new THREE.BoxGeometry(16, 4.5, 6);
-      const bodyMat = new THREE.MeshStandardMaterial({ color: 0xeab308, metalness: 0.8, roughness: 0.2 });
-      const body = new THREE.Mesh(bodyGeo, bodyMat);
-      group.add(body);
+    // Operator Cabin / Upper Structure
+    const cabGeo = new THREE.BoxGeometry(4, 2.8, 4);
+    const cabMat = new THREE.MeshStandardMaterial({
+      color: 0x1e293b,
+      metalness: 0.4,
+      roughness: 0.6
+    });
+    const cab = new THREE.Mesh(cabGeo, cabMat);
+    cab.position.set(0, 3, -1);
+    group.add(cab);
 
-      // Left Cutting Drum
-      const drumGeo = new THREE.CylinderGeometry(3.5, 3.5, 4, 16);
-      const drumMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.9, roughness: 0.1 });
-      const drum1 = new THREE.Mesh(drumGeo, drumMat);
-      drum1.position.set(-10, 0, 0);
-      drum1.name = 'shearer_drum_left';
-      group.add(drum1);
-
-      // Right Cutting Drum
-      const drum2 = new THREE.Mesh(drumGeo, drumMat);
-      drum2.position.set(10, 0, 0);
-      drum2.name = 'shearer_drum_right';
-      group.add(drum2);
-    } else if (cat === 'CONVEYOR') {
-      // Armoured Conveyor Bed
-      const convGeo = new THREE.BoxGeometry(30, 1.8, 4);
-      const convMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.6 });
-      const conv = new THREE.Mesh(convGeo, convMat);
-      group.add(conv);
-
-      // Conveyor Rollers
-      const rollerGeo = new THREE.CylinderGeometry(0.8, 0.8, 4.2, 12);
-      const rollerMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9 });
-      for (let r = -12; r <= 12; r += 6) {
-        const roller = new THREE.Mesh(rollerGeo, rollerMat);
-        roller.position.set(r, 1, 0);
-        roller.rotation.x = Math.PI / 2;
-        group.add(roller);
-      }
-    } else {
-      // Generic Heavy Machinery / Excavator
-      const baseGeo = new THREE.BoxGeometry(10, 5, 8);
-      const baseMat = new THREE.MeshStandardMaterial({ color: 0xf97316, metalness: 0.7 });
-      const base = new THREE.Mesh(baseGeo, baseMat);
-      group.add(base);
-
-      const boomGeo = new THREE.CylinderGeometry(0.8, 1.2, 15, 8);
-      const boomMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.9 });
-      const boom = new THREE.Mesh(boomGeo, boomMat);
-      boom.position.set(4, 7, 0);
-      boom.rotation.z = -Math.PI / 4;
-      group.add(boom);
-    }
+    // Status Beacon on top
+    const beaconGeo = new THREE.SphereGeometry(0.8, 12, 12);
+    const beaconMat = new THREE.MeshStandardMaterial({
+      color: color,
+      emissive: color,
+      emissiveIntensity: 0.9
+    });
+    const beacon = new THREE.Mesh(beaconGeo, beaconMat);
+    beacon.position.set(0, 5, -1);
+    beacon.name = 'equipment_beacon';
+    group.add(beacon);
 
     return group;
   }
 
   /**
-   * Builds 3D Hazard Beacon Pyramid for Active Incidents
+   * Builds Glowing 3D Anomaly / Incident Hazard Marker.
    */
-  static createIncidentBeacon(incident: Incident): THREE.Group {
+  static createAnomalyMesh(anomaly: AnomalyEvent): THREE.Group {
     const group = new THREE.Group();
-    group.position.set(incident.x, incident.z + 8, incident.y);
+    group.name = `anomaly_${anomaly.id}`;
+    group.userData = { type: 'anomaly', data: anomaly, id: anomaly.id };
+
+    const color = anomaly.severity === 'CRITICAL' ? 0xef4444 : 0xf59e0b;
+
+    // Octahedron Hazard Core
+    const geo = new THREE.OctahedronGeometry(3.5, 0);
+    const mat = new THREE.MeshStandardMaterial({
+      color: color,
+      emissive: color,
+      emissiveIntensity: 0.8,
+      wireframe: false,
+      transparent: true,
+      opacity: 0.85
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.name = 'anomaly_core';
+    group.add(mesh);
+
+    // Outer Pulsing Hazard Wireframe
+    const wireGeo = new THREE.OctahedronGeometry(5.0, 0);
+    const wireMat = new THREE.MeshBasicMaterial({
+      color: color,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.5
+    });
+    const wire = new THREE.Mesh(wireGeo, wireMat);
+    wire.name = 'anomaly_pulse_wire';
+    group.add(wire);
+
+    return group;
+  }
+
+  /**
+   * Builds Glowing 3D Incident Hazard Marker.
+   */
+  static createIncidentMesh(incident: Incident): THREE.Group {
+    const group = new THREE.Group();
+    group.name = `incident_${incident.id}`;
     group.userData = { type: 'incident', data: incident, id: incident.id };
 
-    // Floating Hazard Octahedron/Diamond
-    const geo = new THREE.OctahedronGeometry(4, 0);
+    // Floating Hazard Diamond
+    const geo = new THREE.ConeGeometry(3, 6, 4);
     const mat = new THREE.MeshStandardMaterial({
       color: 0xef4444,
-      emissive: 0xdc2626,
+      emissive: 0xef4444,
       emissiveIntensity: 0.9,
-      metalness: 0.8,
-      roughness: 0.1
+      roughness: 0.2
     });
     const diamond = new THREE.Mesh(geo, mat);
     diamond.name = 'incident_diamond';
@@ -244,6 +238,10 @@ export class AssetMarkersBuilder {
     group.add(beam);
 
     return group;
+  }
+
+  static createIncidentBeacon(incident: Incident): THREE.Group {
+    return this.createIncidentMesh(incident);
   }
 
   /**

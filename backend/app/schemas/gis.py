@@ -162,3 +162,54 @@ class GisSearchResponse(BaseModel):
     query: str
     results_count: int
     items: List[GisSearchItem]
+
+
+class GisMineOverviewItem(BaseModel):
+    id: int
+    code: str
+    name: str
+    official_name: str
+    mine_type: str
+    state: str
+    district: str
+    latitude: float
+    longitude: float
+    total_area_sq_km: Optional[float] = None
+    data_status: str
+    geometry_status: str
+    is_simulated: str
+    provenance_doc: Optional[str] = None
+    provenance_hash: Optional[str] = None
+    operator: Optional[str] = None
+    coalfield: Optional[str] = None
+    
+    # Operational & Risk State
+    current_risk_score: float
+    current_risk_band: str # CRITICAL, HIGH, MEDIUM, LOW
+    open_incidents_count: int
+    open_field_tasks_count: int
+    total_sensors: int
+    online_sensors: int
+    offline_sensors: int
+    reporting_rate_percent: float
+    active_anomalies_count: int
+    sla_breaches_count: int
+    predictive_hotspots_count: int
+    active_alerts_count: int
+    
+    # Simplified bounding polygon for quick spatial boundary highlight
+    simplified_boundary: List[List[float]] = []
+
+
+class GisOverviewResponse(BaseModel):
+    total_authorized_mines: int
+    critical_risk_mines: int
+    high_risk_mines: int
+    medium_risk_mines: int
+    low_risk_mines: int
+    total_active_incidents: int
+    total_open_tasks: int
+    total_sensors_online: int
+    total_sensors_count: int
+    mines: List[GisMineOverviewItem] = []
+

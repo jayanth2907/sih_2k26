@@ -3777,47 +3777,93 @@ class FieldService:
         pred.evidence_file_name = payload.evidence_file_name
         pred.evidence_file_hash = payload.evidence_file_hash
 
-        # Optional 1: Create Governance Task for field remediation
+        # Optional 1: Create or update Governance Task for field remediation (Idempotent)
         if payload.create_governance_task:
-            task = GovernanceTask(
-                task_code=f"TSK-PRISK-{pred.id}-{int(now.timestamp())}",
-                mine_id=pred.mine_id,
-                domain="SAFETY",
-                title=payload.task_title or f"Field Risk Remediation: {pred.predicted_severity} Risk #{pred.id}",
-                description=f"Generated from Field Risk Verification ({payload.outcome}): {payload.notes}",
-                priority=payload.task_priority or "HIGH",
-                status="ASSIGNED",
-                assignee_id=user.id,
-                created_by_id=user.id,
-                due_at=now + timedelta(hours=24),
-                source_resource_type="PREDICTIVE_RISK",
-                source_resource_id=str(pred.id),
-                created_at=now,
-                updated_at=now
-            )
-            db.add(task)
-            db.flush()
-            pred.related_task_id = task.id
+            existing_task = None
+            if pred.related_task_id:
+                existing_task = db.query(GovernanceTask).filter(GovernanceTask.id == pred.related_task_id).first()
+            if not existing_task:
+                existing_task = db.query(GovernanceTask).filter(
+                    GovernanceTask.source_resource_type == "PREDICTIVE_RISK",
+                    GovernanceTask.source_resource_id == str(pred.id)
+                ).first()
 
-        # Optional 2: Create Incident if hazard/unsafe condition identified
+            if existing_task:
+                existing_task.title = payload.task_title or existing_task.title or f"Field Risk Remediation: {pred.predicted_severity} Risk #{pred.id}"
+                existing_task.description = f"Generated from Field Risk Verification ({payload.outcome}): {payload.notes}"
+                existing_task.priority = payload.task_priority or existing_task.priority or "HIGH"
+                existing_task.updated_at = now
+                pred.related_task_id = existing_task.id
+            else:
+                base_task_code = f"TSK-PRISK-{pred.id}-{int(now.timestamp())}"
+                task_code = base_task_code
+                counter = 1
+                while db.query(GovernanceTask).filter(GovernanceTask.task_code == task_code).first() is not None:
+                    task_code = f"{base_task_code}-{counter}"
+                    counter += 1
+
+                task = GovernanceTask(
+                    task_code=task_code,
+                    mine_id=pred.mine_id,
+                    domain="SAFETY",
+                    title=payload.task_title or f"Field Risk Remediation: {pred.predicted_severity} Risk #{pred.id}",
+                    description=f"Generated from Field Risk Verification ({payload.outcome}): {payload.notes}",
+                    priority=payload.task_priority or "HIGH",
+                    status="ASSIGNED",
+                    assignee_id=user.id,
+                    created_by_id=user.id,
+                    due_at=now + timedelta(hours=24),
+                    source_resource_type="PREDICTIVE_RISK",
+                    source_resource_id=str(pred.id),
+                    created_at=now,
+                    updated_at=now
+                )
+                db.add(task)
+                db.flush()
+                pred.related_task_id = task.id
+
+        # Optional 2: Create or update Incident if hazard/unsafe condition identified (Idempotent)
         if payload.create_incident:
-            incident = Incident(
-                incident_code=f"INC-{now.year}-{int(now.timestamp()) % 100000:05d}",
-                mine_id=pred.mine_id,
-                title=payload.incident_title or f"Hazard Identified during Risk Verification #{pred.id}",
-                description=f"Field verification finding by {user.full_name}: {payload.notes}",
-                category="GAS_ANOMALY" if "methane" in (payload.notes or "").lower() else "ROOF_FALL_RISK",
-                severity=payload.incident_severity or "HIGH",
-                status="OPEN",
-                reporter_id=user.id,
-                latitude=payload.latitude,
-                longitude=payload.longitude,
-                created_at=now,
-                updated_at=now
-            )
-            db.add(incident)
-            db.flush()
-            pred.related_incident_id = incident.id
+            existing_inc = None
+            if pred.related_incident_id:
+                existing_inc = db.query(Incident).filter(Incident.id == pred.related_incident_id).first()
+            if not existing_inc:
+                existing_inc = db.query(Incident).filter(
+                    Incident.mine_id == pred.mine_id,
+                    Incident.description.contains(f"Risk Verification #{pred.id}")
+                ).first()
+
+            if existing_inc:
+                existing_inc.title = payload.incident_title or existing_inc.title
+                existing_inc.description = f"Field verification finding by {user.full_name}: {payload.notes}"
+                existing_inc.severity = payload.incident_severity or existing_inc.severity
+                existing_inc.updated_at = now
+                pred.related_incident_id = existing_inc.id
+            else:
+                base_inc_code = f"INC-{now.year}-{int(now.timestamp()) % 100000:05d}"
+                inc_code = base_inc_code
+                inc_counter = 1
+                while db.query(Incident).filter(Incident.incident_code == inc_code).first() is not None:
+                    inc_code = f"INC-{now.year}-{(int(now.timestamp()) + inc_counter) % 100000:05d}"
+                    inc_counter += 1
+
+                incident = Incident(
+                    incident_code=inc_code,
+                    mine_id=pred.mine_id,
+                    title=payload.incident_title or f"Hazard Identified during Risk Verification #{pred.id}",
+                    description=f"Field verification finding by {user.full_name}: {payload.notes}",
+                    category="GAS_ANOMALY" if "methane" in (payload.notes or "").lower() else "ROOF_FALL_RISK",
+                    severity=payload.incident_severity or "HIGH",
+                    status="OPEN",
+                    reporter_id=user.id,
+                    latitude=payload.latitude,
+                    longitude=payload.longitude,
+                    created_at=now,
+                    updated_at=now
+                )
+                db.add(incident)
+                db.flush()
+                pred.related_incident_id = incident.id
 
         # Notifications
         if payload.outcome == "ISSUE_FOUND":

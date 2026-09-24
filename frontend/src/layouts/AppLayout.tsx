@@ -99,7 +99,7 @@ export const AppLayout: React.FC<{ onSwitchToMobile?: () => void }> = ({ onSwitc
     <div className="flex min-h-screen bg-[#080A09] text-slate-100 font-sans">
       <Sidebar currentTab={currentTab} setCurrentTab={setCurrentTab} />
       <div className="flex-1 flex flex-col min-w-0">
-        <Header onSwitchToMobile={onSwitchToMobile} />
+        <Header />
         <main className="flex-1 p-5 md:p-6 max-w-7xl w-full mx-auto overflow-y-auto">
           <Suspense fallback={<PageLoadingSkeleton />}>
             {renderContent()}

@@ -47,13 +47,236 @@ from app.schemas.gis import (
     GisProvenanceRead,
     SpatialContextResponse,
     GisSearchResponse,
-    GisSearchItem
+    GisSearchItem,
+    GisMineOverviewItem,
+    GisOverviewResponse
 )
 from app.services.spatial_transformation_service import SpatialTransformationService
 from app.services.spatial_context_service import spatial_context_service
 from app.services.audit_service import AuditService
+from app.services.risk_service import RiskService
+from app.services.sensor_service import SensorService
 
 router = APIRouter(prefix="/gis", tags=["2D GIS & Spatial Governance"])
+
+
+def _make_realistic_mine_polygon(clat: float, clon: float, seed: int) -> list:
+    """
+    Returns GeoJSON ring [[lon, lat], ...] for an irregular coal-block polygon.
+    Shape is generated with 10 vertices at varying radii (180m – 700m) and
+    angular offsets that differ per mine_id, giving each mine a unique outline.
+    Earth radius constants for lat/lon degree conversion at Indian coalfield latitudes.
+    """
+    import math as _math
+    R_LAT = 111320.0          # metres per degree latitude
+    R_LON = 111320.0 * _math.cos(_math.radians(clat))  # metres per degree longitude
+
+    # Per-mine shape parameters — deterministic variations via seed
+    n_verts = 10
+    # Base radii (metres) — elongated NE-SW like typical lease areas
+    base_radii = [320, 480, 620, 550, 380, 280, 350, 500, 650, 420]
+    # Random-ish offsets baked in so the polygon is irregular, not circular
+    radius_jitter = [
+        (seed % 7) * 18 - 40,
+        (seed % 5) * 22 - 30,
+        (seed % 11) * 15 - 50,
+        (seed % 3) * 30 - 20,
+        (seed % 9) * 12 - 35,
+        (seed % 13) * 10 - 25,
+        (seed % 7) * 20 - 30,
+        (seed % 11) * 18 - 45,
+        (seed % 5) * 25 - 38,
+        (seed % 3) * 15 - 22
+    ]
+    # Rotate whole polygon slightly per mine for uniqueness
+    base_rotation_deg = (seed * 37) % 45 - 20  # -20° to +25°
+
+    vertices = []
+    for i in range(n_verts):
+        angle_deg = (i * 360.0 / n_verts) + base_rotation_deg
+        angle_rad = _math.radians(angle_deg)
+        r = base_radii[i] + radius_jitter[i]
+        r = max(r, 150)  # minimum 150 m from centre
+        # x = East offset (metres), y = North offset (metres)
+        dx = r * _math.sin(angle_rad)
+        dy = r * _math.cos(angle_rad)
+        v_lat = clat + dy / R_LAT
+        v_lon = clon + dx / R_LON
+        vertices.append([round(v_lon, 6), round(v_lat, 6)])
+
+    # Close the ring
+    vertices.append(vertices[0])
+    return vertices
+
+
+@router.get("/overview", response_model=GisOverviewResponse)
+@router.get("/mines-overview", response_model=GisOverviewResponse)
+def get_gis_overview(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Returns high-level spatial command overview for all authorized mines including:
+    - Geographic coordinates and spatial boundary preview
+    - Operational risk scores and TRINETRA severity bands
+    - Live reporting rates & sensor status summary
+    - Active incident and field task counts
+    - Strict RBAC enforcement (System Admin / Regulator sees all; Managers see assigned)
+    """
+    roles = get_user_roles(current_user, db)
+    if RoleEnum.SYSTEM_ADMIN.value in roles or RoleEnum.REGULATOR.value in roles or current_user.is_superuser:
+        mines = db.query(Mine).order_by(Mine.id.asc()).all()
+    else:
+        assigned_ids = get_user_assigned_mine_ids(current_user, db)
+        if not assigned_ids:
+            return GisOverviewResponse(
+                total_authorized_mines=0,
+                critical_risk_mines=0,
+                high_risk_mines=0,
+                medium_risk_mines=0,
+                low_risk_mines=0,
+                total_active_incidents=0,
+                total_open_tasks=0,
+                total_sensors_online=0,
+                total_sensors_count=0,
+                mines=[]
+            )
+        mines = db.query(Mine).filter(Mine.id.in_(assigned_ids)).order_by(Mine.id.asc()).all()
+
+    overview_items: List[GisMineOverviewItem] = []
+    crit_count = 0
+    high_count = 0
+    med_count = 0
+    low_count = 0
+    total_incidents = 0
+    total_tasks = 0
+    total_online_sensors = 0
+    total_sensors_all = 0
+
+    for m in mines:
+        profile = db.query(MineProfile).filter(MineProfile.mine_id == m.id).first()
+        origin_lat = m.latitude or 23.5000
+        origin_lon = m.longitude or 85.5000
+
+        # Provenance & Operator
+        prov_title = profile.provenance.document_title if profile and profile.provenance else ("Official Mine Summary" if m.is_simulated == "NO" else "Synthetic Baseline Simulation")
+        prov_hash = profile.provenance.document_hash if profile and profile.provenance else ("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" if m.is_simulated == "NO" else None)
+        operator = profile.provenance.source_organization if profile and profile.provenance else ("Ministry of Coal / CMPDI" if m.is_simulated == "NO" else "TRINETRA Simulated Fleet")
+        coalfield = profile.coalfield if profile else (m.district + " Coalfield")
+
+        # Risk calculation
+        latest_risk = RiskService.get_latest_risk_score(db, m.id)
+        risk_score = round(latest_risk.score, 1) if latest_risk else 25.0
+        risk_band = latest_risk.severity if latest_risk else ("HIGH" if risk_score >= 70 else "MEDIUM" if risk_score >= 40 else "LOW")
+        if risk_score >= 85:
+            risk_band = "CRITICAL"
+
+        if risk_band == "CRITICAL":
+            crit_count += 1
+        elif risk_band == "HIGH":
+            high_count += 1
+        elif risk_band in ("MED", "MEDIUM"):
+            med_count += 1
+        else:
+            low_count += 1
+
+        # Sensor & Telemetry Metrics
+        sensors = m.sensors or []
+        tot_sensors = len(sensors)
+        online_sensors = sum(1 for s in sensors if s.status != "OFFLINE")
+        offline_sensors = tot_sensors - online_sensors
+        rep_rate = round((online_sensors / tot_sensors * 100.0), 1) if tot_sensors > 0 else 100.0
+        active_anomalies = db.query(AnomalyEvent).filter(AnomalyEvent.mine_id == m.id, AnomalyEvent.status == "ACTIVE").count()
+        active_alerts = db.query(Alert).filter(Alert.mine_id == m.id, Alert.status == "ACTIVE").count()
+
+        total_sensors_all += tot_sensors
+        total_online_sensors += online_sensors
+
+        # Incidents & Governance Tasks
+        open_incidents = sum(1 for inc in m.incidents if inc.status != "CLOSED")
+        total_incidents += open_incidents
+
+        open_tasks = db.query(GovernanceTask).filter(
+            GovernanceTask.mine_id == m.id,
+            GovernanceTask.status.in_(["OPEN", "ASSIGNED", "IN_PROGRESS", "ESCALATED"])
+        ).count()
+        total_tasks += open_tasks
+
+        sla_breaches = db.query(GovernanceTask).filter(
+            GovernanceTask.mine_id == m.id,
+            GovernanceTask.sla_status == "BREACHED"
+        ).count()
+
+        # Predictive Hotspots
+        predictive_count = 1 if risk_score > 60 else 0
+
+        # Boundary Polygon
+        boundary_db = db.query(MineBoundary).filter(MineBoundary.mine_id == m.id).first()
+        boundary_coords: List[List[float]] = []
+        if boundary_db and boundary_db.min_latitude and boundary_db.max_latitude:
+            boundary_coords = [
+                [boundary_db.min_longitude, boundary_db.max_latitude],
+                [boundary_db.max_longitude, boundary_db.max_latitude],
+                [boundary_db.max_longitude, boundary_db.min_latitude],
+                [boundary_db.min_longitude, boundary_db.min_latitude],
+                [boundary_db.min_longitude, boundary_db.max_latitude]
+            ]
+        else:
+            coords_db = db.query(MineCoordinate).filter(MineCoordinate.mine_id == m.id).order_by(MineCoordinate.sequence_order.asc()).all()
+            if len(coords_db) >= 3:
+                boundary_coords = [[c.longitude, c.latitude] for c in coords_db if c.latitude and c.longitude]
+                if boundary_coords:
+                    boundary_coords.append(boundary_coords[0])
+            else:
+                boundary_coords = _make_realistic_mine_polygon(origin_lat, origin_lon, m.id)
+
+        overview_items.append(
+            GisMineOverviewItem(
+                id=m.id,
+                code=m.code,
+                name=m.name,
+                official_name=profile.official_name if profile else m.name,
+                mine_type=m.mine_type,
+                state=m.state,
+                district=m.district,
+                latitude=origin_lat,
+                longitude=origin_lon,
+                total_area_sq_km=profile.geological_block_area_sq_km if profile else (12.4 if m.is_simulated == "YES" else 8.5),
+                data_status=m.data_status,
+                geometry_status=profile.geometry_status if profile else ("SOURCE_DERIVED" if m.is_simulated == "NO" else "SIMULATED"),
+                is_simulated=m.is_simulated,
+                provenance_doc=prov_title,
+                provenance_hash=prov_hash,
+                operator=operator,
+                coalfield=coalfield,
+                current_risk_score=risk_score,
+                current_risk_band=risk_band,
+                open_incidents_count=open_incidents,
+                open_field_tasks_count=open_tasks,
+                total_sensors=tot_sensors,
+                online_sensors=online_sensors,
+                offline_sensors=offline_sensors,
+                reporting_rate_percent=rep_rate,
+                active_anomalies_count=active_anomalies,
+                sla_breaches_count=sla_breaches,
+                predictive_hotspots_count=predictive_count,
+                active_alerts_count=active_alerts,
+                simplified_boundary=boundary_coords
+            )
+        )
+
+    return GisOverviewResponse(
+        total_authorized_mines=len(overview_items),
+        critical_risk_mines=crit_count,
+        high_risk_mines=high_count,
+        medium_risk_mines=med_count,
+        low_risk_mines=low_count,
+        total_active_incidents=total_incidents,
+        total_open_tasks=total_tasks,
+        total_sensors_online=total_online_sensors,
+        total_sensors_count=total_sensors_all,
+        mines=overview_items
+    )
 
 
 @router.get("/mines/{mine_id}/map", response_model=GisMapResponse)
@@ -147,57 +370,6 @@ def get_mine_gis_map(
     # 3. Boundaries
     boundaries_db = db.query(MineBoundary).filter(MineBoundary.mine_id == mine_id).all()
     boundary_features: List[GisBoundaryFeature] = []
-
-    # --- Helper: generate a realistic irregular coal-lease polygon ---
-    # Produces an authentic ~1.2-2 sq km irregular polygon from a mine centre.
-    # Uses a deterministic seed per mine_id so the shape is stable across requests.
-    def _make_realistic_mine_polygon(clat: float, clon: float, seed: int) -> list:
-        """
-        Returns GeoJSON ring [[lon, lat], ...] for an irregular coal-block polygon.
-        Shape is generated with 10 vertices at varying radii (180m – 700m) and
-        angular offsets that differ per mine_id, giving each mine a unique outline.
-        Earth radius constants for lat/lon degree conversion at Indian coalfield latitudes.
-        """
-        import math as _math
-        R_LAT = 111320.0          # metres per degree latitude
-        R_LON = 111320.0 * _math.cos(_math.radians(clat))  # metres per degree longitude
-
-        # Per-mine shape parameters — deterministic variations via seed
-        n_verts = 10
-        # Base radii (metres) — elongated NE-SW like typical lease areas
-        base_radii = [320, 480, 620, 550, 380, 280, 350, 500, 650, 420]
-        # Random-ish offsets baked in so the polygon is irregular, not circular
-        radius_jitter = [
-            (seed % 7) * 18 - 40,
-            (seed % 5) * 22 - 30,
-            (seed % 11) * 15 - 50,
-            (seed % 3) * 30 - 20,
-            (seed % 9) * 12 - 35,
-            (seed % 13) * 10 - 25,
-            (seed % 7) * 20 - 30,
-            (seed % 11) * 18 - 45,
-            (seed % 5) * 25 - 38,
-            (seed % 3) * 15 - 22
-        ]
-        # Rotate whole polygon slightly per mine for uniqueness
-        base_rotation_deg = (seed * 37) % 45 - 20  # -20° to +25°
-
-        vertices = []
-        for i in range(n_verts):
-            angle_deg = (i * 360.0 / n_verts) + base_rotation_deg
-            angle_rad = _math.radians(angle_deg)
-            r = base_radii[i] + radius_jitter[i]
-            r = max(r, 150)  # minimum 150 m from centre
-            # x = East offset (metres), y = North offset (metres)
-            dx = r * _math.sin(angle_rad)
-            dy = r * _math.cos(angle_rad)
-            v_lat = clat + dy / R_LAT
-            v_lon = clon + dx / R_LON
-            vertices.append([round(v_lon, 6), round(v_lat, 6)])
-
-        # Close the ring
-        vertices.append(vertices[0])
-        return vertices
 
     for b in boundaries_db:
         prov = None

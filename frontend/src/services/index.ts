@@ -11,7 +11,7 @@ import type {
   IntegrationHealthResponse, SystemHealthResponse, ExternalReport, AuditChainVerification, AdapterHealthStatus, SystemHealthComponent,
   DemoPreflightReport, DemoScenarioSummary, DemoScenarioDetail, DemoStepResponse, DemoResetResponse, DemoScenarioStep, DemoPreflightItem,
   DocumentDTO, DocumentSummaryDTO, DocumentPageDTO, ExtractedDocumentFieldDTO, DocumentProcessingStatusDTO,
-  GisMapDTO, GisRiskHotspotDTO, SpatialContextDTO, GisSearchResponseDTO,
+  GisMapDTO, GisRiskHotspotDTO, SpatialContextDTO, GisSearchResponseDTO, GisMineOverviewItemDTO, GisOverviewResponseDTO,
   OperationalNotification, NotificationUnreadCounts, NotificationListResponse,
   SyncStatusResponse, SyncLogsResponse, QueuedSyncOperation
 } from '../types';
@@ -874,6 +874,11 @@ export const documentService = {
 };
 
 export const gisService = {
+  getMinesOverview: async (): Promise<GisOverviewResponseDTO> => {
+    const res = await api.get<GisOverviewResponseDTO>('/gis/overview');
+    return res.data;
+  },
+
   getMineMap: async (mineId: number): Promise<GisMapDTO> => {
     const res = await api.get<GisMapDTO>(`/gis/mines/${mineId}/map`);
     return res.data;
@@ -935,6 +940,8 @@ export type {
   GisBoundaryFeatureDTO,
   GisCoordinateFeatureDTO,
   GisOperationalFeatureDTO,
+  GisMineOverviewItemDTO,
+  GisOverviewResponseDTO,
   SpatialContextDTO,
   GisSearchResponseDTO,
   GisSearchItemDTO,
@@ -946,6 +953,7 @@ export type {
   NotificationUnreadCounts,
   NotificationListResponse
 } from '../types';
+
 
 
 

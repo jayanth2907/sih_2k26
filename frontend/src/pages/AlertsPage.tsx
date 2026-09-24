@@ -95,7 +95,7 @@ export const AlertsPage: React.FC = () => {
         ) : (
           alerts.map((a) => {
             const isCritical = a.severity === 'CRITICAL';
-            const isWarning = a.severity === 'WARNING' || a.severity === 'HIGH';
+            const isWarning = a.severity === 'HIGH';
             const isUnread = a.status === 'UNREAD';
 
             return (

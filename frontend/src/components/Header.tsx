@@ -72,7 +72,7 @@ export const Header: React.FC = () => {
           <Globe2 className="h-3.5 w-3.5" aria-hidden="true" />
           <Select
             value={language}
-            onValueChange={(value) => setLanguage(value as 'en' | 'hi' | 'te')}
+            onValueChange={(value: string) => setLanguage(value as 'en' | 'hi' | 'te')}
           >
             <SelectTrigger aria-label="Select language">
               <SelectValue />
