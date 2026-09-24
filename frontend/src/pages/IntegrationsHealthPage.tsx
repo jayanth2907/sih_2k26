@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { motion } from 'motion/react';
 import { 
   Network, 
   ShieldCheck, 
@@ -160,32 +161,37 @@ export const IntegrationsHealthPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+      className="space-y-6 max-w-7xl mx-auto pb-12 font-sans text-slate-100"
+    >
       {/* Header Banner */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur">
+      <div className="bg-[#0D100F] border border-[#1B211E] rounded-xl p-5 shadow-xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
-              <Network className="w-6 h-6" />
+            <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 shrink-0">
+              <Network className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+              <h1 className="text-xl font-bold text-white flex items-center gap-2 font-sans">
                 {t('integrationsHealth')}
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-cyan-400 border border-slate-700 font-mono">
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#121614] text-cyan-400 border border-[#27302B] font-mono">
                   ENTERPRISE GATEWAY
                 </span>
               </h1>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-400 mt-0.5 font-sans">
                 Government Ecosystem Adapters (CMSMS, PARIVESH, DGMS), Circuit Breakers & SHA-256 Audit Integrity
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 font-sans">
             <button
               onClick={handleVerifyAuditChain}
               disabled={verifyingAudit}
-              className="px-3.5 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+              className="px-3.5 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
               <ShieldCheck className={clsx('w-4 h-4', verifyingAudit && 'animate-spin')} />
               <span>{verifyingAudit ? 'Verifying...' : 'Verify Cryptographic Audit Ledger'}</span>
@@ -194,7 +200,7 @@ export const IntegrationsHealthPage: React.FC = () => {
             <button
               onClick={loadData}
               disabled={loading}
-              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-2 rounded-lg bg-[#121614] hover:bg-[#1B211E] text-slate-200 text-xs font-semibold border border-[#27302B] transition flex items-center gap-1.5 cursor-pointer"
             >
               <RefreshCw className={clsx('w-4 h-4', loading && 'animate-spin')} />
               <span>Refresh</span>
@@ -554,7 +560,7 @@ export const IntegrationsHealthPage: React.FC = () => {
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 };
 export default IntegrationsHealthPage;

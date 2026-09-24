@@ -1,30 +1,26 @@
 import React, { useEffect, useState } from 'react';
+import { motion } from 'motion/react';
 import { useMineContext } from '../context/MineContext';
 import { useLanguage } from '../context/LanguageContext';
 import { sensorService } from '../services';
 import type { Sensor, SensorReading } from '../types';
 import { StatusBadge } from '../components/StatusBadge';
-import { 
-  Activity, 
-  RefreshCw, 
-  Flame, 
-  Wind, 
-  WifiOff, 
-  TrendingUp, 
-  History, 
-  X, 
-  CheckCircle2, 
+import {
+  Activity,
+  RefreshCw,
+  Flame,
+  Wind,
+  WifiOff,
+  TrendingUp,
+  History,
+  X,
+  CheckCircle2,
   AlertCircle,
   Play,
   Crosshair,
   Zap,
-  ShieldAlert,
   Info,
-  Layers,
   MapPin,
-  Clock,
-  ChevronDown,
-  ChevronUp,
   LayoutGrid,
   Table as TableIcon
 } from 'lucide-react';
@@ -241,34 +237,97 @@ export const SensorsPage: React.FC = () => {
     };
   };
 
+  const criticalSensors = sensors.filter((s) => s.status === 'CRITICAL');
+  const warningSensors = sensors.filter((s) => s.status === 'WARNING');
+  const offlineSensors = sensors.filter((s) => s.status === 'OFFLINE');
+
+  const summaryCards = [
+    {
+      label: criticalSensors.length > 0 ? 'CRITICAL ANOMALY' : warningSensors.length > 0 ? 'WARNING ANOMALY' : 'ATMOSPHERIC SAFETY',
+      tone: criticalSensors.length > 0 ? 'rose' : warningSensors.length > 0 ? 'amber' : 'emerald',
+      dotClass: criticalSensors.length > 0 ? 'bg-rose-500' : warningSensors.length > 0 ? 'bg-amber-400' : 'bg-emerald-400',
+      title: criticalSensors.length > 0
+        ? `${criticalSensors[0].name} (${criticalSensors[0].sensor_code})`
+        : activeScenario !== 'NORMAL'
+          ? `${scenarioInfo.title}`
+          : 'All Environmental Sensors Normal',
+      detail: criticalSensors.length > 0
+        ? `exceeded critical threshold: ${criticalSensors[0].last_value} ${criticalSensors[0].unit} >= ${criticalSensors[0].critical_threshold} ${criticalSensors[0].unit}.`
+        : activeScenario !== 'NORMAL'
+          ? scenarioInfo.injectedValue
+          : 'Operating normally within designated statutory limits.',
+      meta: criticalSensors.length > 0
+        ? `${criticalSensors[0].zone_name || 'East Longwall Face 102'} · ${lastScenarioTime || 'Just now'}`
+        : 'Continuous monitoring active',
+      action: {
+        label: 'Triage',
+        onClick: () => setStatusFilter(criticalSensors.length > 0 ? 'CRITICAL' : 'ALL')
+      }
+    },
+    {
+      label: 'TELEMETRY GAP',
+      tone: offlineSensors.length > 0 ? 'amber' : 'emerald',
+      dotClass: offlineSensors.length > 0 ? 'bg-amber-400' : 'bg-emerald-400',
+      title: offlineSensors.length > 0
+        ? `${offlineSensors[0].name} (${offlineSensors[0].sensor_code})`
+        : '100% Telemetry Coverage',
+      detail: offlineSensors.length > 0
+        ? 'Sensor node silent: telemetry timeout > 180s without heartbeat.'
+        : `All ${sensors.length} sensor nodes transmitting continuously.`,
+      meta: offlineSensors.length > 0
+        ? `${offlineSensors[0].zone_name || 'Seam Level Intake'} · ${lastScenarioTime || 'Just now'}`
+        : 'Continuous telemetry logging',
+      action: {
+        label: 'Inspect Nodes',
+        onClick: () => setStatusFilter(offlineSensors.length > 0 ? 'OFFLINE' : 'ALL')
+      }
+    },
+    {
+      label: 'COMPLIANCE ACTION',
+      tone: 'amber',
+      dotClass: 'bg-amber-400',
+      title: 'Statutory Safety Compliance Audit',
+      detail: 'Automated DGMS Reg 153 / Reg 169 statutory safety rule verification.',
+      meta: 'Governed under CMR 2017 & DGMS Technical Guidelines',
+      action: {
+        label: 'View Remedial',
+        onClick: () => setStatusFilter('ALL')
+      }
+    }
+  ];
+
   return (
-    <div className="space-y-6">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+      className="space-y-6 font-sans text-slate-100"
+    >
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#1B211E] pb-4">
         <div>
           <div className="flex items-center gap-2.5 flex-wrap">
-            <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-              <Activity className="w-5 h-5 text-amber-400" />
+            <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2 font-sans">
+              <Activity className="w-5 h-5 text-amber-400 shrink-0" />
               {t('liveMonitoring')} & {t('sensorsTelemetry')}
             </h2>
-            <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-mono bg-cyan-950/80 text-cyan-300 border border-cyan-800/80 flex items-center gap-1.5">
+            <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-mono bg-[#121614] text-cyan-400 border border-[#27302B] flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
               {t('sourceAndEvidence')}: {t('demonstrationData')}
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-400 mt-1 font-sans">
             Human-readable atmospheric safety monitoring with real-time statutory limit tracking and on-demand technical depth.
           </p>
         </div>
 
         {/* View Toggle & Status Filter */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center bg-[#121614] border border-[#1B211E] rounded-lg p-0.5 text-xs font-mono">
+        <div className="flex items-center gap-3 flex-wrap font-sans">
+          <div className="flex items-center bg-[#0D100F] border border-[#1B211E] rounded-lg p-1 text-xs">
             <button
               onClick={() => setViewMode('cards')}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded transition-colors cursor-pointer ${
-                viewMode === 'cards' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
-              }`}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded transition-colors cursor-pointer font-semibold ${viewMode === 'cards' ? 'bg-amber-500 text-slate-950 font-bold shadow-xs' : 'text-slate-400 hover:text-white'
+                }`}
               title="Human-Centric Card Summary View"
             >
               <LayoutGrid className="w-3.5 h-3.5" />
@@ -276,9 +335,8 @@ export const SensorsPage: React.FC = () => {
             </button>
             <button
               onClick={() => setViewMode('table')}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded transition-colors cursor-pointer ${
-                viewMode === 'table' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
-              }`}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded transition-colors cursor-pointer font-semibold ${viewMode === 'table' ? 'bg-amber-500 text-slate-950 font-bold shadow-xs' : 'text-slate-400 hover:text-white'
+                }`}
               title="Command Matrix Table View"
             >
               <TableIcon className="w-3.5 h-3.5" />
@@ -286,16 +344,15 @@ export const SensorsPage: React.FC = () => {
             </button>
           </div>
 
-          <div className="flex items-center gap-1 p-0.5 bg-[#121614] border border-[#1B211E] rounded-lg text-xs font-mono">
+          <div className="flex items-center gap-1 p-1 bg-[#0D100F] border border-[#1B211E] rounded-lg text-xs font-mono">
             {['ALL', 'ACTIVE', 'WARNING', 'CRITICAL', 'OFFLINE'].map((st) => (
               <button
                 key={st}
                 onClick={() => setStatusFilter(st)}
-                className={`px-2.5 py-1 rounded transition-colors cursor-pointer ${
-                  statusFilter === st
-                    ? 'bg-amber-500 text-slate-950 font-bold'
+                className={`px-2.5 py-1 rounded transition-colors cursor-pointer ${statusFilter === st
+                    ? 'bg-amber-500 text-slate-950 font-bold shadow-xs'
                     : 'text-slate-400 hover:text-white'
-                }`}
+                  }`}
               >
                 {st}
               </button>
@@ -304,134 +361,192 @@ export const SensorsPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Summary Highlight Cards (Design matching user screenshot) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {summaryCards.map((card) => (
+          <div
+            key={card.label}
+            onClick={card.action.onClick}
+            className="rounded-xl border border-[#1B211E] bg-[#0D100F] hover:border-[#27302B] transition-colors p-5 flex flex-col justify-between h-full cursor-pointer group"
+          >
+            <div>
+              {/* Category label + status dot */}
+              <div className="flex items-center justify-between mb-2.5">
+                <span
+                  className={`text-[11px] font-bold uppercase tracking-wider font-sans ${
+                    card.tone === 'rose'
+                      ? 'text-rose-400'
+                      : card.tone === 'amber'
+                        ? 'text-amber-400'
+                        : 'text-emerald-400'
+                  }`}
+                >
+                  {card.label}
+                </span>
+                <span className={`w-2 h-2 rounded-full shrink-0 ${card.dotClass}`} />
+              </div>
+
+              {/* Title, Detail, Meta */}
+              <h3 className="text-sm font-bold text-white leading-snug font-sans">
+                {card.title}
+              </h3>
+              <p className="text-xs font-semibold text-slate-200 mt-1 leading-relaxed font-sans">
+                {card.detail}
+              </p>
+              <p className="text-xs text-slate-400 mt-2 font-sans">
+                {card.meta}
+              </p>
+            </div>
+
+            {/* Divider + Footer Action */}
+            <div className="border-t border-[#1B211E] mt-4 pt-3 flex items-center justify-between font-sans">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  card.action.onClick();
+                }}
+                className="text-amber-400 hover:text-amber-300 font-semibold text-xs inline-flex items-center gap-1 cursor-pointer transition-colors"
+              >
+                <span>{card.action.label}</span>
+                <span className="group-hover:translate-x-0.5 transition-transform">&rarr;</span>
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
       {/* Scenario Control Center */}
-      <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800 space-y-4 shadow-xl">
+      <div className="p-5 rounded-xl bg-[#0D100F] border border-[#1B211E] space-y-4 shadow-xs">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <Play className="w-4 h-4 text-amber-400" />
-            <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider font-mono">
+            <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider font-sans">
               {t('scenarioControlsTitle')}
             </h3>
           </div>
           <div className="flex items-center gap-2">
             {isSimulating && (
-              <span className="flex items-center gap-1 text-[10px] font-mono text-amber-400 animate-pulse">
+              <span className="flex items-center gap-1 text-[10.5px] font-mono text-amber-400 animate-pulse">
                 <RefreshCw className="w-3 h-3 animate-spin" /> Ingesting Telemetry...
               </span>
             )}
-            <span className="text-[10px] font-mono text-cyan-400">Data Mode: SIMULATED (MQTT Ingestion Ready)</span>
+            <span className="text-[10px] font-mono text-cyan-400 bg-[#121614] px-2.5 py-1 rounded border border-[#27302B]">
+              Data Mode: SIMULATED (MQTT Ingestion Ready)
+            </span>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 pt-1 font-mono text-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 pt-1 text-xs font-sans">
           <button
             onClick={() => handleTriggerScenario('NORMAL')}
             disabled={isSimulating}
-            className={`p-2.5 rounded-xl border flex flex-col items-center gap-1 text-center transition-all cursor-pointer ${
-              activeScenario === 'NORMAL'
-                ? 'bg-emerald-950/80 border-emerald-600 text-emerald-300 font-bold shadow-lg shadow-emerald-900/20'
-                : 'bg-slate-950 hover:bg-slate-900 border-slate-800 text-slate-300'
-            }`}
+            className={`p-2.5 rounded-lg border flex flex-col items-center gap-1.5 text-center transition-all cursor-pointer ${activeScenario === 'NORMAL'
+                ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-300 font-bold'
+                : 'bg-[#121614] hover:bg-[#171C19] border-[#1B211E] text-slate-400 hover:text-slate-200'
+              }`}
           >
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            <span className="text-[11px]">{t('normalBaseline')}</span>
+            <span className="text-[11.5px]">{t('normalBaseline')}</span>
           </button>
 
           <button
             onClick={() => handleTriggerScenario('METHANE_SPIKE')}
             disabled={isSimulating}
-            className={`p-2.5 rounded-xl border flex flex-col items-center gap-1 text-center transition-all cursor-pointer ${
-              activeScenario === 'METHANE_SPIKE'
-                ? 'bg-rose-950/80 border-rose-600 text-rose-300 font-bold shadow-lg shadow-rose-900/20'
-                : 'bg-slate-950 hover:bg-slate-900 border-slate-800 text-slate-300'
-            }`}
+            className={`p-2.5 rounded-lg border flex flex-col items-center gap-1.5 text-center transition-all cursor-pointer ${activeScenario === 'METHANE_SPIKE'
+                ? 'bg-rose-500/10 border-rose-500/50 text-rose-300 font-bold'
+                : 'bg-[#121614] hover:bg-[#171C19] border-[#1B211E] text-slate-400 hover:text-slate-200'
+              }`}
           >
             <Flame className="w-4 h-4 text-rose-400" />
-            <span className="text-[11px]">{t('methaneSpike')}</span>
+            <span className="text-[11.5px]">{t('methaneSpike')}</span>
           </button>
 
           <button
             onClick={() => handleTriggerScenario('CO_SPIKE')}
             disabled={isSimulating}
-            className={`p-2.5 rounded-xl border flex flex-col items-center gap-1 text-center transition-all cursor-pointer ${
-              activeScenario === 'CO_SPIKE'
-                ? 'bg-amber-950/80 border-amber-600 text-amber-300 font-bold shadow-lg shadow-amber-900/20'
-                : 'bg-slate-950 hover:bg-slate-900 border-slate-800 text-slate-300'
-            }`}
+            className={`p-2.5 rounded-lg border flex flex-col items-center gap-1.5 text-center transition-all cursor-pointer ${activeScenario === 'CO_SPIKE'
+                ? 'bg-amber-500/10 border-amber-500/50 text-amber-300 font-bold'
+                : 'bg-[#121614] hover:bg-[#171C19] border-[#1B211E] text-slate-400 hover:text-slate-200'
+              }`}
           >
             <AlertCircle className="w-4 h-4 text-amber-400" />
-            <span className="text-[11px]">{t('coSurge')}</span>
+            <span className="text-[11.5px]">{t('coSurge')}</span>
           </button>
 
           <button
             onClick={() => handleTriggerScenario('VENTILATION_DROP')}
             disabled={isSimulating}
-            className={`p-2.5 rounded-xl border flex flex-col items-center gap-1 text-center transition-all cursor-pointer ${
-              activeScenario === 'VENTILATION_DROP'
-                ? 'bg-cyan-950/80 border-cyan-600 text-cyan-300 font-bold shadow-lg shadow-cyan-900/20'
-                : 'bg-slate-950 hover:bg-slate-900 border-slate-800 text-slate-300'
-            }`}
+            className={`p-2.5 rounded-lg border flex flex-col items-center gap-1.5 text-center transition-all cursor-pointer ${activeScenario === 'VENTILATION_DROP'
+                ? 'bg-cyan-500/10 border-cyan-500/50 text-cyan-300 font-bold'
+                : 'bg-[#121614] hover:bg-[#171C19] border-[#1B211E] text-slate-400 hover:text-slate-200'
+              }`}
           >
             <Wind className="w-4 h-4 text-cyan-400" />
-            <span className="text-[11px]">{t('ventilationDrop')}</span>
+            <span className="text-[11.5px]">{t('ventilationDrop')}</span>
           </button>
 
           <button
             onClick={() => handleTriggerScenario('SENSOR_OFFLINE')}
             disabled={isSimulating}
-            className={`p-2.5 rounded-xl border flex flex-col items-center gap-1 text-center transition-all cursor-pointer ${
-              activeScenario === 'SENSOR_OFFLINE'
-                ? 'bg-purple-950/80 border-purple-600 text-purple-300 font-bold shadow-lg shadow-purple-900/20'
-                : 'bg-slate-950 hover:bg-slate-900 border-slate-800 text-slate-300'
-            }`}
+            className={`p-2.5 rounded-lg border flex flex-col items-center gap-1.5 text-center transition-all cursor-pointer ${activeScenario === 'SENSOR_OFFLINE'
+                ? 'bg-purple-500/10 border-purple-500/50 text-purple-300 font-bold'
+                : 'bg-[#121614] hover:bg-[#171C19] border-[#1B211E] text-slate-400 hover:text-slate-200'
+              }`}
           >
             <WifiOff className="w-4 h-4 text-purple-400" />
-            <span className="text-[11px]">{t('sensorSilence')}</span>
+            <span className="text-[11.5px]">{t('sensorSilence')}</span>
           </button>
 
           <button
             onClick={() => handleTriggerScenario('MULTI_SENSOR_ANOMALY')}
             disabled={isSimulating}
-            className={`p-2.5 rounded-xl border flex flex-col items-center gap-1 text-center transition-all cursor-pointer ${
-              activeScenario === 'MULTI_SENSOR_ANOMALY'
-                ? 'bg-rose-950/80 border-rose-600 text-rose-300 font-bold shadow-lg shadow-rose-900/20'
-                : 'bg-slate-950 hover:bg-slate-900 border-slate-800 text-slate-300'
-            }`}
+            className={`p-2.5 rounded-lg border flex flex-col items-center gap-1.5 text-center transition-all cursor-pointer ${activeScenario === 'MULTI_SENSOR_ANOMALY'
+                ? 'bg-rose-500/15 border-rose-500/60 text-rose-300 font-bold'
+                : 'bg-[#121614] hover:bg-[#171C19] border-[#1B211E] text-slate-400 hover:text-slate-200'
+              }`}
           >
             <TrendingUp className="w-4 h-4 text-rose-400" />
-            <span className="text-[11px]">{t('multiHazardSpike')}</span>
+            <span className="text-[11.5px]">{t('multiHazardSpike')}</span>
           </button>
         </div>
 
-        {/* Dynamic Scenario Response Banner */}
-        <div className="p-4 rounded-xl bg-slate-950/90 border border-slate-800/90 text-xs font-mono space-y-2.5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-2">
+        {/* Dynamic Scenario Response Banner (Clean flat design with simple dividers) */}
+        <div className="p-4 rounded-lg bg-[#080A09] border border-[#1B211E] space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#1B211E] pb-2.5">
             <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-amber-400" />
-              <span className="font-bold text-slate-200 uppercase tracking-wider">{t('scenarioImpactTitle')}:</span>
-              <span className="text-amber-400 font-semibold">{scenarioInfo.title}</span>
+              <Zap className="w-4 h-4 text-amber-400 shrink-0" />
+              <span className="font-sans font-bold text-slate-200 text-xs uppercase tracking-wider">{t('scenarioImpactTitle')}:</span>
+              <span className="font-sans text-xs text-amber-400 font-semibold">{scenarioInfo.title}</span>
             </div>
             <div className="flex items-center gap-3">
               <StatusBadge status={scenarioInfo.severity} size="sm" />
               {lastScenarioTime && (
-                <span className="text-[10px] text-slate-400">Triggered: {lastScenarioTime}</span>
+                <span className="font-mono text-[10px] text-slate-500">Triggered: {lastScenarioTime}</span>
               )}
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
-            <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Target Telemetry Channel</span>
-              <p className="text-amber-300 font-semibold">{scenarioInfo.channel}</p>
-              <p className="text-[10.5px] text-slate-400">Injected: {scenarioInfo.injectedValue}</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1 font-sans">
+            <div>
+              <span className="text-[10.5px] uppercase font-semibold text-slate-400 tracking-wider block">
+                Target Telemetry Channel
+              </span>
+              <p className="text-xs text-amber-300 font-semibold mt-1">{scenarioInfo.channel}</p>
+              <p className="font-mono text-[11px] text-slate-400 mt-0.5">{scenarioInfo.injectedValue}</p>
             </div>
-            <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Statutory Threshold Applied</span>
-              <p className="text-rose-300 font-semibold">{scenarioInfo.threshold}</p>
-              <p className="text-[10.5px] text-slate-400">Standard: CMR 2017 / DGMS Guidelines</p>
+            <div className="md:border-l md:border-[#1B211E] md:pl-4">
+              <span className="text-[10.5px] uppercase font-semibold text-slate-400 tracking-wider block">
+                Statutory Threshold Applied
+              </span>
+              <p className="text-xs text-rose-300 font-semibold mt-1">{scenarioInfo.threshold}</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">CMR 2017 / DGMS Guidelines</p>
             </div>
-            <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Automated Governance Action</span>
-              <p className="text-cyan-300 font-semibold">{scenarioInfo.pipelineAction}</p>
+            <div className="md:border-l md:border-[#1B211E] md:pl-4">
+              <span className="text-[10.5px] uppercase font-semibold text-slate-400 tracking-wider block">
+                Automated Governance Action
+              </span>
+              <p className="text-xs text-cyan-300 font-semibold mt-1">{scenarioInfo.pipelineAction}</p>
             </div>
           </div>
         </div>
@@ -447,93 +562,89 @@ export const SensorsPage: React.FC = () => {
             const isOffline = s.status === 'OFFLINE';
 
             return (
-              <div 
-                key={s.id} 
-                className={`p-5 rounded-2xl border transition-all duration-200 backdrop-blur-md space-y-4 shadow-lg ${
-                  isCritical 
-                    ? 'bg-gradient-to-br from-rose-950/30 via-slate-900 to-slate-950 border-rose-800/60 shadow-rose-950/20' 
-                    : isWarning 
-                    ? 'bg-gradient-to-br from-amber-950/30 via-slate-900 to-slate-950 border-amber-800/60 shadow-amber-950/20' 
-                    : isOffline 
-                    ? 'bg-gradient-to-br from-purple-950/30 via-slate-900 to-slate-950 border-purple-800/60' 
-                    : 'bg-slate-900/85 border-slate-800'
-                }`}
+              <div
+                key={s.id}
+                className="bg-[#0D100F] border border-[#1B211E] hover:border-[#27302B] rounded-xl p-5 flex flex-col justify-between space-y-4 transition-all duration-200"
               >
-                {/* Header: Name & Status */}
-                <div className="flex items-start justify-between gap-3 border-b border-slate-800/80 pb-3">
+                {/* 1. HEADER: Sensor Name, Code, Location & Operating Status */}
+                <div className="flex items-start justify-between gap-3 pb-3 border-b border-[#1B211E]">
                   <div>
-                    <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      {s.name}
-                    </h3>
-                    <p className="text-xs text-amber-400/90 font-mono mt-0.5 flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 shrink-0" />
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-[11px] font-bold text-amber-400 tracking-wider uppercase">
+                        {s.sensor_code}
+                      </span>
+                      <h3 className="font-sans text-base font-bold text-white tracking-tight">
+                        {s.name}
+                      </h3>
+                    </div>
+                    <p className="font-sans text-xs text-slate-400 mt-0.5 flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                       {s.zone_name || 'Working Zone'} • {s.level_name || 'Level 1'}
                     </p>
                   </div>
                   <StatusBadge status={s.status} size="sm" />
                 </div>
 
-                {/* Primary Reading Display */}
-                <div className="grid grid-cols-2 gap-3 p-3.5 rounded-xl bg-slate-950/80 border border-slate-800/90">
+                {/* 2. PRIMARY METRIC: Focal Point Display with Permitted Limits beside it */}
+                <div className="flex items-baseline justify-between py-1">
                   <div>
-                    <span className="text-[10px] uppercase font-mono text-slate-400 tracking-wider block">
-                      Current Reading
+                    <span className="font-sans text-[10.5px] uppercase font-semibold text-slate-400 tracking-wider block mb-1">
+                      Current Telemetry
                     </span>
-                    <p className={`text-2xl font-black font-mono mt-1 ${
-                      isCritical ? 'text-rose-400' : isWarning ? 'text-amber-400' : isOffline ? 'text-purple-400' : 'text-emerald-400'
-                    }`}>
-                      {s.last_value !== undefined ? `${s.last_value} ${s.unit}` : 'NOT REPORTING'}
-                    </p>
+                    <div className="flex items-baseline gap-2">
+                      <span className={`font-mono text-3xl font-black tracking-tight ${isCritical ? 'text-rose-400' : isWarning ? 'text-amber-400' : isOffline ? 'text-purple-400' : 'text-emerald-400'
+                        }`}>
+                        {s.last_value !== undefined ? s.last_value : 'OFFLINE'}
+                      </span>
+                      {s.last_value !== undefined && (
+                        <span className="font-mono text-sm font-semibold text-slate-400">{s.unit}</span>
+                      )}
+                    </div>
                   </div>
-                  <div className="border-l border-slate-800/80 pl-3">
-                    <span className="text-[10px] uppercase font-mono text-slate-400 tracking-wider block">
-                      Permitted Limit
+
+                  <div className="text-right">
+                    <span className="font-sans text-[10.5px] uppercase font-semibold text-slate-400 tracking-wider block mb-1">
+                      Statutory Limits
                     </span>
-                    <p className="text-xs font-mono text-slate-300 mt-1 font-semibold">
-                      Warn: <span className="text-amber-400">{s.warning_threshold}</span> / Crit: <span className="text-rose-400">{s.critical_threshold}</span> {s.unit}
+                    <p className="font-mono text-xs text-slate-300">
+                      Warn: <span className="text-amber-400 font-bold">{s.warning_threshold}</span> / Crit: <span className="text-rose-400 font-bold">{s.critical_threshold}</span> {s.unit}
                     </p>
                   </div>
                 </div>
 
-                {/* Plain-Language Interpretation & Recommendation */}
-                <div className="space-y-2 text-xs">
-                  <div className="p-2.5 rounded-lg bg-slate-950/60 border border-slate-850">
-                    <p className="text-[10.5px] font-semibold text-slate-400 uppercase tracking-wider font-mono">
-                      {t('whatItMeans')}:
-                    </p>
-                    <p className="text-slate-200 mt-0.5 leading-relaxed font-sans">
-                      {interp.meaning}
-                    </p>
-                  </div>
+                {/* 3. SUPPORTING INFORMATION & RECOMMENDED ACTION (Clean typography - No nested boxes!) */}
+                <div className="space-y-2.5 pt-3 border-t border-[#1B211E]">
+                  <p className="font-sans text-xs text-slate-300 leading-relaxed">
+                    <span className="font-semibold text-slate-200">{t('whatItMeans')}: </span>
+                    {interp.meaning}
+                  </p>
 
-                  <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                    <p className="text-[10.5px] font-semibold text-amber-400 uppercase tracking-wider font-mono">
-                      Recommended Action:
-                    </p>
-                    <p className="text-amber-200/90 mt-0.5 leading-relaxed font-sans">
+                  <div className="pl-2.5 border-l-2 border-amber-500/70 text-xs py-0.5">
+                    <p className="font-sans text-amber-200/95 leading-relaxed">
+                      <span className="font-semibold text-amber-400">Recommended Action: </span>
                       {interp.action}
                     </p>
                   </div>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-800/80 flex-wrap font-mono text-xs">
+                {/* 4. FOOTER ACTIONS */}
+                <div className="flex items-center justify-between gap-2 pt-3 border-t border-[#1B211E] font-sans text-xs">
                   <button
                     onClick={() => setActiveTechnicalSensor(s)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium transition-all cursor-pointer"
+                    className="inline-flex items-center gap-1.5 text-slate-400 hover:text-white font-medium text-xs transition-colors cursor-pointer"
                   >
                     <Info className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>{t('viewTechnicalDetails')}</span>
+                    <span>Details</span>
                   </button>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleOpenReadings(s)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-[#121614] hover:bg-[#171C19] border border-[#232A26] text-slate-300 font-medium text-xs transition-colors cursor-pointer"
                       title={t('viewReadingHistory')}
                     >
                       <History className="w-3.5 h-3.5 text-amber-400" />
-                      <span>{t('history')}</span>
+                      <span>History</span>
                     </button>
                     <button
                       onClick={() =>
@@ -546,11 +657,11 @@ export const SensorsPage: React.FC = () => {
                           title: `${s.sensor_code}: ${s.name}`
                         })
                       }
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold text-xs transition-all cursor-pointer shadow-xs"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 font-semibold text-xs transition-all cursor-pointer shadow-xs"
                       title={t('centerInTwin')}
                     >
                       <Crosshair className="w-3.5 h-3.5" />
-                      <span>{t('focusIn3D')}</span>
+                      <span>Focus in 3D</span>
                     </button>
                   </div>
                 </div>
@@ -560,55 +671,54 @@ export const SensorsPage: React.FC = () => {
         </div>
       ) : (
         /* Matrix Table View */
-        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden backdrop-blur-md">
-          <table className="w-full text-left text-xs font-mono">
+        <div className="bg-[#0D100F] border border-[#1B211E] rounded-xl overflow-hidden shadow-xs">
+          <table className="w-full text-left text-xs font-sans">
             <thead>
-              <tr className="bg-slate-950/80 border-b border-slate-800 text-slate-400 uppercase tracking-wider text-[10px]">
-                <th className="py-3.5 px-4 font-semibold">{t('sensorCode')}</th>
-                <th className="py-3.5 px-4 font-semibold">{t('sensorNameType')}</th>
-                <th className="py-3.5 px-4 font-semibold">{t('zoneLevel')}</th>
-                <th className="py-3.5 px-4 font-semibold">{t('liveTelemetry')}</th>
-                <th className="py-3.5 px-4 font-semibold">{t('thresholds')}</th>
-                <th className="py-3.5 px-4 font-semibold">{t('coords3d')}</th>
-                <th className="py-3.5 px-4 font-semibold">{t('status')}</th>
-                <th className="py-3.5 px-4 font-semibold text-right">Actions</th>
+              <tr className="bg-[#121614] border-b border-[#1B211E] text-slate-400 uppercase tracking-wider text-[10.5px] font-semibold">
+                <th className="py-3.5 px-4">{t('sensorCode')}</th>
+                <th className="py-3.5 px-4">{t('sensorNameType')}</th>
+                <th className="py-3.5 px-4">{t('zoneLevel')}</th>
+                <th className="py-3.5 px-4">{t('liveTelemetry')}</th>
+                <th className="py-3.5 px-4">{t('thresholds')}</th>
+                <th className="py-3.5 px-4">{t('coords3d')}</th>
+                <th className="py-3.5 px-4">{t('status')}</th>
+                <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 text-slate-300">
+            <tbody className="divide-y divide-[#1B211E]/60 text-slate-300">
               {sensors.map((s) => (
-                <tr key={s.id} className="hover:bg-slate-800/40 transition-colors">
-                  <td className="py-3 px-4 font-bold text-amber-400">{s.sensor_code}</td>
+                <tr key={s.id} className="hover:bg-[#141A17] transition-colors">
+                  <td className="py-3 px-4 font-mono font-bold text-amber-400">{s.sensor_code}</td>
                   <td className="py-3 px-4">
-                    <p className="font-semibold text-white">{s.name}</p>
-                    <p className="text-[10px] text-slate-500">{s.sensor_type_code}</p>
+                    <p className="font-bold text-white">{s.name}</p>
+                    <p className="font-mono text-[10px] text-slate-500">{s.sensor_type_code}</p>
                   </td>
                   <td className="py-3 px-4">
                     <p className="text-slate-200">{s.zone_name || 'Mine Zone'}</p>
-                    <p className="text-[10px] text-slate-500">{s.level_name || 'Level'}</p>
+                    <p className="text-[10.5px] text-slate-400">{s.level_name || 'Level'}</p>
                   </td>
-                  <td className="py-3 px-4">
-                    <span className={`text-sm font-bold ${
-                      s.status === 'CRITICAL' ? 'text-rose-400' :
-                      s.status === 'WARNING' ? 'text-amber-400' :
-                      s.status === 'OFFLINE' ? 'text-purple-400' : 'text-emerald-400'
-                    }`}>
+                  <td className="py-3 px-4 font-mono">
+                    <span className={`text-sm font-bold ${s.status === 'CRITICAL' ? 'text-rose-400' :
+                        s.status === 'WARNING' ? 'text-amber-400' :
+                          s.status === 'OFFLINE' ? 'text-purple-400' : 'text-emerald-400'
+                      }`}>
                       {s.last_value !== undefined ? `${s.last_value} ${s.unit}` : 'OFFLINE'}
                     </span>
                   </td>
-                  <td className="py-3 px-4 text-slate-400">
+                  <td className="py-3 px-4 font-mono text-slate-400 text-xs">
                     <span className="text-amber-300">{s.warning_threshold}</span> / <span className="text-rose-400">{s.critical_threshold}</span> {s.unit}
                   </td>
-                  <td className="py-3 px-4 text-slate-500 text-[10px]">
+                  <td className="py-3 px-4 font-mono text-slate-400 text-[10.5px]">
                     ({s.x}, {s.y}, {s.z})
                   </td>
                   <td className="py-3 px-4">
                     <StatusBadge status={s.status} size="sm" />
                   </td>
                   <td className="py-3 px-4 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
+                    <div className="flex items-center justify-end gap-1.5 font-sans">
                       <button
                         onClick={() => setActiveTechnicalSensor(s)}
-                        className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-cyan-400 transition-colors cursor-pointer"
+                        className="p-1.5 rounded bg-[#121614] hover:bg-[#1B211E] text-cyan-400 border border-[#27302B] transition-colors cursor-pointer"
                         title="View Technical Details"
                       >
                         <Info className="w-3.5 h-3.5" />
@@ -631,7 +741,7 @@ export const SensorsPage: React.FC = () => {
                       </button>
                       <button
                         onClick={() => handleOpenReadings(s)}
-                        className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                        className="p-1.5 rounded bg-[#121614] hover:bg-[#1B211E] text-slate-300 hover:text-white border border-[#27302B] transition-colors cursor-pointer"
                         title={t('viewReadingHistory')}
                       >
                         <History className="w-3.5 h-3.5" />
@@ -645,17 +755,17 @@ export const SensorsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Full Technical Details Modal */}
+      {/* Technical Details Modal */}
       {activeTechnicalSensor && (
-        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-150">
-            <div className="flex items-start justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 bg-[#080A09]/85 backdrop-blur-md z-50 flex items-center justify-center p-4 font-sans">
+          <div className="bg-[#0D100F] border border-[#27302B] rounded-xl max-w-2xl w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-150">
+            <div className="flex items-start justify-between border-b border-[#1B211E] pb-3">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400">
+                <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400">
                   <Activity className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-xs font-mono font-bold text-amber-400">
+                  <span className="font-mono text-xs font-bold text-amber-400">
                     {activeTechnicalSensor.sensor_code}
                   </span>
                   <h3 className="text-lg font-bold text-white">
@@ -665,60 +775,60 @@ export const SensorsPage: React.FC = () => {
               </div>
               <button
                 onClick={() => setActiveTechnicalSensor(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#121614] transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Technical Specifications Matrix */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 font-mono text-xs">
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800/80 space-y-1">
-                <span className="text-[10px] text-slate-500 uppercase tracking-wider block">Sensor ID / Code</span>
-                <p className="text-amber-400 font-bold">{activeTechnicalSensor.sensor_code}</p>
-                <p className="text-[10px] text-slate-400">Type: {activeTechnicalSensor.sensor_type_code}</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+              <div className="p-3 rounded-lg bg-[#080A09] border border-[#1B211E] space-y-1">
+                <span className="text-[10.5px] uppercase font-semibold text-slate-400 tracking-wider block">Sensor ID / Code</span>
+                <p className="font-mono text-amber-400 font-bold">{activeTechnicalSensor.sensor_code}</p>
+                <p className="font-mono text-[10px] text-slate-400">Type: {activeTechnicalSensor.sensor_type_code}</p>
               </div>
 
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800/80 space-y-1">
-                <span className="text-[10px] text-slate-500 uppercase tracking-wider block">Operational Status</span>
+              <div className="p-3 rounded-lg bg-[#080A09] border border-[#1B211E] space-y-1">
+                <span className="text-[10.5px] uppercase font-semibold text-slate-400 tracking-wider block">Operational Status</span>
                 <StatusBadge status={activeTechnicalSensor.status} size="sm" showTechnical />
               </div>
 
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800/80 space-y-1">
-                <span className="text-[10px] text-slate-500 uppercase tracking-wider block">Data Provenance</span>
-                <span className="text-cyan-400 font-bold text-[11px]">SIMULATED (MQTT)</span>
-                <p className="text-[9.5px] text-slate-500">Continuous Ingestion</p>
+              <div className="p-3 rounded-lg bg-[#080A09] border border-[#1B211E] space-y-1">
+                <span className="text-[10.5px] uppercase font-semibold text-slate-400 tracking-wider block">Data Provenance</span>
+                <span className="font-mono text-cyan-400 font-bold text-[11px]">SIMULATED (MQTT)</span>
+                <p className="text-[10px] text-slate-400">Continuous Ingestion</p>
               </div>
 
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800/80 space-y-1">
-                <span className="text-[10px] text-slate-500 uppercase tracking-wider block">Warning Threshold</span>
-                <p className="text-amber-400 font-bold">{activeTechnicalSensor.warning_threshold} {activeTechnicalSensor.unit}</p>
-                <p className="text-[9.5px] text-slate-500">DGMS Standard Enforced</p>
+              <div className="p-3 rounded-lg bg-[#080A09] border border-[#1B211E] space-y-1">
+                <span className="text-[10.5px] uppercase font-semibold text-slate-400 tracking-wider block">Warning Threshold</span>
+                <p className="font-mono text-amber-400 font-bold">{activeTechnicalSensor.warning_threshold} {activeTechnicalSensor.unit}</p>
+                <p className="text-[10px] text-slate-400">DGMS Standard Enforced</p>
               </div>
 
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800/80 space-y-1">
-                <span className="text-[10px] text-slate-500 uppercase tracking-wider block">Critical Threshold</span>
-                <p className="text-rose-400 font-bold">{activeTechnicalSensor.critical_threshold} {activeTechnicalSensor.unit}</p>
-                <p className="text-[9.5px] text-slate-500">Immediate Auto-Trigger</p>
+              <div className="p-3 rounded-lg bg-[#080A09] border border-[#1B211E] space-y-1">
+                <span className="text-[10.5px] uppercase font-semibold text-slate-400 tracking-wider block">Critical Threshold</span>
+                <p className="font-mono text-rose-400 font-bold">{activeTechnicalSensor.critical_threshold} {activeTechnicalSensor.unit}</p>
+                <p className="text-[10px] text-slate-400">Immediate Auto-Trigger</p>
               </div>
 
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800/80 space-y-1">
-                <span className="text-[10px] text-slate-500 uppercase tracking-wider block">3D Coordinates (X, Y, Z)</span>
-                <p className="text-slate-200 font-bold">({activeTechnicalSensor.x}, {activeTechnicalSensor.y}, {activeTechnicalSensor.z})</p>
-                <p className="text-[9.5px] text-slate-500">{activeTechnicalSensor.zone_name || 'Mine Zone'}</p>
+              <div className="p-3 rounded-lg bg-[#080A09] border border-[#1B211E] space-y-1">
+                <span className="text-[10.5px] uppercase font-semibold text-slate-400 tracking-wider block">3D Coordinates (X, Y, Z)</span>
+                <p className="font-mono text-slate-200 font-bold">({activeTechnicalSensor.x}, {activeTechnicalSensor.y}, {activeTechnicalSensor.z})</p>
+                <p className="text-[10px] text-slate-400">{activeTechnicalSensor.zone_name || 'Mine Zone'}</p>
               </div>
             </div>
 
             {/* Statutory Regulation Reference */}
-            <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-1.5">
-              <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">Statutory Reference & Anomaly Context</span>
+            <div className="p-3.5 rounded-lg bg-[#080A09] border border-[#1B211E] text-xs space-y-1.5">
+              <span className="text-[10.5px] font-semibold text-slate-400 uppercase tracking-wider block">Statutory Reference & Anomaly Context</span>
               <p className="text-slate-200 leading-relaxed font-sans">
                 Governed under Coal Mines Regulations 2017 (CMR 2017 Reg 153 / Reg 169) and DGMS Technical Safety Circulars. Automatic threshold exceedance events trigger priority incident dispatch and spatial hot-spot mapping in the 3D Digital Twin.
               </p>
             </div>
 
             {/* Modal Actions */}
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#1B211E]">
               <button
                 onClick={() => {
                   focusInDigitalTwin({
@@ -731,14 +841,14 @@ export const SensorsPage: React.FC = () => {
                   });
                   setActiveTechnicalSensor(null);
                 }}
-                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+                className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs"
               >
                 <Crosshair className="w-4 h-4" />
                 <span>{t('focusIn3D')}</span>
               </button>
               <button
                 onClick={() => setActiveTechnicalSensor(null)}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium cursor-pointer"
+                className="px-4 py-2 rounded-lg bg-[#121614] hover:bg-[#1B211E] text-slate-300 border border-[#27302B] text-xs font-medium cursor-pointer"
               >
                 Close
               </button>
@@ -749,11 +859,11 @@ export const SensorsPage: React.FC = () => {
 
       {/* Reading History Drawer */}
       {selectedSensorReadings && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-start justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 bg-[#080A09]/85 backdrop-blur-md z-50 flex items-center justify-center p-4 font-sans">
+          <div className="bg-[#0D100F] border border-[#27302B] rounded-xl max-w-xl w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-start justify-between border-b border-[#1B211E] pb-3">
               <div>
-                <span className="text-xs font-mono font-bold text-amber-400">
+                <span className="font-mono text-xs font-bold text-amber-400">
                   {selectedSensorReadings.sensor.sensor_code}
                 </span>
                 <h3 className="text-base font-bold text-white mt-1">
@@ -768,25 +878,25 @@ export const SensorsPage: React.FC = () => {
               </button>
             </div>
 
-            <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs font-mono">
-              <span>Thresholds: <b className="text-amber-300">{selectedSensorReadings.sensor.warning_threshold}</b> (Warn) / <b className="text-rose-400">{selectedSensorReadings.sensor.critical_threshold}</b> (Crit) {selectedSensorReadings.sensor.unit}</span>
+            <div className="p-3 rounded-lg bg-[#080A09] border border-[#1B211E] flex items-center justify-between text-xs">
+              <span>Thresholds: <b className="font-mono text-amber-300">{selectedSensorReadings.sensor.warning_threshold}</b> (Warn) / <b className="font-mono text-rose-400">{selectedSensorReadings.sensor.critical_threshold}</b> (Crit) {selectedSensorReadings.sensor.unit}</span>
               <StatusBadge status={selectedSensorReadings.sensor.status} size="sm" />
             </div>
 
-            <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
+            <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1 hide-scrollbar">
               {selectedSensorReadings.readings.map((r) => (
-                <div key={r.id} className="p-2.5 rounded-lg bg-slate-950 border border-slate-800/80 flex items-center justify-between font-mono text-xs">
+                <div key={r.id} className="p-2.5 rounded-lg bg-[#080A09] border border-[#1B211E] flex items-center justify-between text-xs">
                   <div>
-                    <span className="font-bold text-white text-sm">{r.value} {r.unit}</span>
-                    <span className="text-[10px] text-slate-500 ml-2">Source: {r.source}</span>
+                    <span className="font-mono font-bold text-white text-sm">{r.value} {r.unit}</span>
+                    <span className="text-[10.5px] text-slate-400 ml-2">Source: {r.source}</span>
                   </div>
-                  <span className="text-[10px] text-slate-400">{new Date(r.timestamp).toLocaleTimeString()}</span>
+                  <span className="font-mono text-[10.5px] text-slate-400">{new Date(r.timestamp).toLocaleTimeString()}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };

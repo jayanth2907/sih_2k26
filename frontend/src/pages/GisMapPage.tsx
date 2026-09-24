@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
+import { TypewriterText } from '../components/ui/typewriter-text';
 import { useMineContext } from '../context/MineContext';
 import { useLanguage } from '../context/LanguageContext';
 import { gisService } from '../services';
@@ -493,8 +494,8 @@ export const GisMapPage: React.FC = () => {
 
         const baseColor =
           h.risk_band === 'CRITICAL' ? '#E11D48' :
-          h.risk_band === 'HIGH' ? '#F97316' :
-          h.risk_band === 'MEDIUM' ? '#FBBF24' : '#10B981';
+            h.risk_band === 'HIGH' ? '#F97316' :
+              h.risk_band === 'MEDIUM' ? '#FBBF24' : '#10B981';
 
         // Outer Translucent Glow Circle
         const outerCircle = L.circle([h.latitude, h.longitude], {
@@ -703,43 +704,29 @@ export const GisMapPage: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col gap-3 font-sans text-slate-100 bg-[#080A09] min-h-[calc(100vh-4.5rem)] p-3">
-      {/* 1. TOP COMMAND HEADER MATCHING REFERENCE SPECIFICATION */}
-      <div className="bg-[#0D100F] border border-[#1B211E] rounded-xl p-3.5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-xl">
-        {/* Left: Brand Identity & Title */}
-        <div className="flex items-center gap-3.5">
-          <div className="flex items-center gap-2 border-r border-[#1B211E] pr-3.5">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center font-bold text-slate-950 font-serif text-sm shadow-md">
-              त्रिनेत्र
-            </div>
-            <div className="flex flex-col">
-              <span className="font-mono font-black text-sm text-amber-400 tracking-wider">TRINETRA</span>
-              <span className="font-mono text-[9px] text-slate-400 tracking-widest uppercase">MINE GOVERNANCE AI</span>
-            </div>
+    <div className="flex flex-col gap-6 font-sans text-slate-100 bg-[#080A09] min-h-[calc(100vh-4.5rem)] p-1">
+      {/* 1. Page header */}
+      <div className="pb-5 border-b border-[#1B211E] flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+            <Crosshair className="w-4 h-4" />
           </div>
-
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
-              <Crosshair className="w-4 h-4" />
-            </div>
-            <div>
-              <h1 className="font-mono font-bold text-sm tracking-wide text-slate-100">
-                2D GIS COMMAND & SPATIAL RISK MAP
-              </h1>
-              <p className="text-[11px] text-slate-400 font-sans">
-                Source-truth geography, active telemetry, predictive risk overlays & spatial governance
-              </p>
-            </div>
+          <div>
+            <h1 className="text-xl font-semibold text-white tracking-tight">
+              <TypewriterText text="2D GIS command & spatial risk map" speed={30} delay={100} />
+            </h1>
+            <p className="text-[11.5px] text-slate-500 mt-0.5">
+              Source-truth geography, active telemetry, predictive risk overlays &amp; spatial governance
+            </p>
           </div>
         </div>
 
-        {/* Center/Right: Mine Selector, Fit to Mine & KPI Cards */}
-        <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto justify-end">
-          {/* Mine Selector */}
-          <div className="flex items-center gap-1.5 bg-[#121614] border border-[#1B211E] px-3 py-1.5 rounded-lg">
-            <span className="font-mono text-[10px] text-slate-400 uppercase font-semibold">MINE:</span>
+        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end">
+          {/* Mine selector */}
+          <div className="flex items-center gap-1.5 text-xs">
+            <span className="text-slate-500">Mine</span>
             <select
-              className="bg-transparent text-xs text-slate-100 font-mono font-medium focus:outline-hidden cursor-pointer"
+              className="bg-transparent text-slate-100 font-medium focus:outline-hidden cursor-pointer border-b border-[#232A26] pb-0.5"
               value={selectedMine?.id || ''}
               onChange={(e) => {
                 const id = parseInt(e.target.value, 10);
@@ -754,64 +741,58 @@ export const GisMapPage: React.FC = () => {
             </select>
           </div>
 
-          {/* FIT TO MINE Button */}
           <button
             onClick={handleFitToMine}
-            className="flex items-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 px-3 py-1.5 rounded-lg text-xs font-mono font-bold text-amber-400 transition-colors cursor-pointer shadow-sm"
+            className="text-xs font-medium text-amber-400 hover:text-amber-300 transition-colors cursor-pointer"
           >
-            Fit to Mine
+            Fit to mine
           </button>
 
-          {/* KPI Cards Ribbon */}
+          {/* KPI strip */}
           {mapData && (
-            <div className="flex items-center gap-2 font-mono text-xs">
-              {/* CURRENT RISK */}
-              <div className="bg-[#121614] px-3 py-1.5 rounded-lg border border-[#1B211E] flex flex-col items-center">
-                <span className="text-[9px] text-slate-400 uppercase tracking-wider">CURRENT RISK</span>
+            <div className="border border-[#1B211E] rounded-lg grid grid-cols-5 divide-x divide-[#1B211E] overflow-hidden">
+              <div className="px-3 py-2 flex flex-col items-center">
+                <span className="text-[9.5px] text-slate-500 uppercase tracking-wide">Current risk</span>
                 <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="font-bold text-xs text-white">{mapData.dashboard_stats.current_risk_score} / 100</span>
+                  <span className="font-semibold text-xs text-white">{mapData.dashboard_stats.current_risk_score}</span>
                   <span className={clsx(
-                    'px-1.5 py-0.2 rounded text-[9px] font-bold',
-                    mapData.dashboard_stats.current_risk_band === 'CRITICAL' ? 'bg-rose-950 text-rose-300 border border-rose-700' :
-                    mapData.dashboard_stats.current_risk_band === 'HIGH' ? 'bg-rose-950/80 text-rose-400 border border-rose-800' :
-                    mapData.dashboard_stats.current_risk_band === 'MEDIUM' ? 'bg-amber-950 text-amber-400 border border-amber-800' : 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                    'text-[9.5px] font-medium',
+                    mapData.dashboard_stats.current_risk_band === 'CRITICAL' ? 'text-rose-400' :
+                      mapData.dashboard_stats.current_risk_band === 'HIGH' ? 'text-rose-400' :
+                        mapData.dashboard_stats.current_risk_band === 'MEDIUM' ? 'text-amber-400' : 'text-emerald-400'
                   )}>
                     {mapData.dashboard_stats.current_risk_band}
                   </span>
                 </div>
               </div>
 
-              {/* PREDICTIVE HOTSPOTS */}
-              <div className="bg-[#121614] px-3 py-1.5 rounded-lg border border-[#1B211E] flex flex-col items-center">
-                <span className="text-[9px] text-slate-400 uppercase tracking-wider">PREDICTIVE HOTSPOTS</span>
-                <span className="font-bold text-amber-400 text-sm mt-0.5">{mapData.dashboard_stats.predictive_hotspots_count}</span>
+              <div className="px-3 py-2 flex flex-col items-center">
+                <span className="text-[9.5px] text-slate-500 uppercase tracking-wide">Predictive</span>
+                <span className="font-semibold text-amber-400 text-xs mt-0.5">{mapData.dashboard_stats.predictive_hotspots_count}</span>
               </div>
 
-              {/* OPEN INCIDENTS */}
-              <div className="bg-[#121614] px-3 py-1.5 rounded-lg border border-[#1B211E] flex flex-col items-center">
-                <span className="text-[9px] text-slate-400 uppercase tracking-wider">OPEN INCIDENTS</span>
-                <span className="font-bold text-rose-400 text-sm mt-0.5">{mapData.dashboard_stats.open_incidents_count}</span>
+              <div className="px-3 py-2 flex flex-col items-center">
+                <span className="text-[9.5px] text-slate-500 uppercase tracking-wide">Incidents</span>
+                <span className="font-semibold text-rose-400 text-xs mt-0.5">{mapData.dashboard_stats.open_incidents_count}</span>
               </div>
 
-              {/* OPEN FIELD TASKS */}
-              <div className="bg-[#121614] px-3 py-1.5 rounded-lg border border-[#1B211E] flex flex-col items-center">
-                <span className="text-[9px] text-slate-400 uppercase tracking-wider">OPEN FIELD TASKS</span>
-                <span className="font-bold text-cyan-400 text-sm mt-0.5">{mapData.dashboard_stats.open_field_tasks_count}</span>
+              <div className="px-3 py-2 flex flex-col items-center">
+                <span className="text-[9.5px] text-slate-500 uppercase tracking-wide">Field tasks</span>
+                <span className="font-semibold text-sky-400 text-xs mt-0.5">{mapData.dashboard_stats.open_field_tasks_count}</span>
               </div>
 
-              {/* SLA BREACHES */}
-              <div className="bg-[#121614] px-3 py-1.5 rounded-lg border border-[#1B211E] flex flex-col items-center">
-                <span className="text-[9px] text-slate-400 uppercase tracking-wider">SLA BREACHES</span>
-                <span className="font-bold text-rose-400 text-sm mt-0.5">{mapData.dashboard_stats.sla_breaches_count || 0}</span>
+              <div className="px-3 py-2 flex flex-col items-center">
+                <span className="text-[9.5px] text-slate-500 uppercase tracking-wide">SLA breaches</span>
+                <span className="font-semibold text-rose-400 text-xs mt-0.5">{mapData.dashboard_stats.sla_breaches_count || 0}</span>
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Task Creation Notification */}
+      {/* Task creation notification */}
       {taskNotification && (
-        <div className="bg-emerald-950/90 border border-emerald-500/50 text-emerald-300 px-4 py-2 rounded-lg flex items-center justify-between text-xs font-mono shadow-lg animate-fade-in">
+        <div className="bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 px-4 py-2.5 rounded-lg flex items-center justify-between text-xs shadow-lg animate-fade-in -mt-2">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
             <span>{taskNotification}</span>
@@ -822,19 +803,19 @@ export const GisMapPage: React.FC = () => {
         </div>
       )}
 
-      {/* Basemap Diagnostic Warning if any */}
+      {/* Basemap diagnostic warning */}
       {basemapWarning && (
-        <div className="bg-amber-950/80 border border-amber-500/40 text-amber-300 px-4 py-1.5 rounded-lg flex items-center gap-2 text-xs font-mono">
+        <div className="bg-amber-950/40 border border-amber-500/30 text-amber-300 px-4 py-2 rounded-lg flex items-center gap-2 text-xs -mt-2">
           <Info className="w-3.5 h-3.5 text-amber-400 shrink-0" />
           <span>{basemapWarning}</span>
         </div>
       )}
 
-      {/* 2. MAIN GIS WORKSPACE GRID (Map Canvas + Side Panels) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5">
-        {/* Dominant Map Canvas (8 of 12 Columns = ~66.7%) */}
-        <div className="lg:col-span-8 flex flex-col gap-3">
-          <div className="relative w-full h-[680px] rounded-xl border border-[#1B211E] overflow-hidden bg-[#050706] shadow-2xl">
+      {/* 2. Map canvas + side panels */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        {/* Map canvas (8 of 12 columns) */}
+        <div className="lg:col-span-8 flex flex-col gap-4">
+          <div className="relative w-full h-[680px] rounded-lg border border-[#1B211E] overflow-hidden bg-[#050706] shadow-xl">
             {/* Real Leaflet Map Target */}
             <div ref={mapContainerRef} className="w-full h-full z-0" />
 
@@ -853,7 +834,7 @@ export const GisMapPage: React.FC = () => {
 
               {/* Autocomplete Search Dropdown */}
               {searchResults.length > 0 && (
-                <div className="mt-1 bg-[#0D100F] border border-[#232A26] rounded-lg shadow-2xl max-h-60 overflow-y-auto z-50 divide-y divide-[#1B211E]">
+                <div className="mt-1 bg-[#0D100F] border border-[#232A26] rounded-lg shadow-2xl max-h-60 overflow-y-auto z-50 divide-y divide-[#1B211E] animate-fade-in">
                   {searchResults.map((item) => (
                     <button
                       key={item.id}
@@ -884,21 +865,21 @@ export const GisMapPage: React.FC = () => {
               <button
                 onClick={() => mapInstanceRef.current?.zoomIn()}
                 title="Zoom In"
-                className="w-8 h-8 rounded-lg bg-[#0D100F]/90 backdrop-blur-md border border-[#232A26] hover:bg-[#171B18] text-slate-200 flex items-center justify-center shadow-lg transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-lg bg-[#0D100F]/90 backdrop-blur-md border border-[#232A26] hover:bg-[#171B18] text-slate-200 flex items-center justify-center shadow-lg transition-all hover:scale-110 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
               </button>
               <button
                 onClick={() => mapInstanceRef.current?.zoomOut()}
                 title="Zoom Out"
-                className="w-8 h-8 rounded-lg bg-[#0D100F]/90 backdrop-blur-md border border-[#232A26] hover:bg-[#171B18] text-slate-200 flex items-center justify-center shadow-lg transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-lg bg-[#0D100F]/90 backdrop-blur-md border border-[#232A26] hover:bg-[#171B18] text-slate-200 flex items-center justify-center shadow-lg transition-all hover:scale-110 cursor-pointer"
               >
                 <Minus className="w-4 h-4" />
               </button>
               <button
                 onClick={handleFitToMine}
                 title="Center on Mine"
-                className="w-8 h-8 rounded-lg bg-[#0D100F]/90 backdrop-blur-md border border-[#232A26] hover:bg-[#171B18] text-amber-400 flex items-center justify-center shadow-lg transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-lg bg-[#0D100F]/90 backdrop-blur-md border border-[#232A26] hover:bg-[#171B18] text-amber-400 flex items-center justify-center shadow-lg transition-all hover:scale-110 cursor-pointer"
               >
                 <Crosshair className="w-4 h-4" />
               </button>
@@ -911,7 +892,7 @@ export const GisMapPage: React.FC = () => {
                   }
                 }}
                 title="Fullscreen Toggle"
-                className="w-8 h-8 rounded-lg bg-[#0D100F]/90 backdrop-blur-md border border-[#232A26] hover:bg-[#171B18] text-slate-300 flex items-center justify-center shadow-lg transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-lg bg-[#0D100F]/90 backdrop-blur-md border border-[#232A26] hover:bg-[#171B18] text-slate-300 flex items-center justify-center shadow-lg transition-all hover:scale-110 cursor-pointer"
               >
                 <Maximize2 className="w-3.5 h-3.5" />
               </button>
@@ -925,7 +906,7 @@ export const GisMapPage: React.FC = () => {
                   }
                 }}
                 title="Reset North Orientation"
-                className="w-8 h-8 rounded-lg bg-[#0D100F]/90 backdrop-blur-md border border-[#232A26] hover:bg-[#171B18] text-slate-300 flex items-center justify-center shadow-lg transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-lg bg-[#0D100F]/90 backdrop-blur-md border border-[#232A26] hover:bg-[#171B18] text-slate-300 flex items-center justify-center shadow-lg transition-all hover:scale-110 cursor-pointer"
               >
                 <Navigation className="w-3.5 h-3.5 text-amber-400" />
               </button>
@@ -1012,33 +993,31 @@ export const GisMapPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Side Panels (4 of 12 Columns = ~33.3%) */}
-        <div className="lg:col-span-4 flex flex-col gap-3">
-          {/* Panel 1: MAP LAYERS (Categorized Toggles matching reference) */}
-          <div className="bg-[#0D100F] border border-[#1B211E] rounded-xl p-3.5 shadow-xl">
-            <div className="flex items-center justify-between border-b border-[#1B211E] pb-2 mb-2.5">
+        {/* Right side panels (4 of 12 columns) */}
+        <div className="lg:col-span-4 flex flex-col gap-4">
+          {/* Panel 1: Map layers */}
+          <div className="border border-[#1B211E] rounded-lg p-4">
+            <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-[#1B211E]">
               <div className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-amber-400" />
-                <h2 className="font-mono font-bold text-xs uppercase tracking-wider text-slate-200">
-                  MAP LAYERS
-                </h2>
+                <h2 className="text-[12.5px] font-semibold text-white">Map layers</h2>
               </div>
               <button
                 onClick={handleResetLayers}
-                className="text-[10px] font-mono text-slate-400 hover:text-amber-400 transition-colors cursor-pointer"
+                className="text-[10.5px] text-slate-500 hover:text-amber-400 transition-colors cursor-pointer"
               >
                 Reset
               </button>
             </div>
 
-            <div className="space-y-2 text-xs font-mono max-h-48 overflow-y-auto pr-1">
-              {/* Category 1: VERIFIED SOURCE DATA */}
+            <div className="space-y-3 text-[11.5px] max-h-56 overflow-y-auto pr-1">
+              {/* Category 1: verified source data */}
               <div>
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">
-                  ● VERIFIED SOURCE DATA
+                <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wide block mb-1.5">
+                  Verified source data
                 </span>
-                <div className="space-y-1 text-[11px]">
-                  <label className="flex items-center justify-between cursor-pointer hover:text-slate-100">
+                <div className="space-y-1.5">
+                  <label className="flex items-center justify-between cursor-pointer text-slate-300 hover:text-slate-100 transition-colors">
                     <span className="flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -1046,14 +1025,12 @@ export const GisMapPage: React.FC = () => {
                         onChange={() => toggleLayer('mineBoundary')}
                         className="rounded accent-emerald-500 cursor-pointer"
                       />
-                      Mine Boundary
+                      Mine boundary
                     </span>
-                    <span className="text-[9px] text-emerald-400 font-bold px-1.5 py-0.2 rounded bg-emerald-950/60 border border-emerald-800/60">
-                      SOURCE
-                    </span>
+                    <span className="text-[9.5px] text-emerald-400">Source</span>
                   </label>
 
-                  <label className="flex items-center justify-between cursor-pointer hover:text-slate-100">
+                  <label className="flex items-center justify-between cursor-pointer text-slate-300 hover:text-slate-100 transition-colors">
                     <span className="flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -1061,67 +1038,59 @@ export const GisMapPage: React.FC = () => {
                         onChange={() => toggleLayer('surveyCoordinates')}
                         className="rounded accent-emerald-500 cursor-pointer"
                       />
-                      Survey Coordinates
+                      Survey coordinates
                     </span>
-                    <span className="text-[9px] text-emerald-400 font-bold px-1.5 py-0.2 rounded bg-emerald-950/60 border border-emerald-800/60">
-                      SOURCE
-                    </span>
+                    <span className="text-[9.5px] text-emerald-400">Source</span>
                   </label>
 
-                  <label className="flex items-center justify-between cursor-pointer hover:text-slate-100">
+                  <label className="flex items-center justify-between cursor-pointer text-slate-300 hover:text-slate-100 transition-colors">
                     <span className="flex items-center gap-2">
                       <input
                         type="checkbox"
                         checked={layerVisibility.documentedSeams}
                         onChange={() => toggleLayer('documentedSeams')}
-                        className="rounded accent-cyan-500 cursor-pointer"
+                        className="rounded accent-sky-500 cursor-pointer"
                       />
-                      Documented Seams
+                      Documented seams
                     </span>
-                    <span className="text-[9px] text-cyan-400 font-bold px-1.5 py-0.2 rounded bg-cyan-950/60 border border-cyan-800/60">
-                      ATTRIBUTES
-                    </span>
+                    <span className="text-[9.5px] text-sky-400">Attributes</span>
                   </label>
                 </div>
               </div>
 
-              {/* Category 2: OPERATIONAL */}
-              <div className="pt-1 border-t border-[#1B211E]">
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">
-                  ● OPERATIONAL
+              {/* Category 2: operational */}
+              <div className="pt-2.5 border-t border-[#1B211E]">
+                <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wide block mb-1.5">
+                  Operational
                 </span>
-                <div className="space-y-1 text-[11px]">
-                  <label className="flex items-center justify-between cursor-pointer hover:text-slate-100">
+                <div className="space-y-1.5">
+                  <label className="flex items-center justify-between cursor-pointer text-slate-300 hover:text-slate-100 transition-colors">
                     <span className="flex items-center gap-2">
                       <input
                         type="checkbox"
                         checked={layerVisibility.sensors}
                         onChange={() => toggleLayer('sensors')}
-                        className="rounded accent-cyan-500 cursor-pointer"
+                        className="rounded accent-sky-500 cursor-pointer"
                       />
-                      Sensors (Telemetry)
+                      Sensors (telemetry)
                     </span>
-                    <span className="text-[9px] text-cyan-400 font-bold px-1.5 py-0.2 rounded bg-cyan-950/60 border border-cyan-800/60">
-                      SIM
-                    </span>
+                    <span className="text-[9.5px] text-sky-400">Sim</span>
                   </label>
 
-                  <label className="flex items-center justify-between cursor-pointer hover:text-slate-100">
+                  <label className="flex items-center justify-between cursor-pointer text-slate-300 hover:text-slate-100 transition-colors">
                     <span className="flex items-center gap-2">
                       <input
                         type="checkbox"
                         checked={layerVisibility.cameras}
                         onChange={() => toggleLayer('cameras')}
-                        className="rounded accent-cyan-500 cursor-pointer"
+                        className="rounded accent-sky-500 cursor-pointer"
                       />
                       Cameras
                     </span>
-                    <span className="text-[9px] text-cyan-400 font-bold px-1.5 py-0.2 rounded bg-cyan-950/60 border border-cyan-800/60">
-                      SIM
-                    </span>
+                    <span className="text-[9.5px] text-sky-400">Sim</span>
                   </label>
 
-                  <label className="flex items-center justify-between cursor-pointer hover:text-slate-100">
+                  <label className="flex items-center justify-between cursor-pointer text-slate-300 hover:text-slate-100 transition-colors">
                     <span className="flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -1131,12 +1100,10 @@ export const GisMapPage: React.FC = () => {
                       />
                       Machinery
                     </span>
-                    <span className="text-[9px] text-amber-400 font-bold px-1.5 py-0.2 rounded bg-amber-950/60 border border-amber-800/60">
-                      SIM
-                    </span>
+                    <span className="text-[9.5px] text-amber-400">Sim</span>
                   </label>
 
-                  <label className="flex items-center justify-between cursor-pointer hover:text-slate-100">
+                  <label className="flex items-center justify-between cursor-pointer text-slate-300 hover:text-slate-100 transition-colors">
                     <span className="flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -1144,14 +1111,12 @@ export const GisMapPage: React.FC = () => {
                         onChange={() => toggleLayer('incidentsAlerts')}
                         className="rounded accent-rose-500 cursor-pointer"
                       />
-                      Incidents & Alerts
+                      Incidents &amp; alerts
                     </span>
-                    <span className="text-[9px] text-rose-400 font-bold px-1.5 py-0.2 rounded bg-rose-950/60 border border-rose-800/60">
-                      LIVE
-                    </span>
+                    <span className="text-[9.5px] text-rose-400">Live</span>
                   </label>
 
-                  <label className="flex items-center justify-between cursor-pointer hover:text-slate-100">
+                  <label className="flex items-center justify-between cursor-pointer text-slate-300 hover:text-slate-100 transition-colors">
                     <span className="flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -1159,14 +1124,12 @@ export const GisMapPage: React.FC = () => {
                         onChange={() => toggleLayer('fieldInspections')}
                         className="rounded accent-rose-500 cursor-pointer"
                       />
-                      Field Inspections
+                      Field inspections
                     </span>
-                    <span className="text-[9px] text-rose-400 font-bold px-1.5 py-0.2 rounded bg-rose-950/60 border border-rose-800/60">
-                      LIVE
-                    </span>
+                    <span className="text-[9.5px] text-rose-400">Live</span>
                   </label>
 
-                  <label className="flex items-center justify-between cursor-pointer hover:text-slate-100">
+                  <label className="flex items-center justify-between cursor-pointer text-slate-300 hover:text-slate-100 transition-colors">
                     <span className="flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -1174,22 +1137,20 @@ export const GisMapPage: React.FC = () => {
                         onChange={() => toggleLayer('governanceTasks')}
                         className="rounded accent-rose-500 cursor-pointer"
                       />
-                      Governance Tasks
+                      Governance tasks
                     </span>
-                    <span className="text-[9px] text-rose-400 font-bold px-1.5 py-0.2 rounded bg-rose-950/60 border border-rose-800/60">
-                      LIVE
-                    </span>
+                    <span className="text-[9.5px] text-rose-400">Live</span>
                   </label>
                 </div>
               </div>
 
-              {/* Category 3: FORECASTED & SPATIAL RISK */}
-              <div className="pt-1 border-t border-[#1B211E]">
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">
-                  ● FORECASTED & SPATIAL RISK
+              {/* Category 3: forecasted & spatial risk */}
+              <div className="pt-2.5 border-t border-[#1B211E]">
+                <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wide block mb-1.5">
+                  Forecasted &amp; spatial risk
                 </span>
-                <div className="space-y-1 text-[11px]">
-                  <label className="flex items-center justify-between cursor-pointer hover:text-slate-100">
+                <div className="space-y-1.5">
+                  <label className="flex items-center justify-between cursor-pointer text-slate-300 hover:text-slate-100 transition-colors">
                     <span className="flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -1197,14 +1158,12 @@ export const GisMapPage: React.FC = () => {
                         onChange={() => toggleLayer('currentRisk')}
                         className="rounded accent-rose-500 cursor-pointer"
                       />
-                      Current Risk
+                      Current risk
                     </span>
-                    <span className="text-[9px] text-rose-400 font-bold px-1.5 py-0.2 rounded bg-rose-950/60 border border-rose-800/60">
-                      LIVE
-                    </span>
+                    <span className="text-[9.5px] text-rose-400">Live</span>
                   </label>
 
-                  <label className="flex items-center justify-between cursor-pointer hover:text-slate-100">
+                  <label className="flex items-center justify-between cursor-pointer text-slate-300 hover:text-slate-100 transition-colors">
                     <span className="flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -1212,14 +1171,12 @@ export const GisMapPage: React.FC = () => {
                         onChange={() => toggleLayer('predictiveRisk')}
                         className="rounded accent-amber-500 cursor-pointer"
                       />
-                      Forecasted Risk (30m)
+                      Forecasted risk (30m)
                     </span>
-                    <span className="text-[9px] text-amber-400 font-bold px-1.5 py-0.2 rounded bg-amber-950/60 border border-amber-800/60">
-                      MODEL
-                    </span>
+                    <span className="text-[9.5px] text-amber-400">Model</span>
                   </label>
 
-                  <label className="flex items-center justify-between cursor-pointer hover:text-slate-100">
+                  <label className="flex items-center justify-between cursor-pointer text-slate-300 hover:text-slate-100 transition-colors">
                     <span className="flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -1227,14 +1184,12 @@ export const GisMapPage: React.FC = () => {
                         onChange={() => toggleLayer('anomalyHotspots')}
                         className="rounded accent-rose-500 cursor-pointer"
                       />
-                      Anomaly Hotspots
+                      Anomaly hotspots
                     </span>
-                    <span className="text-[9px] text-rose-400 font-bold px-1.5 py-0.2 rounded bg-rose-950/60 border border-rose-800/60">
-                      LIVE
-                    </span>
+                    <span className="text-[9.5px] text-rose-400">Live</span>
                   </label>
 
-                  <label className="flex items-center justify-between cursor-pointer hover:text-slate-100">
+                  <label className="flex items-center justify-between cursor-pointer text-slate-300 hover:text-slate-100 transition-colors">
                     <span className="flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -1242,14 +1197,12 @@ export const GisMapPage: React.FC = () => {
                         onChange={() => toggleLayer('complianceRisk')}
                         className="rounded accent-rose-500 cursor-pointer"
                       />
-                      Compliance/SLA Risk
+                      Compliance / SLA risk
                     </span>
-                    <span className="text-[9px] text-rose-400 font-bold px-1.5 py-0.2 rounded bg-rose-950/60 border border-rose-800/60">
-                      LIVE
-                    </span>
+                    <span className="text-[9.5px] text-rose-400">Live</span>
                   </label>
 
-                  <label className="flex items-center justify-between cursor-pointer hover:text-slate-100">
+                  <label className="flex items-center justify-between cursor-pointer text-slate-300 hover:text-slate-100 transition-colors">
                     <span className="flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -1257,42 +1210,38 @@ export const GisMapPage: React.FC = () => {
                         onChange={() => toggleLayer('environmentalRisk')}
                         className="rounded accent-rose-500 cursor-pointer"
                       />
-                      Environmental Risk
+                      Environmental risk
                     </span>
-                    <span className="text-[9px] text-rose-400 font-bold px-1.5 py-0.2 rounded bg-rose-950/60 border border-rose-800/60">
-                      LIVE
-                    </span>
+                    <span className="text-[9.5px] text-rose-400">Live</span>
                   </label>
                 </div>
               </div>
 
-              {/* Category 4: EXTERNAL */}
-              <div className="pt-1 border-t border-[#1B211E]">
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">
-                  ● EXTERNAL
+              {/* Category 4: external */}
+              <div className="pt-2.5 border-t border-[#1B211E]">
+                <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wide block mb-1.5">
+                  External
                 </span>
-                <label className="flex items-center justify-between cursor-pointer hover:text-slate-100 text-[11px]">
+                <label className="flex items-center justify-between cursor-pointer text-slate-300 hover:text-slate-100 transition-colors">
                   <span className="flex items-center gap-2">
                     <input
                       type="checkbox"
                       checked={layerVisibility.cmsmsSignals}
                       onChange={() => toggleLayer('cmsmsSignals')}
-                      className="rounded accent-cyan-500 cursor-pointer"
+                      className="rounded accent-sky-500 cursor-pointer"
                     />
-                    CMSMS Signals
+                    CMSMS signals
                   </span>
-                  <span className="text-[9px] text-cyan-400 font-bold px-1.5 py-0.2 rounded bg-cyan-950/60 border border-cyan-800/60">
-                    SIM
-                  </span>
+                  <span className="text-[9.5px] text-sky-400">Sim</span>
                 </label>
               </div>
 
-              {/* Category 5: 3D / NAVIGATION */}
-              <div className="pt-1 border-t border-[#1B211E]">
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">
-                  ● 3D / NAVIGATION
+              {/* Category 5: 3D / navigation */}
+              <div className="pt-2.5 border-t border-[#1B211E]">
+                <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wide block mb-1.5">
+                  3D / navigation
                 </span>
-                <label className="flex items-center justify-between cursor-pointer hover:text-slate-100 text-[11px]">
+                <label className="flex items-center justify-between cursor-pointer text-slate-300 hover:text-slate-100 transition-colors">
                   <span className="flex items-center gap-2">
                     <input
                       type="checkbox"
@@ -1300,25 +1249,25 @@ export const GisMapPage: React.FC = () => {
                       onChange={() => toggleLayer('threeDLinked')}
                       className="rounded accent-amber-500 cursor-pointer"
                     />
-                    3D-linked Objects
+                    3D-linked objects
                   </span>
                 </label>
               </div>
             </div>
           </div>
 
-          {/* Panel 2: SELECTED FEATURE & LOCATION EVIDENCE (Matching Reference Screenshot) */}
-          <div className="bg-[#0D100F] border border-[#1B211E] rounded-xl p-4 shadow-xl flex flex-col justify-between flex-1">
+          {/* Panel 2: Selected feature & location evidence */}
+          <div className="border border-[#1B211E] rounded-lg p-4 flex flex-col justify-between flex-1">
             <div>
-              <div className="flex items-center justify-between border-b border-[#1B211E] pb-2 mb-3">
-                <h2 className="font-mono font-bold text-xs uppercase tracking-wider text-slate-200 flex items-center gap-2">
+              <div className="flex items-center justify-between pb-2.5 mb-3 border-b border-[#1B211E]">
+                <h2 className="text-[12.5px] font-semibold text-white flex items-center gap-2">
                   <Crosshair className="w-3.5 h-3.5 text-amber-400" />
-                  SELECTED FEATURE & LOCATION EVIDENCE
+                  Selected feature &amp; location evidence
                 </h2>
                 {selectedFeature && (
                   <button
                     onClick={() => setSelectedFeature(null)}
-                    className="text-slate-400 hover:text-slate-200 cursor-pointer"
+                    className="text-slate-500 hover:text-slate-200 cursor-pointer"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -1326,109 +1275,101 @@ export const GisMapPage: React.FC = () => {
               </div>
 
               {selectedFeature ? (
-                <div className="space-y-3 text-xs font-sans">
-                  {/* Feature Header */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
-                      <h3 className="font-bold text-sm text-white">
+                <div key={JSON.stringify(selectedFeature.data.id ?? selectedFeature.type)} className="space-y-3.5 text-xs animate-fade-in">
+                  {/* Feature header */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
+                      <h3 className="font-semibold text-[13px] text-white truncate">
                         {selectedFeature.type === 'HOTSPOT' ? 'Risk Hotspot' :
-                         selectedFeature.type === 'COORDINATE' ? `Corner ${selectedFeature.data.point_label}` :
-                         selectedFeature.type === 'BOUNDARY' ? `${mapData?.mine.name} Boundary` :
-                         selectedFeature.data.title || selectedFeature.data.name || 'Mine Entity'}
+                          selectedFeature.type === 'COORDINATE' ? `Corner ${selectedFeature.data.point_label}` :
+                            selectedFeature.type === 'BOUNDARY' ? `${mapData?.mine.name} Boundary` :
+                              selectedFeature.data.title || selectedFeature.data.name || 'Mine Entity'}
                       </h3>
                     </div>
                     <span className={clsx(
-                      'px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase',
-                      selectedFeature.data.risk_band === 'CRITICAL' || selectedFeature.data.severity === 'CRITICAL' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' :
-                      selectedFeature.data.risk_band === 'HIGH' || selectedFeature.data.severity === 'HIGH' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' :
-                      selectedFeature.data.trust_badge === 'SOURCE_DERIVED' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' :
-                      'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                      'text-[10px] font-medium shrink-0',
+                      selectedFeature.data.risk_band === 'CRITICAL' || selectedFeature.data.severity === 'CRITICAL' ? 'text-rose-400' :
+                        selectedFeature.data.risk_band === 'HIGH' || selectedFeature.data.severity === 'HIGH' ? 'text-rose-400' :
+                          selectedFeature.data.trust_badge === 'SOURCE_DERIVED' ? 'text-emerald-400' :
+                            'text-amber-400'
                     )}>
-                      {selectedFeature.data.risk_band ? `${selectedFeature.data.risk_band} RISK` : (selectedFeature.data.trust_badge || 'OPERATIONAL')}
+                      {selectedFeature.data.risk_band ? `${selectedFeature.data.risk_band} risk` : (selectedFeature.data.trust_badge || 'Operational')}
                     </span>
                   </div>
 
-                  {/* Metadata Fields */}
-                  <div className="space-y-1 text-xs text-slate-300">
-                    <p><span className="text-slate-400">Zone:</span> {selectedFeature.data.properties?.zone_name || selectedFeature.data.zone_name || 'Northern Sector - Gas Accumulation'}</p>
-                    <p><span className="text-slate-400">Type:</span> {selectedFeature.data.hotspot_type === 'PREDICTIVE_HOTSPOT' ? 'Predictive Risk' : (selectedFeature.data.feature_type || selectedFeature.type)}</p>
+                  {/* Metadata */}
+                  <div className="space-y-1 text-slate-300">
+                    <p><span className="text-slate-500">Zone:</span> {selectedFeature.data.properties?.zone_name || selectedFeature.data.zone_name || 'Northern Sector - Gas Accumulation'}</p>
+                    <p><span className="text-slate-500">Type:</span> {selectedFeature.data.hotspot_type === 'PREDICTIVE_HOTSPOT' ? 'Predictive Risk' : (selectedFeature.data.feature_type || selectedFeature.type)}</p>
                     {selectedFeature.data.risk_score && (
                       <p className="flex items-center gap-2">
-                        <span className="text-slate-400">Risk Score:</span>
+                        <span className="text-slate-500">Risk score:</span>
                         <b className="text-white">{selectedFeature.data.risk_score} / 100</b>
-                        <span className="px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 text-[10px] font-bold font-mono">
-                          {selectedFeature.data.risk_band}
-                        </span>
+                        <span className="text-[10px] font-medium text-rose-400">{selectedFeature.data.risk_band}</span>
                       </p>
                     )}
                     {selectedFeature.data.prediction_horizon && (
-                      <p><span className="text-slate-400">Prediction Horizon:</span> {selectedFeature.data.prediction_horizon}</p>
+                      <p><span className="text-slate-500">Prediction horizon:</span> {selectedFeature.data.prediction_horizon}</p>
                     )}
-                    <p><span className="text-slate-400">Source:</span> {selectedFeature.data.source_model || selectedFeature.data.provenance?.document_title || 'Predictive Risk Model (v1.0)'}</p>
+                    <p><span className="text-slate-500">Source:</span> {selectedFeature.data.source_model || selectedFeature.data.provenance?.document_title || 'Predictive Risk Model (v1.0)'}</p>
                   </div>
 
-                  {/* Location with Copy Button */}
-                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-[#121614] border border-[#1B211E] font-mono text-[11px]">
+                  {/* Location with copy button */}
+                  <div className="flex items-center justify-between py-2 border-y border-[#1B211E] text-[11px]">
                     <div className="flex items-center gap-2 text-slate-300">
-                      <MapPin className="w-3.5 h-3.5 text-amber-400" />
+                      <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                       <span>
-                        Lat: {selectedFeature.data.latitude?.toFixed(4) || selectedFeature.data.min_latitude?.toFixed(4) || '23.4121'}° N &nbsp;
-                        Lon: {selectedFeature.data.longitude?.toFixed(4) || selectedFeature.data.min_longitude?.toFixed(4) || '85.3245'}° E
+                        {selectedFeature.data.latitude?.toFixed(4) || selectedFeature.data.min_latitude?.toFixed(4) || '23.4121'}°N,{' '}
+                        {selectedFeature.data.longitude?.toFixed(4) || selectedFeature.data.min_longitude?.toFixed(4) || '85.3245'}°E
                       </span>
                     </div>
                     <button
                       onClick={() => handleCopyLocation(`${selectedFeature.data.latitude || 23.4121}, ${selectedFeature.data.longitude || 85.3245}`)}
-                      className="text-slate-400 hover:text-white transition-colors cursor-pointer"
-                      title="Copy Coordinates"
+                      className="text-slate-500 hover:text-white transition-colors cursor-pointer"
+                      title="Copy coordinates"
                     >
                       {copiedLocation ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
 
-                  {/* Nearby Entities (within 1 km) */}
+                  {/* Nearby entities */}
                   <div className="space-y-1.5">
-                    <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider block">
-                      Nearby Entities (within 1 km)
+                    <span className="text-[10px] text-slate-500 uppercase tracking-wide block">
+                      Nearby entities (within 1 km)
                     </span>
-                    <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono">
-                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#121614] border border-[#1B211E] text-cyan-400">
-                        <span>▲</span> Sensors <b className="text-white">{spatialContext?.nearest_sensors?.length || 3}</b>
-                      </div>
-                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#121614] border border-[#1B211E] text-rose-400">
-                        <span>!</span> Incidents <b className="text-white">{spatialContext?.nearest_incidents?.length || 1}</b>
-                      </div>
-                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#121614] border border-[#1B211E] text-amber-400">
-                        <span>◉</span> Field Tasks <b className="text-white">{spatialContext?.nearest_inspections?.length || 2}</b>
-                      </div>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]">
+                      <span className="text-sky-400">Sensors <b className="text-white">{spatialContext?.nearest_sensors?.length || 3}</b></span>
+                      <span className="text-rose-400">Incidents <b className="text-white">{spatialContext?.nearest_incidents?.length || 1}</b></span>
+                      <span className="text-amber-400">Field tasks <b className="text-white">{spatialContext?.nearest_inspections?.length || 2}</b></span>
                     </div>
                   </div>
 
-                  {/* Contributing Factors */}
+                  {/* Contributing factors */}
                   <div className="space-y-1.5">
-                    <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider block">
-                      Contributing Factors
+                    <span className="text-[10px] text-slate-500 uppercase tracking-wide block">
+                      Contributing factors
                     </span>
-                    <ul className="space-y-1 text-xs text-slate-300 font-sans pl-1">
+                    <ul className="space-y-1 text-slate-300">
                       {selectedFeature.data.contributing_factors && selectedFeature.data.contributing_factors.length > 0 ? (
                         selectedFeature.data.contributing_factors.map((f: string, idx: number) => (
                           <li key={idx} className="flex items-start gap-2">
-                            <span className="text-amber-400 font-bold">•</span>
+                            <span className="text-amber-400 mt-0.5">·</span>
                             <span>{f}</span>
                           </li>
                         ))
                       ) : (
                         <>
                           <li className="flex items-start gap-2">
-                            <span className="text-amber-400 font-bold">•</span>
+                            <span className="text-amber-400 mt-0.5">·</span>
                             <span>CH4 level rising trend (+18%)</span>
                           </li>
                           <li className="flex items-start gap-2">
-                            <span className="text-amber-400 font-bold">•</span>
+                            <span className="text-amber-400 mt-0.5">·</span>
                             <span>Predictive anomaly detected (12 min ago)</span>
                           </li>
                           <li className="flex items-start gap-2">
-                            <span className="text-amber-400 font-bold">•</span>
+                            <span className="text-amber-400 mt-0.5">·</span>
                             <span>Proximity to working face (320m)</span>
                           </li>
                         </>
@@ -1436,22 +1377,22 @@ export const GisMapPage: React.FC = () => {
                     </ul>
                   </div>
 
-                  {/* Action Buttons Grid */}
-                  <div className="pt-2 space-y-2">
+                  {/* Actions */}
+                  <div className="pt-1 space-y-2">
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         onClick={handleFocus3DTwin}
-                        className="flex items-center justify-center gap-1.5 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-mono font-bold text-xs transition-all shadow-md cursor-pointer"
+                        className="flex items-center justify-center gap-1.5 py-2 rounded-md bg-amber-500 hover:bg-amber-400 text-[#080A09] font-semibold text-xs transition-all hover:scale-[1.02] cursor-pointer"
                       >
-                        <Layers3 className="w-4 h-4 text-slate-950" />
-                        Focus in 3D Twin
+                        <Layers3 className="w-3.5 h-3.5" />
+                        Focus in 3D
                       </button>
 
                       <button
                         onClick={() => setCurrentTab('copilot')}
-                        className="flex items-center justify-center gap-1.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-mono font-bold text-xs transition-all shadow-md cursor-pointer"
+                        className="flex items-center justify-center gap-1.5 py-2 rounded-md bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs transition-all hover:scale-[1.02] cursor-pointer"
                       >
-                        <Sparkles className="w-4 h-4" />
+                        <Sparkles className="w-3.5 h-3.5" />
                         Ask Copilot
                       </button>
                     </div>
@@ -1459,10 +1400,10 @@ export const GisMapPage: React.FC = () => {
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         onClick={handleCreateFieldTask}
-                        className="flex items-center justify-center gap-1.5 py-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-mono font-bold text-xs transition-all cursor-pointer"
+                        className="flex items-center justify-center gap-1.5 py-2 rounded-md border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10 font-medium text-xs transition-all cursor-pointer"
                       >
-                        <ClipboardList className="w-4 h-4" />
-                        Create Field Task
+                        <ClipboardList className="w-3.5 h-3.5" />
+                        Create task
                       </button>
 
                       <button
@@ -1473,26 +1414,26 @@ export const GisMapPage: React.FC = () => {
                             setCurrentTab('documents');
                           }
                         }}
-                        className="flex items-center justify-center gap-1.5 py-2 rounded-lg bg-[#171B18] hover:bg-slate-800 border border-[#232A26] text-slate-300 font-mono text-xs transition-all cursor-pointer"
+                        className="flex items-center justify-center gap-1.5 py-2 rounded-md border border-[#232A26] text-slate-300 hover:bg-white/[0.03] font-medium text-xs transition-all cursor-pointer"
                       >
-                        <FileText className="w-4 h-4" />
-                        View Source Evidence
+                        <FileText className="w-3.5 h-3.5" />
+                        Source evidence
                       </button>
                     </div>
                   </div>
 
-                  {/* Trust Disclaimer */}
-                  <div className="p-2.5 rounded-lg bg-[#121614] border border-[#1B211E] flex items-start gap-2 text-[11px] text-slate-400">
-                    <Info className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                  {/* Trust disclaimer */}
+                  <div className="flex items-start gap-2 text-[10.5px] text-slate-500 pt-1">
+                    <Info className="w-3.5 h-3.5 text-sky-400 shrink-0 mt-0.5" />
                     <span>
-                      This is a model-generated risk hotspot. Not a confirmed violation. Requires field verification.
+                      This is a model-generated risk hotspot, not a confirmed violation. Requires field verification.
                     </span>
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-16 text-slate-500 font-mono text-xs space-y-2">
-                  <Crosshair className="w-8 h-8 mx-auto text-slate-600 animate-pulse" />
-                  <p className="font-semibold text-slate-400">No Feature Selected</p>
+                <div className="text-center py-16 text-slate-500 text-xs space-y-2">
+                  <Crosshair className="w-7 h-7 mx-auto text-slate-600" />
+                  <p className="font-medium text-slate-400">No feature selected</p>
                   <p className="text-[11px] text-slate-500 max-w-xs mx-auto">
                     Click any mine boundary, corner coordinate, sensor node, or risk hotspot on the map to inspect evidence.
                   </p>
@@ -1503,156 +1444,156 @@ export const GisMapPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 3. BOTTOM AUDIT & INFORMATION CARDS (Matching Reference Layout) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* Card 1: DATA TRUST (THIS MINE) */}
+      {/* 3. Audit & information strip — one bordered container, divided cells */}
+      <div className="border border-[#1B211E] rounded-lg grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-[#1B211E]">
+        {/* Data trust */}
         {mapData && (
-          <div className="bg-[#0D100F] border border-[#1B211E] rounded-xl p-3.5 text-xs font-mono shadow-md flex flex-col justify-between">
-            <div className="flex items-center gap-2 border-b border-[#1B211E] pb-2 mb-2.5">
+          <div className="p-4">
+            <div className="flex items-center gap-2 mb-3">
               <Shield className="w-4 h-4 text-emerald-400" />
-              <span className="font-bold text-slate-300 uppercase tracking-wider text-[11px]">DATA TRUST (THIS MINE)</span>
+              <span className="text-[11.5px] font-semibold text-slate-200">Data trust (this mine)</span>
             </div>
-            <div className="grid grid-cols-2 gap-2 text-[11px]">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11px]">
               <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                <span className="text-slate-400">Source-Derived</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                <span className="text-slate-500">Source-derived</span>
                 <b className="text-emerald-400 ml-auto">{mapData.trust_metrics.source_derived_count}</b>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-amber-400" />
-                <span className="text-slate-400">Approximate</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                <span className="text-slate-500">Approximate</span>
                 <b className="text-amber-400 ml-auto">{mapData.trust_metrics.approximate_count}</b>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-cyan-400" />
-                <span className="text-slate-400">Operational</span>
-                <b className="text-cyan-400 ml-auto">{mapData.trust_metrics.operational_count}</b>
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
+                <span className="text-slate-500">Operational</span>
+                <b className="text-sky-400 ml-auto">{mapData.trust_metrics.operational_count}</b>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-purple-400" />
-                <span className="text-slate-400">Simulated</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+                <span className="text-slate-500">Simulated</span>
                 <b className="text-purple-400 ml-auto">{mapData.trust_metrics.simulated_count}</b>
               </div>
             </div>
-            <div className="pt-2 border-t border-[#1B211E] mt-2 flex items-center justify-between text-[10px] text-slate-500">
-              <span>Not Documented: {mapData.trust_metrics.not_documented_count}</span>
-              <span className="text-emerald-400 font-bold">100% AUDITABLE</span>
+            <div className="pt-2.5 mt-2.5 border-t border-[#1B211E] flex items-center justify-between text-[10px] text-slate-500">
+              <span>Not documented: {mapData.trust_metrics.not_documented_count}</span>
+              <span className="text-emerald-400 font-medium">100% auditable</span>
             </div>
           </div>
         )}
 
-        {/* Card 2: MINE INFORMATION */}
+        {/* Mine information */}
         {mapData && (
-          <div className="bg-[#0D100F] border border-[#1B211E] rounded-xl p-3.5 text-xs font-mono shadow-md flex flex-col justify-between">
-            <div className="flex items-center gap-2 border-b border-[#1B211E] pb-2 mb-2.5">
+          <div className="p-4">
+            <div className="flex items-center gap-2 mb-3">
               <Building2 className="w-4 h-4 text-amber-400" />
-              <span className="font-bold text-slate-300 uppercase tracking-wider text-[11px]">MINE INFORMATION</span>
+              <span className="text-[11.5px] font-semibold text-slate-200">Mine information</span>
             </div>
             <div className="space-y-1 text-[11px]">
-              <div className="text-slate-100 font-bold truncate text-xs">{mapData.mine.name}</div>
-              <div className="text-slate-400 text-[10px]">{mapData.mine.district}, {mapData.mine.state}</div>
-              <div className="flex justify-between text-[11px] pt-1">
-                <span className="text-slate-400">Area:</span>
-                <span className="text-amber-400 font-bold">{mapData.mine.total_area_sq_km || '12.4'} km² (approx)</span>
+              <div className="text-slate-100 font-medium truncate text-xs">{mapData.mine.name}</div>
+              <div className="text-slate-500 text-[10.5px]">{mapData.mine.district}, {mapData.mine.state}</div>
+              <div className="flex justify-between pt-1">
+                <span className="text-slate-500">Area</span>
+                <span className="text-amber-400 font-medium">{mapData.mine.total_area_sq_km || '12.4'} km² (approx)</span>
               </div>
-              <div className="flex justify-between text-[11px]">
-                <span className="text-slate-400">Status:</span>
-                <span className="text-emerald-400 font-bold">{mapData.mine.data_status}</span>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Status</span>
+                <span className="text-emerald-400 font-medium">{mapData.mine.data_status}</span>
               </div>
-              <div className="text-[10px] text-slate-500 truncate pt-0.5">
+              <div className="text-[10.5px] text-slate-500 truncate pt-0.5">
                 Source: {mapData.mine.provenance_doc}
               </div>
             </div>
           </div>
         )}
 
-        {/* Card 3: COORDINATE SYSTEM */}
-        <div className="bg-[#0D100F] border border-[#1B211E] rounded-xl p-3.5 text-xs font-mono shadow-md flex flex-col justify-between">
-          <div className="flex items-center gap-2 border-b border-[#1B211E] pb-2 mb-2.5">
-            <Globe className="w-4 h-4 text-cyan-400" />
-            <span className="font-bold text-slate-300 uppercase tracking-wider text-[11px]">COORDINATE SYSTEM</span>
+        {/* Coordinate system */}
+        <div className="p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Globe className="w-4 h-4 text-sky-400" />
+            <span className="text-[11.5px] font-semibold text-slate-200">Coordinate system</span>
           </div>
           <div className="space-y-1.5 text-[11px]">
-            <div className="text-cyan-400 font-bold text-xs flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+            <div className="text-sky-400 font-medium text-xs flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
               WGS84 (EPSG:4326)
             </div>
-            <div className="text-slate-300 text-[11px] flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
-              Local Mine Grid (Topocentric)
+            <div className="text-slate-300 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
+              Local mine grid (topocentric)
             </div>
-            <div className="text-[10px] text-slate-500 pt-1">
-              Datum: WGS84 Ellipsoid | EPSG Geodetic
+            <div className="text-[10.5px] text-slate-500 pt-1">
+              Datum: WGS84 ellipsoid · EPSG geodetic
             </div>
           </div>
         </div>
 
-        {/* Card 4: LAST UPDATED & TELEMETRY MODE */}
-        <div className="bg-[#0D100F] border border-[#1B211E] rounded-xl p-3.5 text-xs font-mono shadow-md flex flex-col justify-between">
-          <div className="flex items-center gap-2 border-b border-[#1B211E] pb-2 mb-2.5">
+        {/* Last updated */}
+        <div className="p-4">
+          <div className="flex items-center gap-2 mb-3">
             <Clock className="w-4 h-4 text-emerald-400" />
-            <span className="font-bold text-slate-300 uppercase tracking-wider text-[11px]">LAST UPDATED</span>
+            <span className="text-[11.5px] font-semibold text-slate-200">Last updated</span>
           </div>
           <div className="space-y-1.5 text-[11px]">
-            <div className="text-slate-200 font-bold text-xs">
+            <div className="text-slate-200 font-medium text-xs">
               {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}, {new Date().toLocaleTimeString()}
             </div>
-            <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 font-bold">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              Live Data Ingestion
+            <div className="flex items-center gap-1.5 text-emerald-400 font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              Live data ingestion
             </div>
-            <div className="text-[10px] text-slate-500">
-              Protocol: MQTT / Webhook Telemetry
+            <div className="text-[10.5px] text-slate-500">
+              Protocol: MQTT / webhook telemetry
             </div>
           </div>
         </div>
       </div>
 
-      {/* 4. SOURCE DOCUMENT PROVENANCE MODAL */}
+      {/* 4. Source document provenance modal */}
       {inspectorData && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center z-50 p-4 font-sans">
-          <div className="bg-[#0D100F] border border-[#232A26] rounded-xl max-w-xl w-full p-5 space-y-4 shadow-2xl animate-fade-in font-sans">
+          <div className="bg-[#0D100F] border border-[#232A26] rounded-lg max-w-xl w-full p-5 space-y-4 shadow-2xl animate-fade-in">
             <div className="flex items-center justify-between border-b border-[#1B211E] pb-3">
               <div className="flex items-center gap-2">
-                <FileCheck className="w-5 h-5 text-amber-400" />
-                <h3 className="font-bold text-sm text-slate-100 font-mono uppercase tracking-wide">
-                  Source Document Provenance Inspector
+                <FileCheck className="w-4.5 h-4.5 text-amber-400" />
+                <h3 className="font-semibold text-[13px] text-slate-100">
+                  Source document provenance inspector
                 </h3>
               </div>
               <button
                 onClick={() => setInspectorData(null)}
-                className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer"
+                className="p-1 rounded hover:bg-white/5 text-slate-500 hover:text-slate-200 cursor-pointer transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-2.5 text-xs font-mono">
-              <div className="bg-[#121614] p-3 rounded-lg border border-[#1B211E]">
-                <span className="text-[10px] text-slate-400 uppercase font-semibold block mb-0.5">DOCUMENT TITLE:</span>
-                <p className="font-bold text-slate-100 text-xs">{inspectorData.document_title}</p>
+            <div className="space-y-3 text-xs">
+              <div>
+                <span className="text-[10px] text-slate-500 uppercase tracking-wide block mb-0.5">Document title</span>
+                <p className="font-medium text-slate-100 text-xs">{inspectorData.document_title}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div className="bg-[#121614] p-2.5 rounded-lg border border-[#1B211E]">
-                  <span className="text-[10px] text-slate-400 uppercase font-semibold block mb-0.5">PAGE NUMBER:</span>
-                  <p className="font-bold text-amber-400">{inspectorData.page_number || 'N/A'}</p>
+              <div className="grid grid-cols-2 gap-4 py-3 border-y border-[#1B211E]">
+                <div>
+                  <span className="text-[10px] text-slate-500 uppercase tracking-wide block mb-0.5">Page number</span>
+                  <p className="font-medium text-amber-400">{inspectorData.page_number || 'N/A'}</p>
                 </div>
-                <div className="bg-[#121614] p-2.5 rounded-lg border border-[#1B211E]">
-                  <span className="text-[10px] text-slate-400 uppercase font-semibold block mb-0.5">AUTHORITY TIER:</span>
-                  <p className="font-bold text-emerald-400">{inspectorData.authority_level || 'TIER 1 (OFFICIAL)'}</p>
+                <div>
+                  <span className="text-[10px] text-slate-500 uppercase tracking-wide block mb-0.5">Authority tier</span>
+                  <p className="font-medium text-emerald-400">{inspectorData.authority_level || 'TIER 1 (OFFICIAL)'}</p>
                 </div>
               </div>
 
-              <div className="bg-[#121614] p-3 rounded-lg border border-[#1B211E]">
-                <span className="text-[10px] text-slate-400 uppercase font-semibold block mb-0.5">SHA-256 PROVENANCE HASH:</span>
-                <p className="font-mono text-[11px] text-amber-400/90 break-all">{inspectorData.document_hash}</p>
+              <div>
+                <span className="text-[10px] text-slate-500 uppercase tracking-wide block mb-0.5">SHA-256 provenance hash</span>
+                <p className="text-[11px] text-amber-400/90 break-all">{inspectorData.document_hash}</p>
               </div>
 
               {inspectorData.source_text_reference && (
-                <div className="bg-[#121614] p-3 rounded-lg border border-[#1B211E] space-y-1">
-                  <span className="text-[10px] text-slate-400 uppercase font-semibold block">VERBATIM SOURCE EXCERPT:</span>
-                  <p className="text-xs text-slate-300 font-sans italic border-l-2 border-amber-500/60 pl-2.5 leading-relaxed">
+                <div className="space-y-1 pt-1">
+                  <span className="text-[10px] text-slate-500 uppercase tracking-wide block">Verbatim source excerpt</span>
+                  <p className="text-xs text-slate-300 italic border-l-2 border-amber-500/50 pl-2.5 leading-relaxed">
                     "{inspectorData.source_text_reference}"
                   </p>
                 </div>
@@ -1665,15 +1606,15 @@ export const GisMapPage: React.FC = () => {
                   setInspectorData(null);
                   setCurrentTab('documents');
                 }}
-                className="px-4 py-2 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-mono font-bold cursor-pointer transition-colors"
+                className="px-3.5 py-2 rounded-md text-amber-400 hover:bg-amber-500/10 text-xs font-medium cursor-pointer transition-colors"
               >
-                OPEN IN DOCUMENT INTELLIGENCE
+                Open in document intelligence
               </button>
               <button
                 onClick={() => setInspectorData(null)}
-                className="px-4 py-2 rounded-lg bg-[#171B18] hover:bg-slate-800 text-slate-300 border border-[#232A26] text-xs font-mono cursor-pointer"
+                className="px-3.5 py-2 rounded-md border border-[#232A26] text-slate-300 hover:bg-white/[0.03] text-xs font-medium cursor-pointer transition-colors"
               >
-                CLOSE
+                Close
               </button>
             </div>
           </div>

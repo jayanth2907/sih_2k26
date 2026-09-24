@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion } from 'motion/react';
 import { useMineContext } from '../context/MineContext';
 import { useLanguage } from '../context/LanguageContext';
 import { documentService } from '../services';
@@ -228,23 +229,28 @@ export const DocumentsPage: React.FC = () => {
   const activePage = selectedDoc?.pages.find(p => p.page_number === selectedPageNum);
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+      className="space-y-6 max-w-7xl mx-auto pb-12 font-sans text-slate-100"
+    >
       {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 border border-slate-800 shadow-xl">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-xl bg-[#0D100F] border border-[#1B211E] shadow-xs">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center shadow-lg shadow-amber-500/20">
-            <Cpu className="w-6 h-6 text-slate-950" />
+          <div className="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0">
+            <Cpu className="w-5 h-5" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold text-white tracking-wide">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-xl font-bold text-white tracking-wide font-sans">
                 Document Intelligence & OCR Digitization
               </h2>
-              <span className="px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-[10px] font-mono text-amber-400">
+              <span className="px-2 py-0.5 rounded-full bg-[#121614] border border-[#27302B] text-[10.5px] font-mono text-amber-400">
                 Phase 12A Hybrid Engine
               </span>
             </div>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-slate-400 mt-1 font-sans">
               Scanned PDF & image digitization, deterministic classification, structured field extraction, and page-level provenance.
             </p>
           </div>
@@ -253,7 +259,7 @@ export const DocumentsPage: React.FC = () => {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowUploadModal(true)}
-            className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs font-mono flex items-center gap-2 transition-all shadow-md shadow-amber-500/20 cursor-pointer"
+            className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs font-mono flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
           >
             <Upload className="w-4 h-4" />
             <span>Upload Document</span>
@@ -782,6 +788,6 @@ export const DocumentsPage: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };

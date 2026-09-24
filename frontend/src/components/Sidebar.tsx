@@ -283,7 +283,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, setCurrentTab }) =
         </div>
 
         {/* 2. Grouped Accordion Navigation */}
-        <nav className="p-2 space-y-3 overflow-y-auto max-h-[calc(100vh-125px)] scrollbar-thin">
+        <nav className="p-2 space-y-3 overflow-y-auto max-h-[calc(100vh-125px)] hide-scrollbar">
           {navGroups.map((group) => {
             const visibleItems = group.items.filter((item) => isSystemAdmin || hasRole(item.roles as any));
             if (visibleItems.length === 0) return null;
