@@ -137,11 +137,7 @@ export const IncidentsPage: React.FC = () => {
             return (
               <div
                 key={inc.id}
-                className={`p-5 rounded-2xl border transition-all duration-200 backdrop-blur-md space-y-4 shadow-xl ${
-                  isCritical 
-                    ? 'bg-gradient-to-br from-rose-950/30 via-slate-900 to-slate-950 border-rose-800/60' 
-                    : 'bg-slate-900/85 border-slate-800'
-                }`}
+                className="p-5 rounded-xl border border-[#1B211E] hover:border-[#27302B] bg-[#0D100F] space-y-4 transition-all duration-150"
               >
                 {/* Top Row: Code, Title, Severity, Location */}
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-slate-800/80 pb-3">

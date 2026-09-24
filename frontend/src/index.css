@@ -104,6 +104,16 @@
   background: #2D3732;
 }
 
+/* Hide scrollbar while preserving scrolling */
+.hide-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge legacy */
+  scrollbar-width: none; /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
+}
+
 /* Leaflet Dark Command-Center Theme Overrides */
 .leaflet-container {
   background-color: #080A09 !important;

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion } from 'motion/react';
 import { useMineContext } from '../context/MineContext';
 import { useLanguage } from '../context/LanguageContext';
 import { copilotService } from '../services';
@@ -9,14 +10,11 @@ import {
   Send, 
   Sparkles, 
   Layers3, 
-  ShieldAlert, 
   FileText, 
-  CheckCircle2, 
   Trash2, 
   ArrowRight, 
   Shield,
   BookOpen,
-  ExternalLink,
   X,
   Copy,
   Check,
@@ -25,7 +23,8 @@ import {
   Compass,
   Scale,
   Building2,
-  Info
+  Info,
+  RefreshCw
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -54,8 +53,11 @@ export const CopilotPage: React.FC = () => {
   // Load quick prompts on mount
   useEffect(() => {
     copilotService.getQuickPrompts()
-      .then((data) => setQuickPrompts(data))
-      .catch((err) => console.error('Failed to load quick prompts:', err));
+      .then((data) => setQuickPrompts(Array.isArray(data) ? data : []))
+      .catch((err) => {
+        console.error('Failed to load quick prompts:', err);
+        setQuickPrompts([]);
+      });
   }, []);
 
   // Auto-scroll to bottom of messages
@@ -153,9 +155,10 @@ export const CopilotPage: React.FC = () => {
   };
 
   const getPromptText = (p: CopilotQuickPrompt) => {
-    if (language === 'hi') return p.prompt_hi;
-    if (language === 'te') return p.prompt_te;
-    return p.prompt_en;
+    if (!p) return '';
+    if (language === 'hi') return p.prompt_hi || p.prompt_en || '';
+    if (language === 'te') return p.prompt_te || p.prompt_en || '';
+    return p.prompt_en || '';
   };
 
   const copyToClipboard = (text: string) => {
@@ -243,7 +246,8 @@ export const CopilotPage: React.FC = () => {
     { id: 'MINE_FACTS', label: 'Real Mine Blocks' },
   ];
 
-  const filteredPrompts = quickPrompts.filter((p) => {
+  const filteredPrompts = (quickPrompts || []).filter((p) => {
+    if (!p) return false;
     if (categoryFilter === 'ALL') return true;
     if (categoryFilter === 'REGULATION') return p.category === 'COMPLIANCE' || p.category === 'GOVERNMENT';
     if (categoryFilter === 'RISK') return p.category === 'SAFETY' || p.category === 'RISK';
@@ -253,39 +257,51 @@ export const CopilotPage: React.FC = () => {
     return true;
   });
 
-  if (!selectedMine) return null;
+  if (!selectedMine) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-slate-400 font-sans text-xs space-y-3">
+        <RefreshCw className="w-5 h-5 animate-spin text-amber-400" />
+        <span>Loading mine context for AI Copilot...</span>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4 max-w-6xl mx-auto pb-6">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+      className="space-y-4 max-w-6xl mx-auto pb-6 font-sans text-slate-100"
+    >
       {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 border border-slate-800 shadow-xl">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-xl bg-[#0D100F] border border-[#1B211E] shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center shadow-lg shadow-amber-500/20">
-            <BrainCircuit className="w-6 h-6 text-slate-950" />
+          <div className="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0">
+            <BrainCircuit className="w-5 h-5" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-white tracking-wide uppercase">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-base font-bold text-white tracking-wide uppercase font-sans">
                 {t('aiCopilot')} — Phase 11C
               </h2>
-              <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[10px] font-mono text-emerald-400">
+              <span className="px-2 py-0.5 rounded-full bg-[#121614] border border-[#27302B] text-[10px] font-mono text-emerald-400">
                 Evidence-Grounded RAG Active
               </span>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-400 mt-0.5 font-sans">
               Authoritative DGMS, Annual Report, Union Budget 2026-27 & Real Mine Block Intelligence for <span className="text-amber-400 font-semibold">{selectedMine.name}</span> ({selectedMine.code})
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-[11px] font-mono text-slate-300 flex items-center gap-2">
+          <div className="px-3 py-1.5 rounded-lg bg-[#121614] border border-[#1B211E] text-[11px] font-mono text-slate-300 flex items-center gap-2">
             <Shield className="w-3.5 h-3.5 text-emerald-400" />
             <span>RBAC & Mine Isolation Active</span>
           </div>
           <button
             onClick={() => setMessages([])}
-            className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-rose-400 border border-slate-800 transition-colors cursor-pointer"
+            className="p-2 rounded-lg bg-[#121614] hover:bg-[#1B211E] text-slate-400 hover:text-rose-400 border border-[#1B211E] transition-colors cursor-pointer"
             title={t('clearChat')}
           >
             <Trash2 className="w-4 h-4" />
@@ -304,8 +320,8 @@ export const CopilotPage: React.FC = () => {
                 className={clsx(
                   'px-2.5 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer',
                   categoryFilter === pill.id
-                    ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
-                    : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800 hover:border-slate-700'
+                    ? 'bg-amber-500 text-slate-950 font-bold shadow-xs'
+                    : 'bg-[#0D100F] text-slate-400 hover:text-slate-200 border border-[#1B211E] hover:border-[#27302B]'
                 )}
               >
                 {pill.label}
@@ -324,7 +340,7 @@ export const CopilotPage: React.FC = () => {
               key={p.id}
               onClick={() => handleSendQuery(getPromptText(p))}
               disabled={isLoading}
-              className="text-left p-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800/90 border border-slate-800/90 hover:border-amber-500/40 text-xs text-slate-300 transition-all flex items-start gap-2.5 cursor-pointer disabled:opacity-50 group"
+              className="text-left p-2.5 rounded-lg bg-[#0D100F] hover:bg-[#121614] border border-[#1B211E] hover:border-[#27302B] text-xs text-slate-300 transition-all flex items-start gap-2.5 cursor-pointer disabled:opacity-50 group"
             >
               <ArrowRight className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5 group-hover:translate-x-0.5 transition-transform" />
               <div className="truncate">
@@ -337,7 +353,7 @@ export const CopilotPage: React.FC = () => {
       </div>
 
       {/* Main Chat Stream */}
-      <div className="h-[560px] rounded-2xl bg-slate-950 border border-slate-800 p-4 overflow-y-auto space-y-4 shadow-inner">
+      <div className="h-[520px] rounded-xl bg-[#0D100F] border border-[#1B211E] p-4 overflow-y-auto space-y-4 shadow-xs">
         {messages.map((msg) => (
           <div
             key={msg.id}
@@ -351,19 +367,19 @@ export const CopilotPage: React.FC = () => {
               <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
                 {msg.sender === 'user' ? 'Mine Officer' : 'TRINETRA Grounded RAG Copilot'}
               </span>
-              <span className="text-[9px] font-mono text-slate-500">{msg.timestamp}</span>
+              <span className="text-[9px] font-mono text-slate-400">{msg.timestamp}</span>
             </div>
 
             {/* Message Bubble / Card */}
             {msg.sender === 'user' ? (
-              <div className="max-w-xl p-3.5 rounded-2xl rounded-tr-none bg-amber-500/10 border border-amber-500/30 text-slate-100 text-sm font-medium shadow-md">
+              <div className="max-w-xl p-3.5 rounded-xl rounded-tr-none bg-amber-500/10 border border-amber-500/30 text-slate-100 text-xs font-medium shadow-xs">
                 {msg.text}
               </div>
             ) : (
-              <div className="max-w-3xl w-full p-4 rounded-2xl rounded-tl-none bg-slate-900/90 border border-slate-800 text-slate-200 text-sm space-y-4 shadow-xl">
+              <div className="max-w-3xl w-full p-4 rounded-xl rounded-tl-none bg-[#080A09] border border-[#1B211E] text-slate-200 text-xs space-y-4 shadow-xs">
                 {/* Fallback Simple Text (Welcome or Error) */}
                 {msg.text && (
-                  <p className="text-slate-200 leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+                  <p className="text-slate-200 leading-relaxed whitespace-pre-wrap font-sans text-xs">{msg.text}</p>
                 )}
 
                 {/* Structured Evidence-Grounded Response */}
@@ -372,12 +388,12 @@ export const CopilotPage: React.FC = () => {
                     {/* Header tags: Classification & Domain */}
                     <div className="flex flex-wrap items-center gap-2">
                       {msg.response.question_type && (
-                        <span className="px-2 py-0.5 rounded-md bg-slate-800 border border-slate-700 text-[10px] font-mono text-amber-400">
+                        <span className="px-2 py-0.5 rounded-md bg-[#121614] border border-[#27302B] text-[10px] font-mono text-amber-400">
                           {msg.response.question_type}
                         </span>
                       )}
                       {msg.response.domain_detected && (
-                        <span className="px-2 py-0.5 rounded-md bg-slate-800 border border-slate-700 text-[10px] font-mono text-cyan-400">
+                        <span className="px-2 py-0.5 rounded-md bg-[#121614] border border-[#27302B] text-[10px] font-mono text-cyan-400">
                           DOMAIN: {msg.response.domain_detected}
                         </span>
                       )}
@@ -394,22 +410,22 @@ export const CopilotPage: React.FC = () => {
                     </div>
 
                     {/* Grounded Markdown Body */}
-                    <div className="p-4 rounded-xl bg-slate-950 border border-slate-800/80 font-normal text-slate-100 leading-relaxed text-sm">
+                    <div className="p-4 rounded-lg bg-[#0D100F] border border-[#1B211E] font-sans text-slate-100 leading-relaxed text-xs">
                       <MarkdownRenderer content={msg.response.answer_markdown || msg.response.summary || ''} />
                     </div>
 
                     {/* Dual Risk Status Banner if present */}
                     {msg.response.predictive_signal && (
-                      <div className="p-3.5 rounded-xl bg-gradient-to-r from-amber-950/40 via-slate-950 to-slate-950 border border-amber-500/30 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center font-mono">
+                      <div className="p-3.5 rounded-lg bg-[#0D100F] border border-[#1B211E] grid grid-cols-2 sm:grid-cols-4 gap-3 text-center font-mono">
                         <div>
                           <span className="text-[10px] text-slate-400 uppercase tracking-wider block">{t('currentRisk')}</span>
-                          <span className="text-base font-bold text-amber-400 mt-0.5 block">
+                          <span className="text-sm font-bold text-amber-400 mt-0.5 block">
                             {msg.response.predictive_signal.current_risk_score.toFixed(1)} / 100
                           </span>
                         </div>
                         <div>
                           <span className="text-[10px] text-slate-400 uppercase tracking-wider block">{t('predictedRisk')}</span>
-                          <span className="text-base font-bold text-rose-400 mt-0.5 block">
+                          <span className="text-sm font-bold text-rose-400 mt-0.5 block">
                             {msg.response.predictive_signal.predicted_risk_score.toFixed(1)} / 100
                           </span>
                         </div>
@@ -429,115 +445,36 @@ export const CopilotPage: React.FC = () => {
                     )}
 
                     {/* Evidence & Provenance Cards */}
-                    {msg.response.evidence.length > 0 && (
+                    {msg.response.evidence && msg.response.evidence.length > 0 && (
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <span className="text-[10.5px] font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                             <BookOpen className="w-3.5 h-3.5 text-emerald-400" />
                             Grounded Document Evidence ({msg.response.evidence.length} Sources)
                           </span>
                           <span className="text-[10px] text-slate-400 font-mono">Click card to inspect source</span>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           {msg.response.evidence.map((ev, idx) => (
                             <div
                               key={idx}
                               onClick={() => setSelectedEvidence(ev)}
-                              className="p-3 rounded-xl bg-slate-950/90 hover:bg-slate-950 border border-slate-800 hover:border-amber-500/50 text-xs space-y-2 cursor-pointer transition-all shadow-sm group"
+                              className="p-3 rounded-lg bg-[#0D100F] hover:bg-[#121614] border border-[#1B211E] hover:border-[#27302B] text-xs space-y-1.5 cursor-pointer transition-colors group"
                             >
                               <div className="flex items-start justify-between gap-2">
-                                <span className="font-bold text-amber-400 group-hover:text-amber-300 transition-colors line-clamp-1">
-                                  {ev.title || ev.source_title}
+                                <span className="font-bold text-amber-400 group-hover:text-amber-300 transition-colors line-clamp-1 font-sans">
+                                  {ev.source_title || ev.title}
                                 </span>
-                                {ev.page_number && (
-                                  <span className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px] font-mono text-cyan-300 shrink-0">
-                                    p. {ev.page_number}
-                                  </span>
-                                )}
                               </div>
-
-                              <div className="flex flex-wrap items-center gap-1.5">
-                                {renderTierBadge(ev.source_tier)}
-                                {renderStatusBadge(ev.status)}
-                              </div>
-
-                              <p className="text-slate-400 text-[11px] leading-snug line-clamp-2">
-                                {ev.description || ev.excerpt}
+                              <p className="text-[11px] text-slate-400 line-clamp-2 font-sans">
+                                {ev.excerpt || ev.description}
                               </p>
-
-                              <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 pt-1 border-t border-slate-900">
-                                <span>{ev.organization || ev.source_type}</span>
-                                <span className="text-amber-400/80 flex items-center gap-1 group-hover:underline">
-                                  Inspect <ExternalLink className="w-3 h-3" />
-                                </span>
-                              </div>
                             </div>
                           ))}
                         </div>
                       </div>
                     )}
-
-                    {/* Operational Implication / Recommended Action Box */}
-                    {msg.response.recommended_next_step && (
-                      <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2.5">
-                        <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                        <div>
-                          <span className="text-[11px] font-mono font-bold text-amber-400 uppercase tracking-wider block">
-                            {t('recommendedAction')} / Operational Implication
-                          </span>
-                          <p className="text-xs text-slate-200 mt-0.5 leading-relaxed">
-                            {msg.response.recommended_next_step}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Statutory Limitations & Confidence Notice */}
-                    <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[10px] font-mono text-slate-400">
-                      <div className="flex items-center gap-1.5">
-                        <Info className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                        <span>Confidence: <strong className="text-emerald-400">{msg.response.confidence || 'HIGH'}</strong></span>
-                      </div>
-                      <div className="text-slate-400 text-[9px] line-clamp-1">
-                        {msg.response.limitations || 'TRINETRA provides grounded regulatory evidence. Official statutory compliance requires human verification.'}
-                      </div>
-                    </div>
-
-                    {/* Action Deep-Link Buttons */}
-                    {msg.response.actions.length > 0 && (
-                      <div className="flex flex-wrap items-center gap-2 pt-1">
-                        {msg.response.actions.map((act, idx) => (
-                          <button
-                            key={idx}
-                            onClick={() => handleActionClick(act)}
-                            className={clsx(
-                              'px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-md',
-                              act.action_type === 'FOCUS_3D_ZONE' || act.action_type === 'FOCUS_3D_MINE'
-                                ? 'bg-amber-500 text-slate-950 hover:bg-amber-400'
-                                : 'bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700'
-                            )}
-                          >
-                            {act.action_type.includes('3D') ? (
-                              <Layers3 className="w-3.5 h-3.5" />
-                            ) : (
-                              <FileText className="w-3.5 h-3.5" />
-                            )}
-                            <span>{act.label}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Provenance & Provider Transparency Footer */}
-                    <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center justify-between text-[10px] font-mono text-slate-400 gap-2">
-                      <span className="text-slate-400 line-clamp-1">
-                        {msg.response.data_provenance}
-                      </span>
-                      <span className="text-amber-400/80 shrink-0">
-                        Engine: {msg.response.provider_used} • Coverage: {msg.response.data_coverage}
-                      </span>
-                    </div>
                   </div>
                 )}
               </div>
@@ -546,9 +483,9 @@ export const CopilotPage: React.FC = () => {
         ))}
 
         {isLoading && (
-          <div className="flex items-center gap-3 p-4 rounded-2xl bg-slate-900 border border-slate-800 text-slate-400 text-xs font-mono">
-            <div className="w-4 h-4 rounded-full border-2 border-amber-500 border-t-transparent animate-spin" />
-            <span>Conducting hybrid lexical & semantic RAG retrieval across government and mine block archives...</span>
+          <div className="flex items-center gap-3 p-4 rounded-lg bg-[#0D100F] border border-[#1B211E] text-slate-400 text-xs font-mono">
+            <RefreshCw className="w-4 h-4 text-amber-400 animate-spin" />
+            <span>Conducting RAG retrieval across government and mine block archives...</span>
           </div>
         )}
         <div ref={messagesEndRef} />
@@ -560,7 +497,7 @@ export const CopilotPage: React.FC = () => {
           e.preventDefault();
           handleSendQuery();
         }}
-        className="flex items-center gap-2 p-2 rounded-2xl bg-slate-900 border border-slate-800 focus-within:border-amber-500/50 shadow-xl transition-all"
+        className="flex items-center gap-2 p-2 rounded-xl bg-[#0D100F] border border-[#1B211E] focus-within:border-amber-500/50 transition-colors shadow-xs"
       >
         <input
           type="text"
@@ -568,12 +505,12 @@ export const CopilotPage: React.FC = () => {
           onChange={(e) => setInputQuery(e.target.value)}
           placeholder={t('askCopilotPlaceholder')}
           disabled={isLoading}
-          className="flex-1 bg-transparent px-3 py-2 text-sm text-slate-100 placeholder-slate-400 focus:outline-none"
+          className="flex-1 bg-transparent px-3 py-2 text-xs text-slate-100 placeholder-slate-400 focus:outline-none font-sans"
         />
         <button
           type="submit"
           disabled={isLoading || !inputQuery.trim()}
-          className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-slate-950 font-bold text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer shadow-md shadow-amber-500/20"
+          className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-slate-950 font-bold text-xs font-mono flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
         >
           <span>{t('sendQuery')}</span>
           <Send className="w-3.5 h-3.5" />
@@ -582,10 +519,10 @@ export const CopilotPage: React.FC = () => {
 
       {/* Source Inspector Modal */}
       {selectedEvidence && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl bg-slate-900 border border-slate-800 p-6 space-y-4 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs font-sans">
+          <div className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-xl bg-[#0D100F] border border-[#1B211E] p-6 space-y-4 shadow-2xl">
             {/* Modal Header */}
-            <div className="flex items-start justify-between gap-4 pb-3 border-b border-slate-800">
+            <div className="flex items-start justify-between gap-4 pb-3 border-b border-[#1B211E]">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <Landmark className="w-5 h-5 text-amber-400" />
@@ -599,7 +536,7 @@ export const CopilotPage: React.FC = () => {
               </div>
               <button
                 onClick={() => setSelectedEvidence(null)}
-                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg bg-[#121614] hover:bg-[#1B211E] text-slate-400 hover:text-white transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -609,35 +546,6 @@ export const CopilotPage: React.FC = () => {
             <div className="flex flex-wrap items-center gap-2">
               {renderTierBadge(selectedEvidence.source_tier)}
               {renderStatusBadge(selectedEvidence.status)}
-              {selectedEvidence.domain && (
-                <span className="px-2 py-0.5 rounded-md bg-slate-800 text-[10px] font-mono text-cyan-400 border border-slate-700">
-                  {selectedEvidence.domain}
-                </span>
-              )}
-            </div>
-
-            {/* Metadata Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-3.5 rounded-xl bg-slate-950 border border-slate-800/80 text-xs font-mono">
-              <div>
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Page Number</span>
-                <span className="text-amber-400 font-bold mt-0.5 block">
-                  {selectedEvidence.page_number !== undefined && selectedEvidence.page_number !== null
-                    ? `Page ${selectedEvidence.page_number}`
-                    : 'Section Header'}
-                </span>
-              </div>
-              <div>
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Section / Topic</span>
-                <span className="text-slate-200 font-bold mt-0.5 block line-clamp-1">
-                  {selectedEvidence.section || 'General'}
-                </span>
-              </div>
-              <div>
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Document Date</span>
-                <span className="text-slate-200 font-bold mt-0.5 block">
-                  {selectedEvidence.document_date || selectedEvidence.effective_from || 'Official Record'}
-                </span>
-              </div>
             </div>
 
             {/* Verbatim Excerpt */}
@@ -646,39 +554,17 @@ export const CopilotPage: React.FC = () => {
                 <FileText className="w-3.5 h-3.5 text-amber-400" />
                 Verbatim Extracted Excerpt
               </span>
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 text-xs leading-relaxed max-h-48 overflow-y-auto whitespace-pre-wrap font-mono">
+              <div className="p-4 rounded-lg bg-[#080A09] border border-[#1B211E] text-slate-300 text-xs leading-relaxed max-h-48 overflow-y-auto whitespace-pre-wrap font-mono">
                 {selectedEvidence.excerpt || selectedEvidence.description || 'No excerpt available.'}
               </div>
             </div>
 
-            {/* Cryptographic SHA-256 Checksum */}
-            {selectedEvidence.source_hash && (
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800/80 space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                    <Shield className="w-3 h-3 text-emerald-400" />
-                    Cryptographic SHA-256 Provenance
-                  </span>
-                  <button
-                    onClick={() => copyToClipboard(selectedEvidence.source_hash || '')}
-                    className="flex items-center gap-1 text-[10px] font-mono text-amber-400 hover:text-amber-300 cursor-pointer"
-                  >
-                    {copiedHash ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                    <span>{copiedHash ? 'Copied' : 'Copy Hash'}</span>
-                  </button>
-                </div>
-                <div className="p-2 rounded bg-slate-900 text-[10px] font-mono text-emerald-400 break-all select-all">
-                  {selectedEvidence.source_hash}
-                </div>
-              </div>
-            )}
-
             {/* Footer */}
-            <div className="pt-2 flex items-center justify-between text-xs text-slate-400">
+            <div className="pt-2 flex items-center justify-between text-xs text-slate-400 border-t border-[#1B211E]">
               <span>TRINETRA Evidence Provenance Guarantee</span>
               <button
                 onClick={() => setSelectedEvidence(null)}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-mono text-xs cursor-pointer transition-colors"
+                className="px-4 py-2 rounded-lg bg-[#121614] hover:bg-[#1B211E] text-slate-200 border border-[#27302B] font-mono text-xs cursor-pointer transition-colors"
               >
                 Close Inspector
               </button>
@@ -686,6 +572,6 @@ export const CopilotPage: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };

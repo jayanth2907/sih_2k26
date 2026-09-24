@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
 import { 
   Play, RotateCcw, FastForward, CheckCircle2, AlertTriangle, XCircle, 
   Layers, ShieldAlert, Cpu, Activity, Eye, FileText, Lock, 
@@ -170,26 +171,30 @@ export const DemoControlCenterPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-12">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+      className="space-y-6 pb-12 font-sans text-slate-100"
+    >
       {/* 1. Header Banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="bg-[#0D100F] border border-[#1B211E] rounded-xl p-5 shadow-xs relative overflow-hidden">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 relative z-10">
           <div>
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-400">
-                <Radio className="w-6 h-6 animate-pulse" />
+              <div className="p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-400 shrink-0">
+                <Radio className="w-5 h-5 animate-pulse" />
               </div>
               <div>
-                <div className="flex items-center gap-3">
-                  <h1 className="text-2xl font-bold text-white tracking-wide">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h1 className="text-xl font-bold text-white tracking-wide font-sans">
                     SIH Demonstration Scenario Engine & Control Center
                   </h1>
-                  <span className="px-2.5 py-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-mono font-bold tracking-wider">
+                  <span className="px-2.5 py-0.5 rounded bg-[#121614] text-amber-400 border border-[#27302B] text-xs font-mono font-bold tracking-wider">
                     DEMO MODE • DETERMINISTIC
                   </span>
                 </div>
-                <p className="text-sm text-slate-400 mt-1">
+                <p className="text-xs text-slate-400 mt-1 font-sans">
                   Orchestrate deterministic, repeatable, national-level judging scenarios across IoT, Predictive ML, 3D Digital Twin, Copilot, and Governance.
                 </p>
               </div>
@@ -586,7 +591,7 @@ export const DemoControlCenterPage: React.FC = () => {
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

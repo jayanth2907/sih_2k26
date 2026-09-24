@@ -1,118 +1,129 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useMineContext } from '../context/MineContext';
 import { useLanguage } from '../context/LanguageContext';
 import { MineSelector } from './MineSelector';
-import { Shield, Bell, LogOut, Radio, BrainCircuit, Activity, CheckCircle2, Smartphone } from 'lucide-react';
+import { LogOut, Bot, Activity, Smartphone, Globe2, ChevronDown } from 'lucide-react';
+import GradientMenu, { GradientMenuItem } from './ui/gradient-menu';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
-interface HeaderProps {
-  onSwitchToMobile?: () => void;
-}
-
-export const Header: React.FC<HeaderProps> = ({ onSwitchToMobile }) => {
+export const Header: React.FC = () => {
   const { user, logout } = useAuth();
   const { setCurrentTab } = useMineContext();
   const { language, setLanguage } = useLanguage();
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  const topbarUtilityItems: GradientMenuItem[] = [
+    {
+      title: 'AI Copilot',
+      icon: <Bot className="h-5 w-5" aria-hidden="true" />,
+      gradientFrom: '#D6A243',
+      gradientTo: '#9E7226',
+      iconColor: 'text-[#D6A243]'
+    },
+    {
+      title: 'Field App',
+      icon: <Smartphone className="h-5 w-5" aria-hidden="true" />,
+      gradientFrom: '#CBD1CE',
+      gradientTo: '#9CA5A0',
+      iconColor: 'text-[#626B63]'
+    }
+  ];
+
+  const handleTopbarUtility = (item: GradientMenuItem) => {
+    if (item.title === 'AI Copilot') setCurrentTab('copilot');
+    if (item.title === 'Field App') setCurrentTab('field-operations');
+  };
 
   return (
-    <header className="h-16 bg-[#0D100F]/95 border-b border-[#1B211E] backdrop-blur-md sticky top-0 z-30 px-6 flex items-center justify-between">
-      {/* Left: Active Mine Switcher & Operational Status */}
-      <div className="flex items-center gap-4">
+    <header className="min-h-16 bg-[#121513]/75 border-b border-[#232923]/80 backdrop-blur-xl sticky top-0 z-30 px-3 md:px-5 py-2 flex flex-wrap lg:flex-nowrap items-center justify-between gap-3 shadow-[0_8px_24px_rgba(0,0,0,0.12)]">
+      {/* Left: Active Mine Switcher */}
+      <div className="flex min-w-0 items-center">
         <MineSelector />
-        
-        {/* System Health Pill (Clickable) */}
+      </div>
+
+      {/* Center: Combined system and telemetry status */}
+      <div className="hidden lg:flex min-w-0 items-center rounded-xl border border-[#232923] bg-[#191D19]/85 px-4 py-2 shadow-[0_6px_18px_rgba(0,0,0,0.12)]">
         <button
           onClick={() => setCurrentTab('integrations-health')}
-          className="hidden md:flex items-center gap-2 px-2.5 py-1 rounded bg-[#121614] border border-[#1B211E] hover:border-emerald-500/40 text-[11px] text-slate-300 font-mono transition-colors cursor-pointer"
           title="Inspect Government Integrations & System Health"
+          className="flex items-center gap-2.5 border-r border-[#303830] pr-5 text-left transition-colors hover:text-[#6EAA87]"
         >
-          <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-xs shadow-emerald-500/60 animate-pulse" />
-          <span className="font-semibold text-emerald-400">SYSTEM: OPERATIONAL</span>
+          <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#00C98B] shadow-[0_0_6px_rgba(0,201,139,0.35)] animate-pulse" />
+          <span className="flex flex-col leading-none">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-[#626B63]">System</span>
+            <span className="mt-1 text-[11px] font-mono font-semibold uppercase tracking-wide text-[#6EAA87]">Operational</span>
+          </span>
         </button>
-
-        {/* Telemetry Ingestion Mode */}
-        <div className="hidden xl:flex items-center gap-2 px-2.5 py-1 rounded bg-[#121614] border border-[#1B211E] text-[11px] text-slate-400 font-mono">
-          <Activity className="w-3.5 h-3.5 text-amber-400" />
-          <span>TELEMETRY: <span className="text-amber-300 font-medium">SIMULATED / SCENARIO READY</span></span>
+        <div className="flex items-center gap-2.5 pl-5 text-[11px] font-mono">
+          <Activity className="h-4 w-4 shrink-0 text-[#D6A243]" />
+          <span className="flex flex-col leading-none">
+            <span className="text-[10px] uppercase tracking-wider text-[#626B63]">Telemetry</span>
+            <span className="mt-1 whitespace-nowrap font-semibold uppercase tracking-wide text-[#D6A243]">Simulated</span>
+          </span>
+          <ChevronDown className="ml-2 h-3.5 w-3.5 text-[#626B63]" aria-hidden="true" />
         </div>
       </div>
 
       {/* Right: Language Switcher, Copilot Trigger, User Profile & Actions */}
-      <div className="flex items-center gap-3">
-        {/* Multilingual Selector */}
-        <div className="flex items-center bg-[#121614] rounded-md p-0.5 border border-[#1B211E] text-[11px] font-mono">
-          <button
-            onClick={() => setLanguage('en')}
-            className={`px-2 py-1 rounded transition-all cursor-pointer ${
-              language === 'en' ? 'bg-amber-500 text-[#080A09] font-bold shadow-xs' : 'text-slate-400 hover:text-white'
-            }`}
-            title="English"
+      <div className="flex shrink-0 items-center gap-2.5">
+        {/* Compact language selector */}
+        <div className="hidden sm:flex items-center gap-2 text-[#8A9189]">
+          <Globe2 className="h-3.5 w-3.5" aria-hidden="true" />
+          <Select
+            value={language}
+            onValueChange={(value) => setLanguage(value as 'en' | 'hi' | 'te')}
           >
-            EN
-          </button>
-          <button
-            onClick={() => setLanguage('hi')}
-            className={`px-2 py-1 rounded transition-all cursor-pointer ${
-              language === 'hi' ? 'bg-amber-500 text-[#080A09] font-bold shadow-xs' : 'text-slate-400 hover:text-white'
-            }`}
-            title="हिन्दी (Hindi)"
-          >
-            हिन्दी
-          </button>
-          <button
-            onClick={() => setLanguage('te')}
-            className={`px-2 py-1 rounded transition-all cursor-pointer ${
-              language === 'te' ? 'bg-amber-500 text-[#080A09] font-bold shadow-xs' : 'text-slate-400 hover:text-white'
-            }`}
-            title="తెలుగు (Telugu)"
-          >
-            తెలుగు
-          </button>
+            <SelectTrigger aria-label="Select language">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="end">
+              <SelectItem value="en">EN</SelectItem>
+              <SelectItem value="hi">हिं</SelectItem>
+              <SelectItem value="te">తె</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* AI Copilot Quick Trigger */}
-        <button
-          onClick={() => setCurrentTab('copilot')}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/40 text-xs font-mono font-bold transition-all cursor-pointer shadow-xs"
-          title="Open AI Governance Copilot"
-        >
-          <BrainCircuit className="w-3.5 h-3.5 text-amber-400" />
-          <span className="hidden sm:inline">AI COPILOT</span>
-        </button>
+        {/* AI Copilot and Field App utility actions */}
+        <GradientMenu
+          items={topbarUtilityItems}
+          onSelect={handleTopbarUtility}
+          compact
+          className="shrink-0"
+        />
 
-        {/* Mobile Field App Switcher */}
-        {onSwitchToMobile && (
+        {/* Admin profile menu */}
+        <div className="relative border-l border-[#232923] pl-2">
           <button
-            onClick={onSwitchToMobile}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-slate-800/80 hover:bg-slate-700/80 text-amber-400 border border-slate-700 text-xs font-mono font-bold transition-all cursor-pointer shadow-xs"
-            title="Switch to TRINETRA FIELD Mobile Application (/mobile)"
+            onClick={() => setIsProfileOpen((open) => !open)}
+            className="flex h-9 items-center gap-2 rounded-md px-2 text-left transition-colors hover:bg-white/[0.025] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D6A243]/60"
+            aria-label="Open admin profile menu"
+            aria-expanded={isProfileOpen}
           >
-            <Smartphone className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden lg:inline">FIELD APP</span>
+            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-[#191D19] text-[#D6A243] font-bold text-xs font-mono">
+              {user?.full_name ? user.full_name.charAt(0) : 'U'}
+            </span>
+            <span className="hidden lg:block text-left">
+              <span className="block text-xs font-semibold text-[#E6E8E3] leading-tight">{user?.full_name || 'Authorized User'}</span>
+              <span className="block text-[9.5px] text-[#D6A243] font-mono uppercase">
+                {user?.roles?.[0]?.replace(/_/g, ' ') || 'SYSTEM OPERATOR'}
+              </span>
+            </span>
+            <ChevronDown className="h-3.5 w-3.5 text-[#626B63]" aria-hidden="true" />
           </button>
-        )}
-
-        {/* User Info */}
-        <div className="flex items-center gap-2.5 pl-3 border-l border-[#1B211E]">
-          <div className="w-8 h-8 rounded bg-[#171B18] border border-[#232A26] flex items-center justify-center text-amber-400 font-bold text-xs font-mono">
-            {user?.full_name ? user.full_name.charAt(0) : 'U'}
-          </div>
-          <div className="hidden sm:block text-left">
-            <p className="text-xs font-semibold text-slate-200 leading-tight">{user?.full_name || 'Authorized User'}</p>
-            <p className="text-[9.5px] text-amber-400 font-mono uppercase">
-              {user?.roles?.[0]?.replace(/_/g, ' ') || 'SYSTEM OPERATOR'}
-            </p>
-          </div>
+          {isProfileOpen && (
+            <div className="absolute right-0 top-11 z-50 min-w-44 rounded-md border border-[#232923] bg-[#191D19] p-1.5 shadow-xl">
+              <button
+                onClick={logout}
+                className="flex w-full items-center gap-2 rounded px-2.5 py-2 text-left text-xs text-[#8A9189] transition-colors hover:bg-rose-500/[0.08] hover:text-[#D96C68]"
+              >
+                <LogOut className="h-4 w-4" aria-hidden="true" />
+                Sign out
+              </button>
+            </div>
+          )}
         </div>
-
-        {/* Logout Action */}
-        <button
-          onClick={logout}
-          title="Sign Out"
-          className="p-2 rounded bg-[#121614] hover:bg-rose-950/60 hover:text-rose-300 text-slate-400 border border-[#1B211E] hover:border-rose-900/60 transition-colors cursor-pointer"
-        >
-          <LogOut className="w-4 h-4" />
-        </button>
       </div>
     </header>
   );

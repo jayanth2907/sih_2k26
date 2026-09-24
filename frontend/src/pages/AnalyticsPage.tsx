@@ -997,11 +997,11 @@ const KpiCard: React.FC<KpiCardProps> = ({
   const getStatusBorder = () => {
     switch (status) {
       case 'CRITICAL':
-        return 'border-rose-500/40 hover:border-rose-500/70 bg-rose-950/10';
+        return 'border-[#1B211E] hover:border-rose-500/50 bg-[#0D100F]';
       case 'WARNING':
-        return 'border-amber-500/40 hover:border-amber-500/70 bg-amber-950/10';
+        return 'border-[#1B211E] hover:border-amber-500/50 bg-[#0D100F]';
       case 'NORMAL':
-        return 'border-emerald-500/30 hover:border-emerald-500/60 bg-emerald-950/10';
+        return 'border-[#1B211E] hover:border-emerald-500/50 bg-[#0D100F]';
       default:
         return 'border-[#1B211E] hover:border-[#2E3832] bg-[#0D100F]';
     }
