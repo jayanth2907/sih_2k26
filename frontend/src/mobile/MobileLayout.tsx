@@ -7,8 +7,18 @@ import { MobileBottomNav } from './components/MobileBottomNav';
 import { MobileHomeScreen } from './screens/MobileHomeScreen';
 import { MobileTasksScreen } from './screens/MobileTasksScreen';
 import { MobileMapScreen } from './screens/MobileMapScreen';
+import { MobileIncidentResponseScreen } from './screens/MobileIncidentResponseScreen';
 import { MobileCopilotScreen } from './screens/MobileCopilotScreen';
 import { MobileMoreScreen } from './screens/MobileMoreScreen';
+import { MobileNotificationsScreen } from './screens/MobileNotificationsScreen';
+import { MobileSyncCenterScreen } from './screens/MobileSyncCenterScreen';
+import { MobileReviewCenterScreen } from './screens/MobileReviewCenterScreen';
+import { MobileDocumentsScreen } from './screens/MobileDocumentsScreen';
+import { MobileWorkforceScreen } from './screens/MobileWorkforceScreen';
+import { MobileFieldReportingScreen } from './screens/MobileFieldReportingScreen';
+import { MobileContractorScreen } from './screens/MobileContractorScreen';
+import { MobileGrievanceScreen } from './screens/MobileGrievanceScreen';
+import { MobileRiskIntelligenceScreen } from './screens/MobileRiskIntelligenceScreen';
 import { AlertTriangle, LogIn } from 'lucide-react';
 import { TouchButton } from './components/TouchButton';
 
@@ -27,8 +37,18 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({
     const path = window.location.pathname;
     if (path.includes('/mobile/tasks')) return 'tasks';
     if (path.includes('/mobile/map')) return 'map';
+    if (path.includes('/mobile/incidents')) return 'incidents';
     if (path.includes('/mobile/copilot')) return 'copilot';
     if (path.includes('/mobile/more')) return 'more';
+    if (path.includes('/mobile/notifications')) return 'notifications';
+    if (path.includes('/mobile/sync')) return 'sync';
+    if (path.includes('/mobile/reviews')) return 'reviews';
+    if (path.includes('/mobile/documents')) return 'documents';
+    if (path.includes('/mobile/workforce')) return 'workforce';
+    if (path.includes('/mobile/reporting')) return 'reporting';
+    if (path.includes('/mobile/contractors')) return 'contractors';
+    if (path.includes('/mobile/grievances')) return 'grievances';
+    if (path.includes('/mobile/intelligence')) return 'intelligence';
     return initialTab;
   });
 
@@ -47,8 +67,18 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({
       const path = window.location.pathname;
       if (path.includes('/mobile/tasks')) setActiveTab('tasks');
       else if (path.includes('/mobile/map')) setActiveTab('map');
+      else if (path.includes('/mobile/incidents')) setActiveTab('incidents');
       else if (path.includes('/mobile/copilot')) setActiveTab('copilot');
       else if (path.includes('/mobile/more')) setActiveTab('more');
+      else if (path.includes('/mobile/notifications')) setActiveTab('notifications');
+      else if (path.includes('/mobile/sync')) setActiveTab('sync');
+      else if (path.includes('/mobile/reviews')) setActiveTab('reviews');
+      else if (path.includes('/mobile/documents')) setActiveTab('documents');
+      else if (path.includes('/mobile/workforce')) setActiveTab('workforce');
+      else if (path.includes('/mobile/reporting')) setActiveTab('reporting');
+      else if (path.includes('/mobile/contractors')) setActiveTab('contractors');
+      else if (path.includes('/mobile/grievances')) setActiveTab('grievances');
+      else if (path.includes('/mobile/intelligence')) setActiveTab('intelligence');
       else if (path.startsWith('/mobile')) setActiveTab('home');
     };
 
@@ -93,13 +123,33 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({
       case 'home':
         return <MobileHomeScreen onNavigateTab={handleTabChange} />;
       case 'tasks':
-        return <MobileTasksScreen />;
+        return <MobileTasksScreen onNavigateTab={handleTabChange} />;
       case 'map':
         return <MobileMapScreen />;
+      case 'incidents':
+        return <MobileIncidentResponseScreen onNavigateTab={handleTabChange} />;
       case 'copilot':
         return <MobileCopilotScreen />;
+      case 'notifications':
+        return <MobileNotificationsScreen onNavigateTab={handleTabChange} />;
+      case 'sync':
+        return <MobileSyncCenterScreen onBack={() => handleTabChange('home')} onNavigateTab={handleTabChange} />;
+      case 'reviews':
+        return <MobileReviewCenterScreen onBack={() => handleTabChange('home')} onNavigateTab={handleTabChange} />;
+      case 'documents':
+        return <MobileDocumentsScreen onBack={() => handleTabChange('home')} onNavigateTab={handleTabChange} />;
+      case 'workforce':
+        return <MobileWorkforceScreen onBack={() => handleTabChange('home')} onNavigateTab={handleTabChange} />;
+      case 'reporting':
+        return <MobileFieldReportingScreen onBack={() => handleTabChange('home')} onNavigateTab={handleTabChange} />;
+      case 'contractors':
+        return <MobileContractorScreen onBack={() => handleTabChange('home')} onNavigateTab={handleTabChange} />;
+      case 'grievances':
+        return <MobileGrievanceScreen onBack={() => handleTabChange('home')} onNavigateTab={handleTabChange} />;
+      case 'intelligence':
+        return <MobileRiskIntelligenceScreen onBack={() => handleTabChange('home')} onNavigateTab={handleTabChange} />;
       case 'more':
-        return <MobileMoreScreen onSwitchToDesktop={onSwitchToDesktop} />;
+        return <MobileMoreScreen onSwitchToDesktop={onSwitchToDesktop} onNavigateTab={handleTabChange} />;
       default:
         return <MobileHomeScreen onNavigateTab={handleTabChange} />;
     }

@@ -84,15 +84,20 @@ class PredictiveRiskAnalyticsService:
 
         # Top contributing features from explanation_json of recent predictions
         top_features: List[Dict[str, Any]] = []
-        if latest_p and latest_p.explanation_json:
-            try:
-                parsed = json.loads(latest_p.explanation_json)
-                if isinstance(parsed, list):
-                    top_features = parsed[:5]
-                elif isinstance(parsed, dict):
-                    top_features = [{"feature": k, "impact": v} for k, v in list(parsed.items())[:5]]
-            except Exception:
-                top_features = [{"feature": "Methane (CH4) rate of rise", "impact": "High"}]
+        for cand in reversed(preds):
+            if cand.explanation_json:
+                try:
+                    parsed = json.loads(cand.explanation_json)
+                    if isinstance(parsed, list) and parsed:
+                        top_features = parsed[:5]
+                        break
+                    elif isinstance(parsed, dict) and parsed:
+                        top_features = [{"feature": k, "impact": v} for k, v in list(parsed.items())[:5]]
+                        break
+                except Exception:
+                    pass
+        if not top_features and total_preds > 0:
+            top_features = [{"feature": "Methane (CH4) rate of rise", "impact": "High"}]
 
         # Active hotspots count (unique zones with high/critical prediction in recent snapshot)
         recent_preds = preds[-10:] if preds else []

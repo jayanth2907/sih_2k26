@@ -1,0 +1,172 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-primary: #080A09;
+    --bg-surface-1: #0D100F;
+    --bg-surface-2: #121614;
+    --bg-surface-3: #171B18;
+    --border-subtle: #1B211E;
+    --border-card: #232A26;
+    --border-focus: #F59E0B;
+    
+    --color-accent: #F59E0B;
+    --color-accent-hover: #FFB52E;
+    
+    --severity-critical: #EF4444;
+    --severity-high: #F97316;
+    --severity-medium: #F59E0B;
+    --severity-low: #22C55E;
+    --severity-info: #60A5FA;
+  }
+
+  body {
+    font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--bg-primary);
+    color: #F1F5F9;
+    min-height: 100vh;
+    letter-spacing: -0.01em;
+  }
+
+  /* Technical typography utility classes */
+  .font-mono, 
+  code, 
+  pre, 
+  .tech-val, 
+  .coord-val, 
+  .timestamp-val, 
+  .hash-val, 
+  .sensor-code {
+    font-family: 'IBM Plex Mono', monospace;
+  }
+}
+
+/* Industrial Command Palette / SCADA Surface Utilities */
+.surface-card {
+  background-color: var(--bg-surface-1);
+  border: 1px solid var(--border-subtle);
+}
+
+.surface-panel {
+  background-color: var(--bg-surface-2);
+  border: 1px solid var(--border-card);
+}
+
+.surface-elevated {
+  background-color: var(--bg-surface-3);
+  border: 1px solid var(--border-card);
+}
+
+/* Severity Pill Utilities */
+.pill-critical {
+  background-color: rgba(239, 68, 68, 0.12);
+  color: #F87171;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.pill-high {
+  background-color: rgba(249, 115, 22, 0.12);
+  color: #FB923C;
+  border: 1px solid rgba(249, 115, 22, 0.35);
+}
+
+.pill-medium {
+  background-color: rgba(245, 158, 11, 0.12);
+  color: #FBBF24;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.pill-low {
+  background-color: rgba(34, 197, 94, 0.12);
+  color: #4ADE80;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+}
+
+.pill-info {
+  background-color: rgba(96, 165, 250, 0.12);
+  color: #93C5FD;
+  border: 1px solid rgba(96, 165, 250, 0.35);
+}
+
+/* Custom modern scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #080A09;
+}
+::-webkit-scrollbar-thumb {
+  background: #1B211E;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2D3732;
+}
+
+/* Leaflet Dark Command-Center Theme Overrides */
+.leaflet-container {
+  background-color: #080A09 !important;
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
+.leaflet-popup-content-wrapper {
+  background-color: #0D100F !important;
+  color: #F1F5F9 !important;
+  border: 1px solid #232A26 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.7) !important;
+  padding: 4px !important;
+}
+
+.leaflet-popup-tip {
+  background-color: #0D100F !important;
+  border: 1px solid #232A26 !important;
+}
+
+.leaflet-popup-content {
+  margin: 8px 12px !important;
+  line-height: 1.4 !important;
+  font-size: 11px !important;
+}
+
+.leaflet-tooltip {
+  background-color: #0D100F !important;
+  color: #F1F5F9 !important;
+  border: 1px solid #232A26 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+  padding: 4px 8px !important;
+  font-family: 'IBM Plex Mono', monospace !important;
+  font-size: 11px !important;
+}
+
+.leaflet-tooltip-top:before,
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+  border-color: #0D100F !important;
+}
+
+/* Compact Leaflet Attribution & Controls (Prevent oversized boxes) */
+.leaflet-control-attribution {
+  background: rgba(13, 16, 15, 0.8) !important;
+  color: #94A3B8 !important;
+  font-size: 9px !important;
+  font-family: 'IBM Plex Mono', monospace !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  border: 1px solid rgba(35, 42, 38, 0.6) !important;
+  backdrop-filter: blur(4px);
+  margin: 0 4px 4px 0 !important;
+}
+
+.leaflet-control-attribution a {
+  color: #F59E0B !important;
+  text-decoration: none !important;
+}
+
+.leaflet-control-attribution a:hover {
+  text-decoration: underline !important;
+}
+

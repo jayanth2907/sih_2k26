@@ -330,11 +330,71 @@ def seed():
         db.add_all([c_komatsu, c_elecon, c_haulage])
         db.commit()
 
-        # 3. Contracts
+        # 3. Contracts & Requirements
         today_date = now.date()
         ct1 = Contract(contract_code="CON-BDS04-SHR-2026", contractor_id=c_komatsu.id, mine_id=m1.id, work_scope="Longwall Shearer OEM Maintenance & Strata Tooling", start_date=today_date - timedelta(days=90), end_date=today_date + timedelta(days=275), total_value=12500000.0, status="ACTIVE", compliance_status="COMPLIANT", responsible_officer_id=u_mgr1.id)
         ct2 = Contract(contract_code="CON-BDS04-CNV-2026", contractor_id=c_elecon.id, mine_id=m1.id, work_scope="Trunk Conveyor Belt Splice & Roller Overhaul", start_date=today_date - timedelta(days=340), end_date=today_date + timedelta(days=25), total_value=4800000.0, status="EXPIRING", compliance_status="REVIEW_REQUIRED", responsible_officer_id=u_safety1.id)
-        db.add_all([ct1, ct2])
+        ct3 = Contract(contract_code="CON-SOB02-HAUL-2026", contractor_id=c_haulage.id, mine_id=m2.id, work_scope="Opencast Heavy Surface Haulage Fleet", start_date=today_date - timedelta(days=60), end_date=today_date + timedelta(days=300), total_value=9500000.0, status="ACTIVE", compliance_status="COMPLIANT", responsible_officer_id=u_admin.id)
+        db.add_all([ct1, ct2, ct3])
+        db.commit()
+
+        # Contract Requirements for SLA & Field Operations
+        req1 = ContractRequirement(
+            contract_id=ct1.id,
+            title="Form-O Initial & Periodic Medical Examination Certificates (PME)",
+            document_type="MEDICAL_FITNESS",
+            mandatory=True,
+            status="DOCUMENTED",
+            expiry_date=today_date + timedelta(days=180),
+            verification_notes="PME records verified under Mines Rules 1955 Form O for 25 deployed contract mechanics.",
+            verified_at=now - timedelta(days=15),
+            verified_by_id=u_safety1.id
+        )
+        req2 = ContractRequirement(
+            contract_id=ct1.id,
+            title="Statutory Workmen Compensation & Group Personal Accident Insurance",
+            document_type="INSURANCE_POLICY",
+            mandatory=True,
+            status="DOCUMENTED",
+            expiry_date=today_date + timedelta(days=60),
+            verification_notes="Policy active under Policy #OR-GIC-99210. Valid for underground strata maintenance work.",
+            verified_at=now - timedelta(days=30),
+            verified_by_id=u_mgr1.id
+        )
+        req3 = ContractRequirement(
+            contract_id=ct2.id,
+            title="VTC Statutory Refresher Safety Induction Training Records",
+            document_type="SAFETY_TRAINING_RECORD",
+            mandatory=True,
+            status="PENDING",
+            expiry_date=today_date + timedelta(days=3),
+            verification_notes="Refresher certificates due for 8 conveyor splicing technicians. Verification pending field audit.",
+            verified_at=None,
+            verified_by_id=None
+        )
+        req4 = ContractRequirement(
+            contract_id=ct2.id,
+            title="Monthly ESI / EPF Challan & Statutory Return Filings",
+            document_type="ESI_EPF_CERTIFICATE",
+            mandatory=True,
+            status="EXPIRED",
+            expiry_date=today_date - timedelta(days=12),
+            verification_notes="Previous month electronic challan return (ECR) receipt not submitted. Rectification task required.",
+            verified_at=now - timedelta(days=45),
+            verified_by_id=u_safety1.id
+        )
+        req5 = ContractRequirement(
+            contract_id=ct3.id,
+            title="Heavy Mining Machinery (HEMM) Operator Valid DGMS Licenses",
+            document_type="SAFETY_TRAINING_RECORD",
+            mandatory=True,
+            status="DOCUMENTED",
+            expiry_date=today_date + timedelta(days=210),
+            verification_notes="12 dumper drivers and 2 shovel operators verified with valid DGMS heavy machinery endorsement.",
+            verified_at=now - timedelta(days=5),
+            verified_by_id=u_admin.id
+        )
+        db.add_all([req1, req2, req3, req4, req5])
         db.commit()
 
         # 4. Workers & Attendance (Seeded across Mine 1, Mine 2, Mine 3)
@@ -372,7 +432,7 @@ def seed():
 
         # 7. Grievance
         grv1 = Grievance(
-            grievance_code=f"GRV-1-{int(now.timestamp())}",
+            grievance_code=f"PGRM-2026-BDS04-0001",
             mine_id=m1.id,
             category="SAFETY",
             title="Dust suppression mist spray nozzle clogged at Haulage Drift",
@@ -383,9 +443,73 @@ def seed():
             submitted_by_id=u_safety1.id,
             assigned_to_id=u_mgr1.id,
             sla_hours=48,
-            due_at=now + timedelta(hours=48)
+            due_at=now + timedelta(hours=36),
+            latitude=23.7960,
+            longitude=86.4310,
+            location_context="Haulage Drift Level 2",
+            evidence_file_name="spray_nozzle_clogged.jpg",
+            evidence_file_hash="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            source_channel="MOBILE_FIELD"
         )
-        db.add(grv1)
+        grv2 = Grievance(
+            grievance_code=f"PGRM-2026-BDS04-0002",
+            mine_id=m1.id,
+            category="WORKER_WELFARE",
+            title="Drinking Water Chiller Filter Replacement Required",
+            description="Pit head rest shelter drinking water filtration unit overdue for replacement cartridge.",
+            priority="MEDIUM",
+            status="SUBMITTED",
+            anonymous=True,
+            sla_hours=72,
+            due_at=now + timedelta(hours=60),
+            latitude=23.7955,
+            longitude=86.4300,
+            location_context="Pit Head 3 Rest Shelter",
+            source_channel="MOBILE_FIELD"
+        )
+        grv3 = Grievance(
+            grievance_code=f"PGRM-2026-BDS04-0003",
+            mine_id=m1.id,
+            category="WATER",
+            title="Drainage Sump Overflow near Incline Conveyor",
+            description="Incline drift sump pump trip causing minor water accumulation on operator walkway.",
+            priority="CRITICAL",
+            status="UNDER_INVESTIGATION",
+            anonymous=False,
+            submitted_by_id=u_safety1.id,
+            assigned_to_id=u_safety1.id,
+            investigated_by_id=u_safety1.id,
+            investigated_at=now - timedelta(hours=4),
+            investigation_notes="Field inspection verified primary pump electrical trip. Auxiliary submersible pump engaged.",
+            action_required=True,
+            sla_hours=24,
+            due_at=now + timedelta(hours=12),
+            latitude=23.7970,
+            longitude=86.4320,
+            location_context="Incline Conveyor Sub-station",
+            source_channel="MOBILE_FIELD"
+        )
+        grv4 = Grievance(
+            grievance_code=f"PGRM-2026-BDS04-0004",
+            mine_id=m1.id,
+            category="CONTRACTOR",
+            title="Contractor Tipline PPE Shortage for Night Shift",
+            description="Third-party tipper drivers reported lack of high-visibility reflective vests for Shift C.",
+            priority="HIGH",
+            status="RESOLVED",
+            anonymous=False,
+            submitted_by_id=u_safety1.id,
+            assigned_to_id=u_mgr1.id,
+            resolution_notes="Vendor manager issued 25 sets of EN471 compliant reflective vests before shift start.",
+            resolved_at=now - timedelta(days=1),
+            sla_hours=48,
+            due_at=now - timedelta(hours=10),
+            latitude=23.7945,
+            longitude=86.4290,
+            location_context="ROM Coal Stockpile Weighbridge",
+            source_channel="CPGRAMS"
+        )
+        db.add_all([grv1, grv2, grv3, grv4])
 
         # 8. Regulatory Report
         rep1 = RegulatoryReport(
@@ -495,6 +619,101 @@ def seed():
         )
 
         db.add_all([fi1, fi2, fi3])
+        db.commit()
+
+        # Seed MOBILE-15 Predictive Risk Records for Field Intelligence
+        print("Seeding MOBILE-15 Predictive Risk Signals...")
+        from app.models.risk_prediction import RiskPrediction
+        pred1 = RiskPrediction(
+            mine_id=m1.id,
+            zone_id=m1_z_east.id,
+            prediction_timestamp=now - timedelta(minutes=15),
+            horizon_minutes=30,
+            predicted_risk_score=88.4,
+            predicted_severity="HIGH",
+            probability=0.884,
+            predicted_class=1,
+            current_risk_score=52.0,
+            model_name="TRINETRA-HistGradientBoosting",
+            model_version="risk-escalation-v1.0",
+            dataset_type="SIMULATED_DEMO",
+            feature_snapshot_json=json.dumps({"methane_ppm": 1.42, "ventilation_velocity": 1.85, "co_ppm": 18.0}),
+            explanation_json=json.dumps([
+                {
+                    "feature": "methane_ppm",
+                    "label": "Methane Concentration",
+                    "direction": "INCREASING_RISK",
+                    "symbol": "↑",
+                    "current_value": 1.42,
+                    "unit": "%",
+                    "normal_reference": 0.5,
+                    "threshold_reference": 1.25,
+                    "contribution_points": 24.5,
+                    "explanation": "Methane level 1.42% is 13.6% above statutory threshold."
+                },
+                {
+                    "feature": "ventilation_velocity",
+                    "label": "Ventilation Air Velocity",
+                    "direction": "INCREASING_RISK",
+                    "symbol": "↓",
+                    "current_value": 1.85,
+                    "unit": "m/s",
+                    "normal_reference": 2.5,
+                    "threshold_reference": 2.0,
+                    "contribution_points": 18.2,
+                    "explanation": "Air velocity decreased 18% over past 45 minutes."
+                }
+            ]),
+            data_quality_score=1.0,
+            data_quality_notes="Full telemetry available (100% online sensors)",
+            field_verified=False,
+            is_alert_generated=True,
+            created_at=now - timedelta(minutes=15)
+        )
+
+        pred2 = RiskPrediction(
+            mine_id=m1.id,
+            zone_id=m1_z_west.id,
+            prediction_timestamp=now - timedelta(hours=2),
+            horizon_minutes=30,
+            predicted_risk_score=91.0,
+            predicted_severity="CRITICAL",
+            probability=0.91,
+            predicted_class=1,
+            current_risk_score=68.0,
+            model_name="TRINETRA-HistGradientBoosting",
+            model_version="risk-escalation-v1.0",
+            dataset_type="SIMULATED_DEMO",
+            feature_snapshot_json=json.dumps({"roof_stress_kpa": 420.0, "seismic_events": 4}),
+            explanation_json=json.dumps([
+                {
+                    "feature": "roof_stress_kpa",
+                    "label": "Roof Convergence Pressure",
+                    "direction": "INCREASING_RISK",
+                    "symbol": "↑",
+                    "current_value": 420.0,
+                    "unit": "kPa",
+                    "normal_reference": 250.0,
+                    "threshold_reference": 380.0,
+                    "contribution_points": 32.0,
+                    "explanation": "Convergence stress exceeded 380 kPa limit."
+                }
+            ]),
+            data_quality_score=1.0,
+            data_quality_notes="Full telemetry available",
+            field_verified=True,
+            field_outcome="ISSUE_FOUND",
+            field_notes="Roof convergence tell-tale confirmed 4mm displacement. Chock support reinforced.",
+            verified_by_id=u_insp.id,
+            verified_at=now - timedelta(hours=1, minutes=30),
+            latitude=23.7954,
+            longitude=86.4308,
+            location_context="Drift 2 South Junction",
+            is_alert_generated=True,
+            created_at=now - timedelta(hours=2)
+        )
+
+        db.add_all([pred1, pred2])
         db.commit()
 
         # Seed Phase 11A Real Mine Data Foundation (6 Official Coal Blocks)

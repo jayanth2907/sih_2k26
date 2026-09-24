@@ -11,7 +11,9 @@ import type {
   IntegrationHealthResponse, SystemHealthResponse, ExternalReport, AuditChainVerification, AdapterHealthStatus, SystemHealthComponent,
   DemoPreflightReport, DemoScenarioSummary, DemoScenarioDetail, DemoStepResponse, DemoResetResponse, DemoScenarioStep, DemoPreflightItem,
   DocumentDTO, DocumentSummaryDTO, DocumentPageDTO, ExtractedDocumentFieldDTO, DocumentProcessingStatusDTO,
-  GisMapDTO, GisRiskHotspotDTO, SpatialContextDTO, GisSearchResponseDTO
+  GisMapDTO, GisRiskHotspotDTO, SpatialContextDTO, GisSearchResponseDTO,
+  OperationalNotification, NotificationUnreadCounts, NotificationListResponse,
+  SyncStatusResponse, SyncLogsResponse, QueuedSyncOperation
 } from '../types';
 
 export const authService = {
@@ -404,10 +406,270 @@ export const mobileService = {
     return res.data;
   },
 
-  getSyncStatus: async (mineId: number): Promise<any> => {
-    const res = await api.get('/mobile/sync/status', { params: { mine_id: mineId } });
+  getSyncStatus: async (mineId?: number): Promise<SyncStatusResponse> => {
+    const res = await api.get<SyncStatusResponse>('/mobile/sync/status', { params: mineId ? { mine_id: mineId } : {} });
+    return res.data;
+  },
+
+  getSyncLogs: async (mineId?: number, status?: string, limit: number = 50, offset: number = 0): Promise<SyncLogsResponse> => {
+    const params: any = { limit, offset };
+    if (mineId) params.mine_id = mineId;
+    if (status) params.status = status;
+    const res = await api.get<SyncLogsResponse>('/mobile/sync/logs', { params });
+    return res.data;
+  },
+
+  getWorkQueue: async (mineId?: number): Promise<any> => {
+    const res = await api.get('/mobile/work-queue', { params: mineId ? { mine_id: mineId } : {} });
+    return res.data;
+  },
+
+  updateTaskStatus: async (taskId: number, payloadOrStatus: string | { status: string; resolution_notes?: string; comment?: string }, notes?: string, comment?: string): Promise<any> => {
+    let payload: { status: string; resolution_notes?: string; comment?: string };
+    if (typeof payloadOrStatus === 'string') {
+      payload = { status: payloadOrStatus, resolution_notes: notes, comment };
+    } else {
+      payload = payloadOrStatus;
+    }
+    const res = await api.patch(`/mobile/tasks/${taskId}/status`, payload);
+    return res.data;
+  },
+
+  getShiftContext: async (mineId: number): Promise<any> => {
+    const res = await api.get('/mobile/shift-context', { params: { mine_id: mineId } });
+    return res.data;
+  },
+
+  getNotifications: async (mineId?: number, status?: string, category?: string): Promise<NotificationListResponse> => {
+    const params: any = {};
+    if (mineId) params.mine_id = mineId;
+    if (status) params.status = status;
+    if (category) params.category = category;
+    const res = await api.get<NotificationListResponse>('/mobile/notifications', { params });
+    return res.data;
+  },
+
+  getUnreadCounts: async (mineId?: number): Promise<NotificationUnreadCounts> => {
+    const params: any = {};
+    if (mineId) params.mine_id = mineId;
+    const res = await api.get<NotificationUnreadCounts>('/mobile/notifications/unread-count', { params });
+    return res.data;
+  },
+
+  markNotificationRead: async (notificationId: string): Promise<any> => {
+    const res = await api.patch(`/mobile/notifications/${notificationId}/read`);
+    return res.data;
+  },
+
+  markAllNotificationsRead: async (mineId?: number): Promise<any> => {
+    const params: any = {};
+    if (mineId) params.mine_id = mineId;
+    const res = await api.post('/mobile/notifications/mark-all-read', null, { params });
+    return res.data;
+  },
+
+  getWorkforce: async (params?: { mine_id?: number; shift_code?: string; trade?: string; search?: string; status?: string }): Promise<any> => {
+    const res = await api.get('/mobile/workforce', { params });
+    return res.data;
+  },
+
+  recordAttendance: async (payload: { worker_id: number; mine_id: number; shift_code?: string; status?: string; notes?: string; device_latitude?: number; device_longitude?: number }): Promise<any> => {
+    const res = await api.post('/mobile/workforce/attendance', payload);
+    return res.data;
+  },
+
+  correctAttendance: async (payload: { attendance_id: number; mine_id: number; new_status: string; correction_reason: string }): Promise<any> => {
+    const res = await api.post('/mobile/workforce/attendance/correct', payload);
+    return res.data;
+  },
+
+  getShiftHandoverSummary: async (mineId?: number): Promise<any> => {
+    const res = await api.get('/mobile/workforce/handover', { params: mineId ? { mine_id: mineId } : {} });
+    return res.data;
+  },
+
+  createShiftHandover: async (payload: { mine_id: number; from_shift_code: string; to_shift_code: string; summary_notes: string; safety_summary?: string }): Promise<any> => {
+    const res = await api.post('/mobile/workforce/handover', payload);
+    return res.data;
+  },
+
+  acknowledgeShiftHandover: async (handoverId: number, payload: { acknowledgment_notes?: string }): Promise<any> => {
+    const res = await api.post(`/mobile/workforce/handover/${handoverId}/acknowledge`, payload);
+    return res.data;
+  },
+
+  getFieldReportingSummary: async (mineId?: number): Promise<any> => {
+    const params: any = {};
+    if (mineId) params.mine_id = mineId;
+    const res = await api.get('/mobile/reporting/summary', { params });
+    return res.data;
+  },
+
+  getProductionReports: async (mineId?: number): Promise<any> => {
+    const params: any = {};
+    if (mineId) params.mine_id = mineId;
+    const res = await api.get('/mobile/reporting/production', { params });
+    return res.data;
+  },
+
+  recordProductionReport: async (payload: any): Promise<any> => {
+    const res = await api.post('/mobile/reporting/production', payload);
+    return res.data;
+  },
+
+  getEnvironmentalData: async (mineId?: number): Promise<any> => {
+    const params: any = {};
+    if (mineId) params.mine_id = mineId;
+    const res = await api.get('/mobile/reporting/environment', { params });
+    return res.data;
+  },
+
+  recordEnvironmentalObservation: async (payload: any): Promise<any> => {
+    const res = await api.post('/mobile/reporting/environment', payload);
+    return res.data;
+  },
+
+  getComplianceData: async (mineId?: number): Promise<any> => {
+    const params: any = {};
+    if (mineId) params.mine_id = mineId;
+    const res = await api.get('/mobile/reporting/compliance', { params });
+    return res.data;
+  },
+
+  recordComplianceObservation: async (payload: any): Promise<any> => {
+    const res = await api.post('/mobile/reporting/compliance', payload);
+    return res.data;
+  },
+
+  getContractorsSummary: async (mineId?: number): Promise<any> => {
+    const params: any = {};
+    if (mineId) params.mine_id = mineId;
+    const res = await api.get('/mobile/contractors/summary', { params });
+    return res.data;
+  },
+
+  getContractorsList: async (params?: { mine_id?: number; search?: string }): Promise<any> => {
+    const res = await api.get('/mobile/contractors', { params });
+    return res.data;
+  },
+
+  getContractDetail: async (contractId: number): Promise<any> => {
+    const res = await api.get(`/mobile/contractors/contracts/${contractId}`);
+    return res.data;
+  },
+
+  getContractRequirements: async (params?: { mine_id?: number; contract_id?: number; status_filter?: string }): Promise<any> => {
+    const res = await api.get('/mobile/contractors/requirements', { params });
+    return res.data;
+  },
+
+  verifyContractRequirement: async (payload: any): Promise<any> => {
+    const res = await api.post('/mobile/contractors/requirements/verify', payload);
+    return res.data;
+  },
+
+  // MOBILE-14: Grievance Field Operations
+  getGrievancesSummary: async (mineId?: number): Promise<any> => {
+    const params: any = {};
+    if (mineId) params.mine_id = mineId;
+    const res = await api.get('/mobile/grievances/summary', { params });
+    return res.data;
+  },
+
+  getGrievancesList: async (params?: {
+    mine_id?: number;
+    status?: string;
+    category?: string;
+    priority?: string;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<any> => {
+    const res = await api.get('/mobile/grievances', { params });
+    return res.data;
+  },
+
+  getGrievanceDetail: async (grievanceId: number): Promise<any> => {
+    const res = await api.get(`/mobile/grievances/${grievanceId}`);
+    return res.data;
+  },
+
+  createGrievance: async (payload: any): Promise<any> => {
+    const res = await api.post('/mobile/grievances', payload);
+    return res.data;
+  },
+
+  acknowledgeGrievance: async (grievanceId: number, payload?: any): Promise<any> => {
+    const res = await api.post(`/mobile/grievances/${grievanceId}/acknowledge`, payload || {});
+    return res.data;
+  },
+
+  assignGrievance: async (grievanceId: number, payload: any): Promise<any> => {
+    const res = await api.post(`/mobile/grievances/${grievanceId}/assign`, payload);
+    return res.data;
+  },
+
+  investigateGrievance: async (grievanceId: number, payload: any): Promise<any> => {
+    const res = await api.post(`/mobile/grievances/${grievanceId}/investigate`, payload);
+    return res.data;
+  },
+
+  resolveGrievance: async (grievanceId: number, payload: any): Promise<any> => {
+    const res = await api.post(`/mobile/grievances/${grievanceId}/resolve`, payload);
+    return res.data;
+  },
+
+  // MOBILE-15: Field Intelligence & Predictive Risk Actions
+  getRiskIntelligenceSummary: async (mineId: number): Promise<any> => {
+    const res = await api.get('/mobile/intelligence/summary', { params: { mine_id: mineId } });
+    return res.data;
+  },
+
+  getRiskIntelligenceList: async (params: {
+    mine_id: number;
+    status?: string;
+    severity?: string;
+    limit?: number;
+  }): Promise<any> => {
+    const res = await api.get('/mobile/intelligence/risks', { params });
+    return res.data;
+  },
+
+  getRiskIntelligenceDetail: async (predictionId: number): Promise<any> => {
+    const res = await api.get(`/mobile/intelligence/risks/${predictionId}`);
+    return res.data;
+  },
+
+  verifyRiskPrediction: async (predictionId: number, payload: any): Promise<any> => {
+    const res = await api.post(`/mobile/intelligence/risks/${predictionId}/verify`, payload);
+    return res.data;
+  },
+
+  // MOBILE-16: Cross-Domain Field Command & Integration
+  getFieldCommandSummary: async (mineId: number, latitude?: number, longitude?: number): Promise<any> => {
+    const params: Record<string, any> = { mine_id: mineId };
+    if (latitude !== undefined) params.latitude = latitude;
+    if (longitude !== undefined) params.longitude = longitude;
+    const res = await api.get('/mobile/command/summary', { params });
+    return res.data;
+  },
+
+  getUnifiedResourceTimeline: async (resourceType: string, resourceId: string, mineId: number): Promise<any> => {
+    const res = await api.get(`/mobile/command/timeline/${resourceType}/${resourceId}`, { params: { mine_id: mineId } });
+    return res.data;
+  },
+
+  getCrossDomainRelatedRecords: async (resourceType: string, resourceId: string, mineId: number): Promise<any> => {
+    const res = await api.get(`/mobile/command/related/${resourceType}/${resourceId}`, { params: { mine_id: mineId } });
     return res.data;
   }
+};
+
+export const notificationService = {
+  getNotifications: mobileService.getNotifications,
+  getUnreadCounts: mobileService.getUnreadCounts,
+  markNotificationRead: mobileService.markNotificationRead,
+  markAllNotificationsRead: mobileService.markAllNotificationsRead
 };
 
 export const mobileApi = mobileService;
@@ -675,7 +937,14 @@ export type {
   GisOperationalFeatureDTO,
   SpatialContextDTO,
   GisSearchResponseDTO,
-  GisSearchItemDTO
+  GisSearchItemDTO,
+  GovernanceTask,
+  WorkQueueResponse,
+  WorkQueueCounts,
+  ShiftContextResponse,
+  OperationalNotification,
+  NotificationUnreadCounts,
+  NotificationListResponse
 } from '../types';
 
 

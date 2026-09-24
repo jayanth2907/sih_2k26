@@ -63,3 +63,30 @@ class AttendanceRecord(Base):
     mine = relationship("Mine")
     shift = relationship("Shift", back_populates="attendance_records")
     marked_by = relationship("User")
+
+
+class ShiftHandover(Base):
+    __tablename__ = "shift_handovers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    handover_code = Column(String(50), unique=True, index=True, nullable=False)
+    mine_id = Column(Integer, ForeignKey("mines.id", ondelete="CASCADE"), nullable=False, index=True)
+    from_shift_code = Column(String(20), nullable=False) # A, B, C
+    to_shift_code = Column(String(20), nullable=False)   # B, C, A
+    outgoing_officer_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    incoming_officer_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    
+    status = Column(String(50), default="SUBMITTED", nullable=False) # DRAFT, SUBMITTED, ACKNOWLEDGED
+    summary_notes = Column(Text, nullable=True)
+    safety_summary = Column(Text, nullable=True)
+    open_items_count = Column(Integer, default=0, nullable=False)
+    
+    acknowledged_at = Column(DateTime, nullable=True)
+    acknowledgment_notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+
+    mine = relationship("Mine")
+    outgoing_officer = relationship("User", foreign_keys=[outgoing_officer_id])
+    incoming_officer = relationship("User", foreign_keys=[incoming_officer_id])
+

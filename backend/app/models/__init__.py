@@ -14,7 +14,7 @@ from app.models.document import Document, DocumentPage, ExtractedDocumentField
 from app.models.audit import AuditEvent
 from app.models.notification import Notification
 from app.models.production import ProductionReport
-from app.models.workforce import Worker, Shift, AttendanceRecord
+from app.models.workforce import Worker, Shift, AttendanceRecord, ShiftHandover
 from app.models.contractor import Contractor, Contract, ContractRequirement
 from app.models.environmental import EnvironmentalRule, EnvironmentalObservation
 from app.models.grievance import Grievance
@@ -83,6 +83,7 @@ __all__ = [
     "Worker",
     "Shift",
     "AttendanceRecord",
+    "ShiftHandover",
     "Contractor",
     "Contract",
     "ContractRequirement",

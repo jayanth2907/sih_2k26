@@ -33,9 +33,32 @@ class RiskPrediction(Base):
     
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
+    # Field Verification & Operational Tracking (MOBILE-15)
+    field_verified = Column(Boolean, default=False, nullable=False, index=True)
+    field_outcome = Column(String(50), nullable=True) # NO_ISSUE_OBSERVED, ISSUE_FOUND, REQUIRES_FURTHER_REVIEW
+    field_notes = Column(Text, nullable=True)
+    verified_by_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    verified_at = Column(DateTime, nullable=True)
+    
+    # Downstream Linkages
+    related_task_id = Column(Integer, ForeignKey("governance_tasks.id", ondelete="SET NULL"), nullable=True, index=True)
+    related_incident_id = Column(Integer, ForeignKey("incidents.id", ondelete="SET NULL"), nullable=True, index=True)
+    
+    # Evidence & GPS Context
+    evidence_url = Column(String(255), nullable=True)
+    evidence_file_name = Column(String(255), nullable=True)
+    evidence_file_hash = Column(String(64), nullable=True)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    location_context = Column(String(255), nullable=True)
+
     mine = relationship("Mine")
     zone = relationship("MineZone")
     level = relationship("MineLevel")
+    verified_by = relationship("User", foreign_keys=[verified_by_id])
+    related_task = relationship("GovernanceTask", foreign_keys=[related_task_id])
+    related_incident = relationship("Incident", foreign_keys=[related_incident_id])
 
 Index("idx_risk_pred_mine_time", RiskPrediction.mine_id, RiskPrediction.prediction_timestamp)
 Index("idx_risk_pred_zone_time", RiskPrediction.zone_id, RiskPrediction.prediction_timestamp)
+Index("idx_risk_pred_verified", RiskPrediction.mine_id, RiskPrediction.field_verified)

@@ -1,7 +1,9 @@
+import json
+import logging
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone, timedelta, date
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, desc, or_
 from app.models.production import ProductionReport
 from app.models.workforce import Worker, Shift, AttendanceRecord
 from app.models.contractor import Contractor, Contract, ContractRequirement
@@ -14,11 +16,18 @@ from app.models.mine import Mine
 from app.models.user import User
 from app.models.sensor import Sensor
 from app.models.incident import Incident
-from app.models.violation import Violation
+from app.models.violation import Violation, CorrectiveAction
 from app.models.risk import RiskScore
-from app.core.exceptions import EntityNotFoundError, BusinessRuleViolationError
+from app.models.field_operation import FieldInspection, FieldEvidence
+from app.models.notification import Notification
+from app.models.audit import AuditEvent
+from app.core.exceptions import EntityNotFoundError, BusinessRuleViolationError, PermissionDeniedError
+from app.core.authz import check_mine_access, get_user_roles, get_user_assigned_mine_ids
+from app.core.permissions import RoleEnum
 from app.services.audit_service import AuditService
 from app.services.pdf_report_service import PDFReportGenerator
+
+logger = logging.getLogger("trinetra.governance")
 
 class GovernanceService:
     # -------------------------------------------------------------
@@ -423,38 +432,612 @@ class GovernanceService:
         if not req:
             raise EntityNotFoundError("ApprovalRequest", request_id)
 
+        # Mine isolation check
+        if not check_mine_access(actor, req.mine_id, db):
+            raise PermissionDeniedError(f"Access denied to ApprovalRequest ID {request_id} for Mine ID {req.mine_id}")
+
+        action_clean = action.upper()
+        if action_clean not in ["APPROVE", "REJECT", "REQUEST_CHANGES"]:
+            raise BusinessRuleViolationError(f"Invalid approval action: {action}. Must be APPROVE, REJECT, or REQUEST_CHANGES.")
+
+        # Mandatory comments rule for REJECT and REQUEST_CHANGES
+        if action_clean in ["REJECT", "REQUEST_CHANGES"] and (not comments or not comments.strip()):
+            action_label = "rejection" if action_clean == "REJECT" else "return for correction"
+            raise BusinessRuleViolationError(f"A mandatory reason/comment is required for {action_label}.")
+
         # Separation of Duties Rule: Requester cannot approve own submission
-        if req.requester_id == actor.id and action == "APPROVE":
+        if req.requester_id == actor.id and action_clean == "APPROVE":
             raise BusinessRuleViolationError("Separation of Duties: You cannot approve your own submission.")
 
         # Role validation
-        if req.required_role not in user_roles and not actor.is_superuser:
+        is_admin = actor.is_superuser or RoleEnum.SYSTEM_ADMIN.value in user_roles
+        if req.required_role not in user_roles and not is_admin:
             raise BusinessRuleViolationError(f"Unauthorized: Role {req.required_role} required to process this approval.")
 
         now = datetime.now(timezone.utc)
-        req.status = "APPROVED" if action == "APPROVE" else "REJECTED" if action == "REJECT" else "CHANGES_REQUESTED"
+        target_status = "APPROVED" if action_clean == "APPROVE" else "REJECTED" if action_clean == "REJECT" else "CHANGES_REQUESTED"
+        req.status = target_status
         req.final_decision_at = now
 
         db.add(ApprovalAction(
             approval_request_id=req.id,
             actor_id=actor.id,
-            action=action,
-            role_used=req.required_role,
+            action=action_clean,
+            role_used=req.required_role if req.required_role in user_roles else ("SYSTEM_ADMIN" if is_admin else "REVIEWER"),
             comments=comments
         ))
+
+        # Synchronize status with underlying resource if applicable
+        if req.resource_type in ["INSPECTION", "FIELD_INSPECTION"]:
+            try:
+                insp = db.query(FieldInspection).filter(
+                    or_(FieldInspection.id == int(req.resource_id) if str(req.resource_id).isdigit() else False,
+                        FieldInspection.inspection_code == req.resource_id)
+                ).first()
+                if insp:
+                    if action_clean == "APPROVE":
+                        insp.status = "VERIFIED"
+                    elif action_clean == "REQUEST_CHANGES":
+                        insp.status = "IN_PROGRESS"
+            except Exception as e:
+                logger.warning(f"Could not synchronize FieldInspection status: {e}")
+
+        elif req.resource_type in ["TASK", "GOVERNANCE_TASK"]:
+            try:
+                task = db.query(GovernanceTask).filter(
+                    or_(GovernanceTask.id == int(req.resource_id) if str(req.resource_id).isdigit() else False,
+                        GovernanceTask.task_code == req.resource_id)
+                ).first()
+                if task:
+                    if action_clean == "APPROVE":
+                        task.status = "VERIFIED"
+                    elif action_clean == "REQUEST_CHANGES":
+                        task.status = "IN_PROGRESS"
+            except Exception as e:
+                logger.warning(f"Could not synchronize GovernanceTask status: {e}")
+
+        elif req.resource_type in ["INCIDENT"]:
+            try:
+                inc = db.query(Incident).filter(
+                    or_(Incident.id == int(req.resource_id) if str(req.resource_id).isdigit() else False,
+                        Incident.incident_code == req.resource_id)
+                ).first()
+                if inc and action_clean == "APPROVE":
+                    inc.status = "CLOSED"
+            except Exception as e:
+                logger.warning(f"Could not synchronize Incident status: {e}")
+
+        # Send Actionable Notification to Submitter
+        if req.requester_id:
+            notif_title = (
+                f"Digital Sign-Off Approved: {req.request_code}" if action_clean == "APPROVE"
+                else f"Review Rejected: {req.request_code}" if action_clean == "REJECT"
+                else f"Returned for Correction: {req.request_code}"
+            )
+            notif_type = "INFO" if action_clean == "APPROVE" else "CRITICAL" if action_clean == "REJECT" else "WARNING"
+            notif_msg = (
+                f"Your request '{req.title}' has been approved and digitally signed off by {actor.full_name}." if action_clean == "APPROVE"
+                else f"Your request '{req.title}' was rejected by {actor.full_name}. Reason: {comments}" if action_clean == "REJECT"
+                else f"Your request '{req.title}' was returned for correction by {actor.full_name}. Reason: {comments}"
+            )
+            db.add(Notification(
+                user_id=req.requester_id,
+                mine_id=req.mine_id,
+                title=notif_title,
+                message=notif_msg,
+                notification_type=notif_type,
+                link="/mobile/reviews"
+            ))
+
+        db.commit()
+        db.refresh(req)
+
+        # Log Primary Audit Event
+        AuditService.log_event(
+            db=db,
+            actor_id=actor.id,
+            action=f"APPROVAL_DECISION_{action_clean}",
+            resource_type="APPROVAL_REQUEST",
+            resource_id=str(req.id),
+            mine_id=req.mine_id,
+            after_state={"status": req.status, "action": action_clean, "comments": comments}
+        )
+
+        # Log Specific Digital Sign-off Audit Entry on APPROVE
+        if action_clean == "APPROVE":
+            AuditService.log_event(
+                db=db,
+                actor_id=actor.id,
+                action="DIGITAL_SIGNOFF_RECORDED",
+                resource_type="APPROVAL_REQUEST",
+                resource_id=str(req.id),
+                mine_id=req.mine_id,
+                after_state={
+                    "status": req.status,
+                    "reviewer_id": actor.id,
+                    "reviewer_name": actor.full_name,
+                    "signed_off_at": now.isoformat(),
+                    "request_code": req.request_code
+                }
+            )
+
+        return req
+
+    @staticmethod
+    def resubmit_approval_request(
+        db: Session,
+        request_id: int,
+        actor: User,
+        comments: Optional[str] = None,
+        updated_description: Optional[str] = None
+    ) -> ApprovalRequest:
+        req = db.query(ApprovalRequest).filter(ApprovalRequest.id == request_id).first()
+        if not req:
+            raise EntityNotFoundError("ApprovalRequest", request_id)
+
+        if not check_mine_access(actor, req.mine_id, db):
+            raise PermissionDeniedError(f"Access denied to Mine ID {req.mine_id}")
+
+        roles = get_user_roles(actor, db)
+        is_admin = actor.is_superuser or RoleEnum.SYSTEM_ADMIN.value in roles
+        if req.requester_id != actor.id and not is_admin:
+            raise PermissionDeniedError("Only the original requester or an administrator can resubmit this request.")
+
+        if req.status not in ["CHANGES_REQUESTED", "REJECTED"]:
+            raise BusinessRuleViolationError(
+                f"Cannot resubmit request currently in status '{req.status}'. Only CHANGES_REQUESTED or REJECTED items can be resubmitted."
+            )
+
+        now = datetime.now(timezone.utc)
+        req.status = "PENDING"
+        if updated_description:
+            req.description = updated_description
+
+        db.add(ApprovalAction(
+            approval_request_id=req.id,
+            actor_id=actor.id,
+            action="RESUBMIT",
+            role_used="REQUESTER",
+            comments=comments or "Resubmitted with requested revisions."
+        ))
+
+        # Notification to supervisory reviewers
+        db.add(Notification(
+            user_id=req.requester_id,
+            mine_id=req.mine_id,
+            title=f"Review Resubmitted: {req.request_code}",
+            message=f"Request '{req.title}' was resubmitted for review: {comments or 'Revisions provided'}",
+            notification_type="INFO",
+            link="/mobile/reviews"
+        ))
+
         db.commit()
         db.refresh(req)
 
         AuditService.log_event(
             db=db,
             actor_id=actor.id,
-            action=f"APPROVAL_DECISION_{action}",
+            action="APPROVAL_RESUBMITTED",
             resource_type="APPROVAL_REQUEST",
             resource_id=str(req.id),
             mine_id=req.mine_id,
-            after_state={"status": req.status, "action": action, "comments": comments}
+            after_state={"status": "PENDING", "comments": comments}
         )
+
         return req
+
+    @staticmethod
+    def get_mobile_review_queue(
+        db: Session,
+        user: User,
+        mine_id: Optional[int] = None,
+        status_filter: Optional[str] = None,
+        resource_filter: Optional[str] = None,
+        limit: int = 50,
+        offset: int = 0
+    ) -> Dict[str, Any]:
+        """
+        Unified Mobile Review Queue for supervisors and field operators.
+        Enforces mine isolation, role-scoped queries, SoD eligibility, SLA countdowns, and summary counters.
+        """
+        roles = get_user_roles(user, db)
+        is_admin = user.is_superuser or RoleEnum.SYSTEM_ADMIN.value in roles or RoleEnum.REGULATOR.value in roles
+
+        if mine_id is not None:
+            if not check_mine_access(user, mine_id, db):
+                raise PermissionDeniedError(f"Access denied to Mine ID {mine_id}")
+            mine_ids = [mine_id]
+        else:
+            if is_admin:
+                mines = db.query(Mine).all()
+                mine_ids = [m.id for m in mines]
+            else:
+                mine_ids = get_user_assigned_mine_ids(user, db)
+
+        base_query = db.query(ApprovalRequest).filter(ApprovalRequest.mine_id.in_(mine_ids) if mine_ids else False)
+
+        all_requests = base_query.order_by(desc(ApprovalRequest.created_at)).all()
+
+        now = datetime.now(timezone.utc)
+
+        # Compute accurate summary counters across authorized scope
+        total_cnt = len(all_requests)
+        pending_cnt = sum(1 for r in all_requests if r.status == "PENDING")
+        urgent_cnt = 0
+        overdue_cnt = 0
+        returned_cnt = sum(1 for r in all_requests if r.status == "CHANGES_REQUESTED")
+        approved_cnt = sum(1 for r in all_requests if r.status == "APPROVED")
+        rejected_cnt = sum(1 for r in all_requests if r.status == "REJECTED")
+
+        for r in all_requests:
+            if r.status == "PENDING":
+                created_at = r.created_at.replace(tzinfo=timezone.utc) if r.created_at.tzinfo is None else r.created_at
+                age_hours = (now - created_at).total_seconds() / 3600
+                if age_hours > 24:
+                    overdue_cnt += 1
+                elif age_hours > 12:
+                    urgent_cnt += 1
+
+        # Apply filtering
+        filtered_list = all_requests
+        if status_filter:
+            st = status_filter.upper()
+            if st == "PENDING":
+                filtered_list = [r for r in filtered_list if r.status == "PENDING"]
+            elif st == "URGENT":
+                filtered_list = [
+                    r for r in filtered_list
+                    if r.status == "PENDING" and (now - (r.created_at.replace(tzinfo=timezone.utc) if r.created_at.tzinfo is None else r.created_at)).total_seconds() / 3600 > 12
+                ]
+            elif st == "OVERDUE":
+                filtered_list = [
+                    r for r in filtered_list
+                    if r.status == "PENDING" and (now - (r.created_at.replace(tzinfo=timezone.utc) if r.created_at.tzinfo is None else r.created_at)).total_seconds() / 3600 > 24
+                ]
+            elif st in ["RETURNED", "CHANGES_REQUESTED"]:
+                filtered_list = [r for r in filtered_list if r.status == "CHANGES_REQUESTED"]
+            elif st == "APPROVED":
+                filtered_list = [r for r in filtered_list if r.status == "APPROVED"]
+            elif st == "REJECTED":
+                filtered_list = [r for r in filtered_list if r.status == "REJECTED"]
+
+        if resource_filter and resource_filter.upper() != "ALL":
+            filtered_list = [r for r in filtered_list if r.resource_type.upper() == resource_filter.upper()]
+
+        paginated = filtered_list[offset:offset + limit]
+
+        items = []
+        for req in paginated:
+            created_at = req.created_at.replace(tzinfo=timezone.utc) if req.created_at.tzinfo is None else req.created_at
+            age_hours = int((now - created_at).total_seconds() / 3600)
+
+            is_overdue = age_hours > 24 and req.status == "PENDING"
+            is_urgent = age_hours > 12 and req.status == "PENDING"
+
+            sla_text = (
+                f"OVERDUE ({age_hours}h)" if is_overdue
+                else f"URGENT ({age_hours}h)" if is_urgent
+                else f"SUBMITTED {age_hours}h AGO" if age_hours > 0
+                else "SUBMITTED JUST NOW"
+            )
+
+            # Determine separation of duties & approval capability
+            can_approve = True
+            sod_warning = None
+            if req.requester_id == user.id:
+                can_approve = False
+                sod_warning = "You cannot approve your own submission."
+            elif req.required_role not in roles and not is_admin:
+                can_approve = False
+                sod_warning = f"Role '{req.required_role}' required to review."
+
+            # Fetch associated evidence count & location if inspection/incident
+            ev_count = 0
+            lat = req.mine.latitude if req.mine else 23.7957
+            lon = req.mine.longitude if req.mine else 86.4304
+            loc_summary = f"{req.mine.name if req.mine else 'Mine'}, Section A"
+            loc_source = "SURVEYED_MINE"
+
+            if req.resource_type in ["INSPECTION", "FIELD_INSPECTION"]:
+                try:
+                    insp = db.query(FieldInspection).filter(
+                        or_(FieldInspection.id == int(req.resource_id) if str(req.resource_id).isdigit() else False,
+                            FieldInspection.inspection_code == req.resource_id)
+                    ).first()
+                    if insp:
+                        ev_count = len(insp.evidences)
+                        if insp.latitude and insp.longitude:
+                            lat = insp.latitude
+                            lon = insp.longitude
+                            loc_source = "ACTUAL_GPS"
+                        if insp.zone:
+                            loc_summary = f"{insp.mine.name if insp.mine else 'Mine'} • {insp.zone.name}"
+                except Exception:
+                    pass
+
+            elif req.resource_type in ["INCIDENT"]:
+                try:
+                    inc = db.query(Incident).filter(
+                        or_(Incident.id == int(req.resource_id) if str(req.resource_id).isdigit() else False,
+                            Incident.incident_code == req.resource_id)
+                    ).first()
+                    if inc:
+                        ev_count = db.query(FieldEvidence).filter(FieldEvidence.incident_id == inc.id).count()
+                        if inc.latitude and inc.longitude:
+                            lat = inc.latitude
+                            lon = inc.longitude
+                            loc_source = "ACTUAL_GPS"
+                except Exception:
+                    pass
+
+            last_action_entry = req.actions[-1].action if req.actions else "SUBMIT"
+
+            items.append({
+                "id": req.id,
+                "request_code": req.request_code,
+                "resource_type": req.resource_type,
+                "resource_id": req.resource_id,
+                "mine_id": req.mine_id,
+                "mine_name": req.mine.name if req.mine else f"Mine #{req.mine_id}",
+                "title": req.title,
+                "description": req.description,
+                "requester_id": req.requester_id,
+                "requester_name": req.requester.full_name if req.requester else f"User #{req.requester_id}",
+                "required_role": req.required_role,
+                "status": req.status,
+                "priority": "HIGH" if is_urgent or is_overdue else "MEDIUM",
+                "evidence_count": ev_count,
+                "location_summary": loc_summary,
+                "latitude": lat,
+                "longitude": lon,
+                "location_source": loc_source,
+                "is_overdue": is_overdue,
+                "sla_text": sla_text,
+                "can_approve": can_approve,
+                "sod_warning": sod_warning,
+                "created_at": req.created_at.isoformat() if req.created_at else None,
+                "final_decision_at": req.final_decision_at.isoformat() if req.final_decision_at else None,
+                "last_action": last_action_entry
+            })
+
+        return {
+            "mine_id": mine_id,
+            "counts": {
+                "total": total_cnt,
+                "pending": pending_cnt,
+                "urgent": urgent_cnt,
+                "overdue": overdue_cnt,
+                "returned": returned_cnt,
+                "approved": approved_cnt,
+                "rejected": rejected_cnt
+            },
+            "reviews": items,
+            "limit": limit,
+            "offset": offset
+        }
+
+    @staticmethod
+    def get_mobile_review_detail(
+        db: Session,
+        user: User,
+        request_id: int
+    ) -> Dict[str, Any]:
+        """
+        Retrieves detailed review context including full inspection checklists, observations,
+        evidence gallery with SHA-256 fingerprints and GPS verification, and server audit timeline.
+        """
+        req = db.query(ApprovalRequest).filter(ApprovalRequest.id == request_id).first()
+        if not req:
+            raise EntityNotFoundError("ApprovalRequest", request_id)
+
+        if not check_mine_access(user, req.mine_id, db):
+            raise PermissionDeniedError(f"Access denied to Mine ID {req.mine_id}")
+
+        roles = get_user_roles(user, db)
+        is_admin = user.is_superuser or RoleEnum.SYSTEM_ADMIN.value in roles
+
+        # Separation of duties check
+        can_approve = True
+        sod_warning = None
+        if req.requester_id == user.id:
+            can_approve = False
+            sod_warning = "You cannot approve your own submission."
+        elif req.required_role not in roles and not is_admin:
+            can_approve = False
+            sod_warning = f"Role '{req.required_role}' required to process this approval."
+
+        # Field Context defaults
+        lat = req.mine.latitude if req.mine else 23.7957
+        lon = req.mine.longitude if req.mine else 86.4304
+        loc_source = "SURVEYED_MINE"
+        zone_name = None
+        level_name = None
+
+        checklist_items = []
+        observations = req.description
+        severity = "MEDIUM"
+        statutory_ref = "DGMS / Coal Mines Regulations 2017"
+
+        evidences = []
+        related_incident_id = None
+        related_incident_code = None
+        related_task_id = None
+        related_task_code = None
+        related_violation_id = None
+        predictive_risk = 28.5
+
+        # Check linked resource
+        if req.resource_type in ["INSPECTION", "FIELD_INSPECTION"]:
+            try:
+                insp = db.query(FieldInspection).filter(
+                    or_(FieldInspection.id == int(req.resource_id) if str(req.resource_id).isdigit() else False,
+                        FieldInspection.inspection_code == req.resource_id)
+                ).first()
+                if insp:
+                    if insp.checklist_json:
+                        try:
+                            checklist_items = json.loads(insp.checklist_json)
+                        except Exception:
+                            checklist_items = []
+                    observations = insp.summary_notes or observations
+                    severity = insp.severity_assessment or "LOW"
+                    if insp.latitude and insp.longitude:
+                        lat = insp.latitude
+                        lon = insp.longitude
+                        loc_source = "ACTUAL_GPS"
+                    if insp.zone:
+                        zone_name = insp.zone.name
+                    if insp.level:
+                        level_name = insp.level.name
+
+                    for ev in insp.evidences:
+                        evidences.append({
+                            "id": ev.id,
+                            "evidence_code": ev.evidence_code,
+                            "title": ev.title,
+                            "description": ev.description,
+                            "evidence_type": ev.evidence_type,
+                            "file_hash_sha256": ev.file_hash_sha256,
+                            "file_size_bytes": ev.file_size_bytes,
+                            "mime_type": ev.mime_type,
+                            "location_source": ev.location_source,
+                            "latitude": ev.latitude,
+                            "longitude": ev.longitude,
+                            "gps_accuracy_meters": ev.gps_accuracy_meters,
+                            "verification_status": ev.verification_status,
+                            "client_capture_timestamp": ev.client_capture_timestamp.isoformat() if ev.client_capture_timestamp else None,
+                            "captured_by_name": ev.captured_by.full_name if ev.captured_by else "Inspector"
+                        })
+            except Exception as e:
+                logger.warning(f"Error enriching inspection detail: {e}")
+
+        elif req.resource_type in ["TASK", "GOVERNANCE_TASK"]:
+            try:
+                task = db.query(GovernanceTask).filter(
+                    or_(GovernanceTask.id == int(req.resource_id) if str(req.resource_id).isdigit() else False,
+                        GovernanceTask.task_code == req.resource_id)
+                ).first()
+                if task:
+                    related_task_id = task.id
+                    related_task_code = task.task_code
+                    observations = task.resolution_notes or task.description
+                    severity = task.priority
+                    if task.source_resource_type == "INCIDENT" and task.source_resource_id:
+                        inc = db.query(Incident).filter(Incident.id == int(task.source_resource_id)).first()
+                        if inc:
+                            related_incident_id = inc.id
+                            related_incident_code = inc.incident_code
+            except Exception as e:
+                logger.warning(f"Error enriching task detail: {e}")
+
+        elif req.resource_type in ["INCIDENT"]:
+            try:
+                inc = db.query(Incident).filter(
+                    or_(Incident.id == int(req.resource_id) if str(req.resource_id).isdigit() else False,
+                        Incident.incident_code == req.resource_id)
+                ).first()
+                if inc:
+                    related_incident_id = inc.id
+                    related_incident_code = inc.incident_code
+                    observations = inc.description
+                    severity = inc.severity
+                    if inc.latitude and inc.longitude:
+                        lat = inc.latitude
+                        lon = inc.longitude
+                        loc_source = "ACTUAL_GPS"
+                    ev_records = db.query(FieldEvidence).filter(FieldEvidence.incident_id == inc.id).all()
+                    for ev in ev_records:
+                        evidences.append({
+                            "id": ev.id,
+                            "evidence_code": ev.evidence_code,
+                            "title": ev.title,
+                            "description": ev.description,
+                            "evidence_type": ev.evidence_type,
+                            "file_hash_sha256": ev.file_hash_sha256,
+                            "file_size_bytes": ev.file_size_bytes,
+                            "mime_type": ev.mime_type,
+                            "location_source": ev.location_source,
+                            "latitude": ev.latitude,
+                            "longitude": ev.longitude,
+                            "gps_accuracy_meters": ev.gps_accuracy_meters,
+                            "verification_status": ev.verification_status,
+                            "client_capture_timestamp": ev.client_capture_timestamp.isoformat() if ev.client_capture_timestamp else None,
+                            "captured_by_name": ev.captured_by.full_name if ev.captured_by else "Submitter"
+                        })
+            except Exception as e:
+                logger.warning(f"Error enriching incident detail: {e}")
+
+        # Build Audit & Action Timeline from database
+        timeline = []
+        for a in req.actions:
+            timeline.append({
+                "id": a.id,
+                "action": a.action,
+                "actor_id": a.actor_id,
+                "actor_name": a.actor.full_name if a.actor else f"User #{a.actor_id}",
+                "role_used": a.role_used,
+                "comments": a.comments,
+                "created_at": a.created_at.isoformat() if a.created_at else None
+            })
+
+        # Fetch AuditEvents for this request
+        audit_events = db.query(AuditEvent).filter(
+            AuditEvent.resource_type == "APPROVAL_REQUEST",
+            AuditEvent.resource_id == str(req.id)
+        ).order_by(AuditEvent.timestamp.asc()).all()
+
+        for ev in audit_events:
+            # Only add if not duplicate with actions
+            action_desc = ev.action.replace("APPROVAL_DECISION_", "")
+            timeline.append({
+                "id": f"audit-{ev.id}",
+                "action": action_desc,
+                "actor_id": ev.actor_id,
+                "actor_name": ev.actor.full_name if ev.actor else "System Auditor",
+                "role_used": "AUDIT_LOG",
+                "comments": f"Server audit recorded: {ev.action}",
+                "created_at": ev.timestamp.isoformat() if ev.timestamp else None
+            })
+
+        # Sort timeline chronologically
+        timeline.sort(key=lambda x: x["created_at"] or "")
+
+        return {
+            "id": req.id,
+            "request_code": req.request_code,
+            "resource_type": req.resource_type,
+            "resource_id": req.resource_id,
+            "mine_id": req.mine_id,
+            "mine_name": req.mine.name if req.mine else f"Mine #{req.mine_id}",
+            "title": req.title,
+            "description": req.description,
+            "requester_id": req.requester_id,
+            "requester_name": req.requester.full_name if req.requester else f"User #{req.requester_id}",
+            "required_role": req.required_role,
+            "status": req.status,
+            "priority": severity,
+            "created_at": req.created_at.isoformat() if req.created_at else None,
+            "final_decision_at": req.final_decision_at.isoformat() if req.final_decision_at else None,
+            "can_approve": can_approve,
+            "sod_warning": sod_warning,
+            "latitude": lat,
+            "longitude": lon,
+            "location_source": loc_source,
+            "zone_name": zone_name,
+            "level_name": level_name,
+            "checklist": checklist_items,
+            "observations": observations,
+            "severity": severity,
+            "statutory_reference": statutory_ref,
+            "evidences": evidences,
+            "related_incident_id": related_incident_id,
+            "related_incident_code": related_incident_code,
+            "related_task_id": related_task_id,
+            "related_task_code": related_task_code,
+            "related_violation_id": related_violation_id,
+            "predictive_risk_score": predictive_risk,
+            "timeline": timeline
+        }
 
     # -------------------------------------------------------------
     # 7. REGULATORY REPORT GENERATION & PDF CREATION

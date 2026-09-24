@@ -702,7 +702,7 @@ def search_gis_objects(
                     id=f"search-incident-{inc.id}",
                     title=inc.title,
                     type="INCIDENT",
-                    category=inc.incident_type,
+                    category=getattr(inc, "category", "INCIDENT"),
                     latitude=inc.latitude or (m.latitude if m else None),
                     longitude=inc.longitude or (m.longitude if m else None),
                     mine_id=inc.mine_id,

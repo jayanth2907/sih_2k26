@@ -1,0 +1,19 @@
+{
+  "name": "TRINETRA FIELD — Observe. Verify. Record. Act.",
+  "short_name": "TRINETRA FIELD",
+  "description": "Standalone AI-Powered Field Intelligence, Inspection & Operational Governance System for Coal Mines",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#080A09",
+  "theme_color": "#0B0F19",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "48x48 72x72 96x96 128x128 192x192 256x256 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

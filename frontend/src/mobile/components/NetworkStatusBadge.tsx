@@ -13,6 +13,7 @@ interface NetworkStatusBadgeProps {
 export const NetworkStatusBadge: React.FC<NetworkStatusBadgeProps> = ({
   status: propStatus,
   pendingCount = 0,
+  onSyncRequest,
 }) => {
   const { t } = useLanguage();
   const [internalStatus, setInternalStatus] = useState<NetworkStatusType>(
@@ -134,12 +135,27 @@ export const NetworkStatusBadge: React.FC<NetworkStatusBadgeProps> = ({
               </div>
             </div>
 
-            <button
-              onClick={() => setShowDetails(false)}
-              className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-750 active:bg-slate-700 text-slate-200 text-xs font-semibold uppercase tracking-wider transition-all min-h-[44px]"
-            >
-              Close Diagnostics
-            </button>
+            <div className="space-y-2 pt-2">
+              <button
+                onClick={() => {
+                  setShowDetails(false);
+                  if (onSyncRequest) {
+                    onSyncRequest();
+                  } else {
+                    window.location.pathname = '/mobile/sync';
+                  }
+                }}
+                className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-slate-950 text-xs font-bold font-mono uppercase tracking-wider transition-all min-h-[44px]"
+              >
+                Open Sync Center
+              </button>
+              <button
+                onClick={() => setShowDetails(false)}
+                className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-750 active:bg-slate-700 text-slate-200 text-xs font-semibold uppercase tracking-wider transition-all min-h-[44px]"
+              >
+                Close Diagnostics
+              </button>
+            </div>
           </div>
         </div>
       )}

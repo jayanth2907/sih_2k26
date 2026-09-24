@@ -25,6 +25,27 @@ class Grievance(Base):
     is_escalated = Column(Boolean, default=False, nullable=False)
     escalation_level = Column(Integer, default=0, nullable=False)
     
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    location_source = Column(String(50), default="ACTUAL_GPS", nullable=True) # ACTUAL_GPS, SURVEYED_LOCATION
+    location_context = Column(String(255), nullable=True)
+    
+    evidence_url = Column(String(500), nullable=True)
+    evidence_file_name = Column(String(255), nullable=True)
+    evidence_file_hash = Column(String(64), nullable=True)
+    
+    investigation_notes = Column(Text, nullable=True)
+    investigated_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    investigated_at = Column(DateTime, nullable=True)
+    action_required = Column(Boolean, default=False, nullable=False)
+    
+    related_task_id = Column(Integer, ForeignKey("governance_tasks.id"), nullable=True)
+    related_incident_id = Column(Integer, ForeignKey("incidents.id"), nullable=True)
+    source_channel = Column(String(50), default="MOBILE_FIELD", nullable=False) # MOBILE_FIELD, CPGRAMS, WORKER_DESK, WRITTEN
+    
+    acknowledged_at = Column(DateTime, nullable=True)
+    acknowledged_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+
     resolution_notes = Column(Text, nullable=True)
     resolved_at = Column(DateTime, nullable=True)
     verified_at = Column(DateTime, nullable=True)
@@ -35,3 +56,7 @@ class Grievance(Base):
     mine = relationship("Mine")
     submitted_by = relationship("User", foreign_keys=[submitted_by_id])
     assigned_to = relationship("User", foreign_keys=[assigned_to_id])
+    investigated_by = relationship("User", foreign_keys=[investigated_by_id])
+    acknowledged_by = relationship("User", foreign_keys=[acknowledged_by_id])
+    related_task = relationship("GovernanceTask", foreign_keys=[related_task_id])
+    related_incident = relationship("Incident", foreign_keys=[related_incident_id])

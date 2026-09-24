@@ -41,3 +41,21 @@ htmlcov/
 
 # Scratch
 scratch/
+
+# TRINETRA FIELD local/generated files
+trinetra-field/node_modules/
+trinetra-field/dist/
+trinetra-field/.env
+trinetra-field/.env.local
+trinetra-field/.env.production
+TRINETRA-FIELD-v1.0.0-dist.zip
+TRINETRA-FIELD-v1.0.0-source.zip
+
+# TRINETRA FIELD local/generated files
+trinetra-field/node_modules/
+trinetra-field/dist/
+trinetra-field/.env
+trinetra-field/.env.local
+trinetra-field/.env.production
+TRINETRA-FIELD-v1.0.0-dist.zip
+TRINETRA-FIELD-v1.0.0-source.zip

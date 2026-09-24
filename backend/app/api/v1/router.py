@@ -21,6 +21,8 @@ from app.api.v1.documents import router as documents_router
 from app.api.v1.gis import router as gis_router
 from app.api.v1.analytics import router as analytics_router
 
+from app.api.v1.notifications import router as notifications_router
+
 api_v1_router = APIRouter()
 
 api_v1_router.include_router(health_router)
@@ -38,6 +40,7 @@ api_v1_router.include_router(risk_router)
 api_v1_router.include_router(predictive_risk_router)
 api_v1_router.include_router(copilot_router)
 api_v1_router.include_router(mobile_router)
+api_v1_router.include_router(notifications_router)
 api_v1_router.include_router(integrations_router)
 api_v1_router.include_router(demo_router)
 api_v1_router.include_router(alerts_router)

@@ -17,15 +17,24 @@ import {
   Check, 
   ChevronRight,
   Database,
-  Smartphone
+  Smartphone,
+  BookOpen,
+  Users,
+  Layers,
+  Briefcase,
+  MessageSquare,
+  Zap
 } from 'lucide-react';
 import clsx from 'clsx';
 
+import { MobileTab } from '../types/mobile';
+
 interface MobileMoreScreenProps {
   onSwitchToDesktop: () => void;
+  onNavigateTab?: (tab: MobileTab) => void;
 }
 
-export const MobileMoreScreen: React.FC<MobileMoreScreenProps> = ({ onSwitchToDesktop }) => {
+export const MobileMoreScreen: React.FC<MobileMoreScreenProps> = ({ onSwitchToDesktop, onNavigateTab }) => {
   const { user, logout } = useAuth();
   const { selectedMine } = useMineContext();
   const { language, setLanguage, t } = useLanguage();
@@ -93,6 +102,229 @@ export const MobileMoreScreen: React.FC<MobileMoreScreenProps> = ({ onSwitchToDe
           </div>
         </MobileCard>
       </div>
+
+      {/* Field Intelligence & Response */}
+      {onNavigateTab && (
+        <div className="space-y-2">
+          <span className="font-mono text-xs font-bold text-slate-400 uppercase tracking-wider px-1">
+            {t('fieldResponse')}
+          </span>
+          <MobileCard
+            interactive
+            onClick={() => onNavigateTab('incidents')}
+            className="p-4 flex items-center justify-between bg-gradient-to-r from-slate-900 to-red-950/20 border-red-500/20"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20">
+                <Activity className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-semibold text-xs text-slate-200">
+                  {t('incidentResponseWorkflow')}
+                </div>
+                <div className="text-[11px] text-slate-400 font-mono">
+                  {t('activeIncidents')} & {t('correctiveActions')}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 text-xs text-red-400 font-mono font-semibold">
+              <ChevronRight className="w-4 h-4" />
+            </div>
+          </MobileCard>
+
+          {/* Sync Center & Offline Resilience */}
+          <MobileCard
+            interactive
+            onClick={() => onNavigateTab('sync')}
+            className="p-4 flex items-center justify-between bg-gradient-to-r from-slate-900 to-amber-950/20 border-amber-500/20"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                <Database className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-semibold text-xs text-slate-200">
+                  {t('syncCenterTitle')}
+                </div>
+                <div className="text-[11px] text-slate-400 font-mono">
+                  {t('savedLocally')} • {t('queuedForSync')} • {t('lastSuccessfulServerSync')}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 text-xs text-amber-400 font-mono font-semibold">
+              <ChevronRight className="w-4 h-4" />
+            </div>
+          </MobileCard>
+
+          {/* Review & Digital Sign-Off Center (MOBILE-09) */}
+          <MobileCard
+            interactive
+            onClick={() => onNavigateTab('reviews')}
+            className="p-4 flex items-center justify-between bg-gradient-to-r from-slate-900 to-amber-950/20 border-amber-500/30"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-semibold text-xs text-slate-200">
+                  {t('reviewCenterTitle')}
+                </div>
+                <div className="text-[11px] text-slate-400 font-mono">
+                  {t('pendingReviewTab')} • {t('approveAndSignOffBtn')} • {t('auditTimelineTitle')}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 text-xs text-amber-400 font-mono font-semibold">
+              <ChevronRight className="w-4 h-4" />
+            </div>
+          </MobileCard>
+
+          {/* Field Documents & Statutory Records (MOBILE-10) */}
+          <MobileCard
+            interactive
+            onClick={() => onNavigateTab('documents')}
+            className="p-4 flex items-center justify-between bg-gradient-to-r from-slate-900 to-indigo-950/20 border-indigo-500/30"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-indigo-500/15 text-indigo-400 border border-indigo-500/30">
+                <BookOpen className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-semibold text-xs text-slate-200">
+                  {t('fieldDocuments')}
+                </div>
+                <div className="text-[11px] text-slate-400 font-mono">
+                  {t('statutoryTab')} • {t('mineOperationalTab')} • {t('ocrVerifiedTab')}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 text-xs text-indigo-400 font-mono font-semibold">
+              <ChevronRight className="w-4 h-4" />
+            </div>
+          </MobileCard>
+
+          {/* Workforce, Attendance & Shift Handover (MOBILE-11) */}
+          <MobileCard
+            interactive
+            onClick={() => onNavigateTab('workforce')}
+            className="p-4 flex items-center justify-between bg-gradient-to-r from-slate-900 to-indigo-950/20 border-indigo-500/30"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-indigo-500/15 text-indigo-400 border border-indigo-500/30">
+                <Users className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-semibold text-xs text-slate-200">
+                  {t('mobileWorkforceTitle')}
+                </div>
+                <div className="text-[11px] text-slate-400 font-mono">
+                  {t('rosterTab')} • {t('shiftHandoverTab')} • {t('currentShiftTitle')}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 text-xs text-indigo-400 font-mono font-semibold">
+              <ChevronRight className="w-4 h-4" />
+            </div>
+          </MobileCard>
+
+          {/* Field Reporting (MOBILE-12) */}
+          <MobileCard
+            interactive
+            onClick={() => onNavigateTab('reporting')}
+            className="p-4 flex items-center justify-between bg-gradient-to-r from-slate-900 to-amber-950/20 border-amber-500/30"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                <Layers className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-semibold text-xs text-slate-200">
+                  {t('fieldReportingTitle')}
+                </div>
+                <div className="text-[11px] text-slate-400 font-mono">
+                  {t('productionReportTab')} • {t('environmentObservationTab')} • {t('complianceObservationTab')}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 text-xs text-amber-400 font-mono font-semibold">
+              <ChevronRight className="w-4 h-4" />
+            </div>
+          </MobileCard>
+
+          {/* Contractor Field Operations & SLA Management (MOBILE-13) */}
+          <MobileCard
+            interactive
+            onClick={() => onNavigateTab('contractors')}
+            className="p-4 flex items-center justify-between bg-gradient-to-r from-slate-900 to-amber-950/20 border-amber-500/30"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                <Briefcase className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-semibold text-xs text-slate-200">
+                  {t('contractorsFieldTitle')}
+                </div>
+                <div className="text-[11px] text-slate-400 font-mono">
+                  {t('contractsTab')} • {t('requirementsTab')} • {t('contractorVerificationQueueTab')}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 text-xs text-amber-400 font-mono font-semibold">
+              <ChevronRight className="w-4 h-4" />
+            </div>
+          </MobileCard>
+
+          {/* Grievance & Worker Issue Field Operations (MOBILE-14) */}
+          <MobileCard
+            interactive
+            onClick={() => onNavigateTab('grievances')}
+            className="p-4 flex items-center justify-between bg-gradient-to-r from-slate-900 to-amber-950/20 border-amber-500/30"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                <MessageSquare className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-semibold text-xs text-slate-200">
+                  {t('grievancesFieldTitle')}
+                </div>
+                <div className="text-[11px] text-slate-400 font-mono">
+                  {t('allGrievancesTab')} • {t('investigationQueueTab')} • {t('logGrievanceBtn')}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 text-xs text-amber-400 font-mono font-semibold">
+              <ChevronRight className="w-4 h-4" />
+            </div>
+          </MobileCard>
+
+          {/* Field Risk Intelligence & Predictive Actions (MOBILE-15) */}
+          <MobileCard
+            interactive
+            onClick={() => onNavigateTab('intelligence')}
+            className="p-4 flex items-center justify-between bg-gradient-to-r from-slate-900 to-amber-950/20 border-amber-500/30"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                <Zap className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-semibold text-xs text-slate-200">
+                  {t('fieldIntelligenceTitle')}
+                </div>
+                <div className="text-[11px] text-slate-400 font-mono">
+                  {t('activeSignalsTab')} • {t('myVerificationsTab')} • {t('verifyInFieldBtn')}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 text-xs text-amber-400 font-mono font-semibold">
+              <ChevronRight className="w-4 h-4" />
+            </div>
+          </MobileCard>
+        </div>
+      )}
 
       {/* Multilingual Language Switcher */}
       <div className="space-y-2">

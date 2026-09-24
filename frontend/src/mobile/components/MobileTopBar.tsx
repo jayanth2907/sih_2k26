@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useMineContext } from '../../context/MineContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { NetworkStatusBadge } from './NetworkStatusBadge';
 import { MineSelectorModal } from './MineSelectorModal';
-import { ChevronDown, Shield, User as UserIcon } from 'lucide-react';
+import { ChevronDown, Shield, User as UserIcon, Bell } from 'lucide-react';
 import { MobileTab } from '../types/mobile';
+import { mobileApi } from '../../services';
 
 interface MobileTopBarProps {
   onNavigateTab: (tab: MobileTab) => void;
@@ -16,8 +17,30 @@ export const MobileTopBar: React.FC<MobileTopBarProps> = ({ onNavigateTab }) => 
   const { selectedMine } = useMineContext();
   const { t } = useLanguage();
   const [mineModalOpen, setMineModalOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
 
   const primaryRole = user?.roles?.[0]?.replace(/_/g, ' ') || 'FIELD OPERATOR';
+
+  // Periodically load unread notification count
+  useEffect(() => {
+    let isMounted = true;
+    const loadUnread = async () => {
+      try {
+        const counts = await mobileApi.getUnreadCounts(selectedMine?.id);
+        if (isMounted && counts && typeof counts.total_unread === 'number') {
+          setUnreadCount(counts.total_unread);
+        }
+      } catch {
+        // quiet fallback
+      }
+    };
+    loadUnread();
+    const interval = setInterval(loadUnread, 30000); // 30s gentle refresh
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [selectedMine?.id]);
 
   return (
     <>
@@ -60,9 +83,24 @@ export const MobileTopBar: React.FC<MobileTopBarProps> = ({ onNavigateTab }) => 
           <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
         </button>
 
-        {/* Right: Network Status + User Avatar */}
-        <div className="flex items-center gap-2 shrink-0">
+        {/* Right: Network Status + Notifications Bell + User Avatar */}
+        <div className="flex items-center gap-1.5 shrink-0">
           <NetworkStatusBadge />
+
+          {/* Actionable Notification Bell Button */}
+          <button
+            onClick={() => onNavigateTab('notifications')}
+            className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-300 hover:text-amber-400 active:scale-95 transition-all relative"
+            title={t('notifications')}
+            aria-label="Notifications"
+          >
+            <Bell className="w-4 h-4" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 text-white font-mono font-extrabold text-[10px] rounded-full flex items-center justify-center border-2 border-[#080A09] animate-pulse">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
+          </button>
 
           <button
             onClick={() => onNavigateTab('more')}
